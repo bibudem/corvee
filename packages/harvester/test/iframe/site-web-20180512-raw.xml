@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<linkchecker created="2019-10-21 16:18:47-004">
+    <urldata id="7">
+        <url>other-3nd-page.html</url>
+        <name>to other 3nd page</name>
+        <parent>http://www.site.com/iframe-page2.html</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level/>
+        <checktime>11.175000108778477</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-404">Not found</error>
+        </errors>
+        <valid result="404 not found">0</valid>
+    </urldata>
+</linkchecker>

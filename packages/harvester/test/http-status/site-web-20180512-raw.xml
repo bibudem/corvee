@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<linkchecker created="2019-11-11 17:13:22-004">
+    <urldata id="2">
+        <url>http://extern.com/500</url>
+        <name>http://extern.com/500</name>
+        <parent>http://intern.com</parent>
+        <realurl/>
+        <extern>1</extern>
+        <level>1</level>
+        <checktime>54.23500016331673</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="500 undefined">0</valid>
+    </urldata>
+    <urldata id="3">
+        <url>/500</url>
+        <name>500</name>
+        <parent>http://intern.com</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>36.35500022210181</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="500 undefined">0</valid>
+    </urldata>
+</linkchecker>

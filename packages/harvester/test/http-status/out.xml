@@ -1,0 +1,743 @@
+<?xml version="1.0"?>
+<linkchecker created="2019-05-29 13:39:04-004">
+    <urldata id="10">
+        <url>/300-header</url>
+        <name>300-header</name>
+        <parent>http://localhost:3000</parent>
+        <realurl>/300-header-ok</realurl>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>14.339999999720021</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="300 multiple choices">1</valid>
+    </urldata>
+    <urldata id="11">
+        <url>/300-body</url>
+        <name>300-body</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>18.90000000003056</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="300 multiple choices">1</valid>
+    </urldata>
+    <urldata id="13">
+        <url>/301-without-location-header</url>
+        <name>301-without-location-header</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.805000000393193</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="301 moved permanently">1</valid>
+    </urldata>
+    <urldata id="16">
+        <url>/302-without-location-header</url>
+        <name>302-without-location-header</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>7.6249999997344275</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="302 found">1</valid>
+    </urldata>
+    <urldata id="18">
+        <url>/303-without-location-header</url>
+        <name>303-without-location-header</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.644999999840365</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="303 see other">1</valid>
+    </urldata>
+    <urldata id="19">
+        <url>/305</url>
+        <name>305</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>14.07999999992171</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="305 use proxy">1</valid>
+    </urldata>
+    <urldata id="21">
+        <url>/307-without-location-header</url>
+        <name>307-without-location-header</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>16.129999999975553</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="307 temporary redirect">1</valid>
+    </urldata>
+    <urldata id="23">
+        <url>/308-without-location-header</url>
+        <name>308-without-location-header</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.130000000117434</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="308 permanent redirect">1</valid>
+    </urldata>
+    <urldata id="24">
+        <url>/400</url>
+        <name>400</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>12.589999999818247</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-400">Bad Request</error>
+        </errors>
+        <valid result="400 bad request">0</valid>
+    </urldata>
+    <urldata id="25">
+        <url>/401</url>
+        <name>401</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>13.844999999946594</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-401">Unauthorized</error>
+        </errors>
+        <valid result="401 unauthorized">0</valid>
+    </urldata>
+    <urldata id="26">
+        <url>/402</url>
+        <name>402</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.88999999956286</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-402">Payment Required</error>
+        </errors>
+        <valid result="402 payment required">0</valid>
+    </urldata>
+    <urldata id="27">
+        <url>/403</url>
+        <name>403</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.59500000024127</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-403">Forbidden</error>
+        </errors>
+        <valid result="403 forbidden">0</valid>
+    </urldata>
+    <urldata id="28">
+        <url>/404</url>
+        <name>404</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.025000000041473</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-404">Not Found</error>
+        </errors>
+        <valid result="404 not found">0</valid>
+    </urldata>
+    <urldata id="29">
+        <url>/405</url>
+        <name>405</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>35.25999999965279</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-405">Method Not Allowed</error>
+        </errors>
+        <valid result="405 method not allowed">0</valid>
+    </urldata>
+    <urldata id="30">
+        <url>/406</url>
+        <name>406</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>12.744999999995343</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-406">Not Acceptable</error>
+        </errors>
+        <valid result="406 not acceptable">0</valid>
+    </urldata>
+    <urldata id="31">
+        <url>/408</url>
+        <name>408</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>16.605000000254222</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-408">Request Timeout</error>
+        </errors>
+        <valid result="408 request timeout">0</valid>
+    </urldata>
+    <urldata id="32">
+        <url>/409</url>
+        <name>409</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.33499999994092</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-409">Conflict</error>
+        </errors>
+        <valid result="409 conflict">0</valid>
+    </urldata>
+    <urldata id="33">
+        <url>/410</url>
+        <name>410</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>9.765000000243163</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-410">Gone</error>
+        </errors>
+        <valid result="410 gone">0</valid>
+    </urldata>
+    <urldata id="34">
+        <url>/411</url>
+        <name>411</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.969999999815627</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-411">Length Required</error>
+        </errors>
+        <valid result="411 length required">0</valid>
+    </urldata>
+    <urldata id="35">
+        <url>/412</url>
+        <name>412</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>11.715000000094733</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-412">Precondition Failed</error>
+        </errors>
+        <valid result="412 precondition failed">0</valid>
+    </urldata>
+    <urldata id="36">
+        <url>/413</url>
+        <name>413</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.7149999999383</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-413">Payload Too Large</error>
+        </errors>
+        <valid result="413 payload too large">0</valid>
+    </urldata>
+    <urldata id="37">
+        <url>/414</url>
+        <name>414</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>14.799999999922875</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-414">URI Too Long</error>
+        </errors>
+        <valid result="414 uri too long">0</valid>
+    </urldata>
+    <urldata id="38">
+        <url>/415</url>
+        <name>415</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>11.304999999993015</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-415">Unsupported Media Type</error>
+        </errors>
+        <valid result="415 unsupported media type">0</valid>
+    </urldata>
+    <urldata id="39">
+        <url>/416</url>
+        <name>416</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.554999999887514</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-416">Range Not Satisfiable</error>
+        </errors>
+        <valid result="416 range not satisfiable">0</valid>
+    </urldata>
+    <urldata id="40">
+        <url>/417</url>
+        <name>417</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>9.680000000116706</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-417">Expectation Failed</error>
+        </errors>
+        <valid result="417 expectation failed">0</valid>
+    </urldata>
+    <urldata id="41">
+        <url>/418</url>
+        <name>418</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>9.189999999762222</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-418">I'm a Teapot</error>
+        </errors>
+        <valid result="418 i'm a teapot">0</valid>
+    </urldata>
+    <urldata id="42">
+        <url>/421</url>
+        <name>421</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>24.37999999983731</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-421">Misdirected Request</error>
+        </errors>
+        <valid result="421 misdirected request">0</valid>
+    </urldata>
+    <urldata id="43">
+        <url>/422</url>
+        <name>422</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.53000000006432</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-422">Unprocessable Entity</error>
+        </errors>
+        <valid result="422 unprocessable entity">0</valid>
+    </urldata>
+    <urldata id="44">
+        <url>/428</url>
+        <name>428</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>9.279999999762367</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-428">Precondition Required</error>
+        </errors>
+        <valid result="428 precondition required">0</valid>
+    </urldata>
+    <urldata id="45">
+        <url>/429</url>
+        <name>429</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>9.720000000015716</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-429">Too Many Requests</error>
+        </errors>
+        <valid result="429 too many requests">0</valid>
+    </urldata>
+    <urldata id="46">
+        <url>/431</url>
+        <name>431</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>15.214999999898282</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-431">Request Header Fields Too Large</error>
+        </errors>
+        <valid result="431 request header fields too large">0</valid>
+    </urldata>
+    <urldata id="47">
+        <url>/451</url>
+        <name>451</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>7.79499999998734</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-451">Unavailable For Legal Reasons</error>
+        </errors>
+        <valid result="451 unavailable for legal reasons">0</valid>
+    </urldata>
+    <urldata id="48">
+        <url>/500</url>
+        <name>500</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.315000000038708</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-500">Internal Server Error</error>
+        </errors>
+        <valid result="500 internal server error">0</valid>
+    </urldata>
+    <urldata id="49">
+        <url>/501</url>
+        <name>501</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.745000000042637</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-501">Not Implemented</error>
+        </errors>
+        <valid result="501 not implemented">0</valid>
+    </urldata>
+    <urldata id="50">
+        <url>/502</url>
+        <name>502</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>9.710000000268337</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-502">Bad Gateway</error>
+        </errors>
+        <valid result="502 bad gateway">0</valid>
+    </urldata>
+    <urldata id="51">
+        <url>/503</url>
+        <name>503</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>23.33500000031563</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-503">Service Unavailable</error>
+        </errors>
+        <valid result="503 service unavailable">0</valid>
+    </urldata>
+    <urldata id="52">
+        <url>/504</url>
+        <name>504</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>9.155000000191649</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-504">Gateway Timeout</error>
+        </errors>
+        <valid result="504 gateway timeout">0</valid>
+    </urldata>
+    <urldata id="53">
+        <url>/505</url>
+        <name>505</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.844999999837455</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-505">HTTP Version Not Supported</error>
+        </errors>
+        <valid result="505 http version not supported">0</valid>
+    </urldata>
+    <urldata id="54">
+        <url>/511</url>
+        <name>511</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>10.159999999814318</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-511">Network Authentication Required</error>
+        </errors>
+        <valid result="511 network authentication required">0</valid>
+    </urldata>
+    <urldata id="55">
+        <url>/520</url>
+        <name>520</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.269999999811262</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-520">unknown</error>
+        </errors>
+        <valid result="520 unknown">0</valid>
+    </urldata>
+    <urldata id="56">
+        <url>/522</url>
+        <name>522</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>8.730000000014115</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-522">unknown</error>
+        </errors>
+        <valid result="522 unknown">0</valid>
+    </urldata>
+    <urldata id="57">
+        <url>/524</url>
+        <name>524</name>
+        <parent>http://localhost:3000</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>1</level>
+        <checktime>13.784999999643333</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-524">unknown</error>
+        </errors>
+        <valid result="524 unknown">0</valid>
+    </urldata>
+    <urldata id="58">
+        <url>choix-1.html</url>
+        <name>choix-1</name>
+        <parent>http://localhost:3000/300-body</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>2</level>
+        <checktime>10.880000000270229</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-404">Not Found</error>
+        </errors>
+        <valid result="404 not found">0</valid>
+    </urldata>
+    <urldata id="60">
+        <url>choix-2.html</url>
+        <name>choix-2</name>
+        <parent>http://localhost:3000/300-body</parent>
+        <realurl/>
+        <extern>0</extern>
+        <level>2</level>
+        <checktime>9.810000000015862</checktime>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+            <error tag="http-404">Not Found</error>
+        </errors>
+        <valid result="404 not found">0</valid>
+    </urldata>
+</linkchecker>

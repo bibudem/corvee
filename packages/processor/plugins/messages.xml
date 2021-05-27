@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configs>
+	<sites>
+		<!--site nom="www.bib.umontreal.ca">
+            <fichier>www.bib.umontreal.ca-final.htm</fichier>
+            <pattern-url>http://www.bib.umontreal.ca</pattern-url>
+        </site-->
+		<site nom="guides.bib.umontreal.ca">
+			<fichier>guides.bib.umontreal.ca-final.htm</fichier>
+			<pattern-url>http://guides.bib.umontreal.ca</pattern-url>
+		</site>
+	</sites>
+	<excludes>
+		<!--
+            Chaque élément <exclude> représente une règle permettant d'exclure un ensemble de résultats "<urldata>".
+
+            Attributs
+
+            @test - L'attribut @test doit contenir une expression XPath. Cette dernière doit obligatoirement retourner une
+                    valeur booléenne (xs:boolean). Chaque noeud évalué 'true' sera exclue des résultats. Le contexte
+                    d'évaluation de ces expressions est le noeud <urldata>.
+
+            @message - Peut prendre des expressions XPath si elles sont contenues entre des accolades. L'expression sera
+                       alors évaluée à partir du contexte <urldata>.
+
+            @priority - ...
+        -->
+
+		<!--
+            Exculsions de base
+            L'élément URLdata est exclus si une des règles qui suivent s'applique
+        -->
+
+		<!--<exclude test="" message=""/>-->
+		<exclude test="starts-with(url, 'data:')" message="Liens utilisant le schème data:" />
+		<!-- <exclude test="matches(normalize-space(valid/@result), '^200') and warnings/warning[@tag='http-robots-denied']" message="Lien avec le statut 200, mais dont l'accès est interdit par une règle du fichier robots.txt" /> -->
+
+		<exclude test="infos/info[contains(., 'Access denied by robots.txt, checked only syntax.')] and valid = '1'" message="Lien de type 'http-robots-denied'." />
+		<exclude test="infos/info[contains(., 'En dehors du filtre de domaine, analyse de la syntaxe seulement.')] and valid = '1'" message="Lien en dehors du filtre de domaine." />
+		<!-- <exclude test="infos/info[contains(., 'Redirected to `')] and count(warnings/warning | errors/error) = 0 and valid = '1'" message="Message informatif." /> -->
+		<!-- <exclude test="infos/info[contains(., 'The URL is outside of the domain filter, checked only syntax.')] and valid = '1'" message="Lien en dehors du filtre de domaine." /> -->
+		<!-- <exclude test="infos/info[contains(., 'The redirected URL is outside of the domain filter, checked only syntax.')] and valid = '1'" message="Lien en dehors du filtre de domaine." /> -->
+		<!-- <exclude test="infos/info[contains(., 'did not support HEAD request')]" message="Message informatif." /> -->
+		<!-- <exclude test="infos/info[starts-with(., 'Last modified')] and count(warnings/warning | errors/error) = 0 and valid = '1'" message="Message informatif." /> -->
+		<!-- <exclude test="infos/info[starts-with(., 'Sent Cookie:')] and count(warnings/warning | errors/error) = 0 and valid = '1'" message="Message informatif." /> -->
+
+		<!-- <exclude test="warnings/warning/@tag='ignore-url'" message="Schème d'URL &quot;{substring-before(realurl, ':')}:&quot; ignoré." /> -->
+		<!-- <exclude test="warnings/warning[@tag='http-cookie-store-error']" message="Lien de type 'http-cookie-store-error'." /> -->
+		<!-- <exclude test="warnings/warning[@tag='http-decompress-error']" message="Lien de type 'http-decompress-error'. Ce problème vient d'une mauvaise interprétation des 2 octets dans l'en-tête du fichier compressé. Le contenu est bien 'zipé', le navigateur est capable de récupérer." /> -->
+		<exclude test="warnings/warning[@tag='http-moved-permanent'] and lower-case(url) = lower-case(realurl)" message="Redirection circulaire (souvent afin d'enregistrer des cookies)" />
+		<!-- <exclude test="warnings/warning[@tag='http-robots-denied'] and valid[@result = '403 Forbidden'][. = '0']" message="Lien dont l'accès est interdit par une règle du fichier robots.txt" /> -->
+		<exclude test="warnings/warning[@tag='http-robots-denied']" message="Lien de type 'http-robots-denied'." />
+		<exclude test="warnings/warning[@tag='http-unsupported-encoding']" message="Lien de type 'http-unsupported-encoding'. On considère comme ok les réponses où on signale l'avertissement http-unsupported-encoding." />
+		<!--exclude test="warnings/warning[@tag='http-wrong-redirect'][contains(., 'with different scheme found; the original URL was')]" message="Lien de type 'http-wrong-redirect'." /-->
+		<!-- <exclude test="warnings/warning[@tag='mail-unverified-address']" message="Lien de type 'mail-unverified-address'." /> -->
+		<!-- <exclude test="warnings/warning[@tag='url-content-duplicate']" message="Lien de type 'url-content-duplicate'." /> -->
+		<!-- <exclude test="warnings/warning[@tag='url-content-size-unequal']" message="Lien de type 'url-content-size-unequal'." /> -->
+		<!-- <exclude test="warnings/warning[@tag='url-content-size-zero']" message="Lien de type 'url-content-size-zero'." /> -->
+		<!-- <exclude test="warnings/warning[@tag='url-error-getting-content']" message="Lien de type 'url-error-getting-content'." /> -->
+		<!-- <exclude test="warnings/warning[@tag='url-warnregex-found'][contains(., '&lt;title&gt;')][count(warnings/warning) = 1][count(errors/error) = 0][count(infos/info) = 0]" message="Lien de type 'url-warnregex-found'." /> -->
+		<!-- <exclude test="warnings/warning[@tag='url-whitespace']" message="Lien de type 'url-whitespace'. Les blancs sont acceptés en HTML5 avant ou après l'URL." /> -->
+
+		<exclude test="contains(valid/@result, '303 See Other') and valid = '1'" message="Redirection 303 See Other" priority="2" />
+		<exclude test="contains(valid/@result, '307 Temporary Redirect') and valid = '1'" message="Redirection temporaire" />
+		<!-- <exclude test="valid = '0' and contains(valid/@result, 'BadStatusLine:') and count(warnings/warning) = 0 and count(infos/info) = 0 and url = realurl" message="Faux positif causé par 'BadStatusLine'" /> -->
+		<!-- <exclude test="valid = '0' and contains(valid/@result, 'recursive redirection encountered:')" message="Redirection circulaire (souvent afin d'enregistrer des cookies)" /> -->
+		<exclude test="valid = '1' and concat(lower-case(url), '/') = lower-case(realurl)" message="Redirection 'forward slash', i.e. http://www.exemple.com/toto -> http://www.exemple.com/toto/" />
+		<exclude test="valid = '1' and matches(lower-case(url), '\s*javascript\s*:')" message="Lien dont l'URL a le schème 'javascript:'" />
+		<!-- <exclude test="valid[contains(@tag, 'BadStatusLine:')] = '1'" message="Page avec code 200, mais dont Python retourne l'erreur 'BadStatusLine'" /> -->
+
+		<exclude test="starts-with(url, 'http') and replace(lower-case(url), '^(.+)://', '$1s$2://') = lower-case(realurl)" message="Redirection vers la même adresse en version sécurisée." />
+
+
+		<!--
+            Exclusions liées à des bogues de Linkchecker
+        -->
+		<!-- <exclude test="infos/info[contains(., 'did not support HEAD request')] and starts-with(valid/@result, '500')" message="Server `Microsoft-IIS/x.y' did not support HEAD request; a GET request was used instead." /> -->
+
+		<!--
+            Exclusions liées à l'application en cours
+        -->
+
+		<!-- <exclude test="not(matches(parent, '^https?://((\w+\.bib)|atrium)\.umontreal\.ca'))" message="Pages externes faussement considérées comme faisant partie du site Web." /> -->
+		<exclude test="starts-with(url, 'http://dx.doi.org')" message="Lien dx.doi.org" />
+		<exclude test="url[contains(lower-case(.), '//api.recaptcha.net') or contains(lower-case(.), '//www.google.com/recaptcha/api/')]" message="Service Web Recaptcha" />
+		<exclude test="url[starts-with(lower-case(.), 'http://www.bib.umontreal.ca/infosphere')] or parent[starts-with(lower-case(.), 'http://www.bib.umontreal.ca/infosphere')]" message="Lien vers InfoSphère UdeM" priority="1" />
+		<exclude test="parent[starts-with(lower-case(.), 'http://www.bib.umontreal.ca/centenaire-baby/')]" message="Lien sur le site du Centenaire Baby" />
+		<exclude test="parent[starts-with(lower-case(.), 'http://www.bib.umontreal.ca/ideale/')]" message="Lien sur le site Bibliothèque Idéale" />
+		<exclude test="parent[starts-with(lower-case(.), 'http://www.bib.umontreal.ca/nouvelles-acquisitions/')]" message="Lien sur le site des nouvelles acquisitions" />
+		<exclude test="parent[starts-with(lower-case(.), 'http://www.bib.umontreal.ca/gif/')]" message="Lien sur le site GIF" />
+		<exclude test="parent[starts-with(lower-case(.), 'https://jade.daa.umontreal.ca/')]" message="Lien sur le site jade.daa" />
+		<exclude test="lower-case(url) = 'http://www.adobe.com/go/getflashplayer'" message="Lien getflashplayer" />
+		<exclude test="lower-case(url) = 'http://www.adobe.com/products/reader'" message="Lien Adobe Reader" />
+		<exclude test="url[. = 'http://jupiter.bib.umontreal.ca/metalib/redirect.asp']" message="Lien cible de la boîte de recherche imbriquée de Maestro." />
+		<exclude test="starts-with(lower-case(url), 'http://www.myilibrary.com?id=') or starts-with(lower-case(url), 'http://www.myilibrary.com/?id=')" message="Lien canonique pour une ressource sur myilibrary.com." />
+		<exclude test="starts-with(lower-case(url), 'http://www.canlii.org') and valid/@result = '403 Forbidden'" message="Lien sur le fournisseur canlii.org qui demande parfois de s'identifier via un CAPTCHA." />
+		<exclude test="url = '/disciplines-impression'" message="Lien /discipline-impression sur la page d'accueil d'À La Carte" />
+		<exclude test="parent = 'http://guides.bib.umontreal.ca/disciplines' and warnings/warning/@tag = 'http-moved-permanent'" message="Redirections sur la page d'accueil d'À La Carte vers des guides hébergés ailleurs sur le site." />
+		<exclude test="url[starts-with(lower-case(.), 'http://testproxy.umontreal.ca')]" message="Page de test pour le Proxy." />
+		<exclude test="infos/info[starts-with(., 'Redirected to')][contains(lower-case(.), '/asicommon/')][contains(lower-case(.), 'login.aspx')]" message="Redirections nombreuses causées par le logiciel iMIS."/>
+		<exclude test="starts-with(lower-case(realurl), 'https://identification.umontreal.ca/cas/login')" message="Redirection vers le service d'authentification https://identification.umontreal.ca." />
+		<exclude test="starts-with(lower-case(realurl), 'https://authentification.umontreal.ca')" message="Redirection vers le service d'authentification https://authentification.umontreal.ca."/>
+		<exclude test="starts-with(url, 'http://youtu.be/') and valid[. = '1']" message="Ancienne URL simplifiée YouTube."/>
+		<exclude test="starts-with(url, 'https://youtu.be/') and valid[. = '1']" message="URL simplifiée YouTube."/>
+		<!-- <exclude test="starts-with(url, 'http://youtube.com/embed/') and valid[. = '1']" message="Liens non sécurisé vers la version 'embed' d'un vidéo YouTube."/> -->
+		<exclude test="starts-with(realurl, 'https://pinnacle-secure.allenpress.com')" message="Redirection de partage de cookie."/>
+		<exclude test="url[lower-case(.) = 'https://www2.portail.umontreal.ca/mailform/mailform.aspx']" message="Adresse du service de courriels de la TI pour nos formulaires."/>
+		<exclude test="parent[lower-case(.) = 'http://www.bib.umontreal.ca/faire-un-don/css/jquery-ui-1.8.9.custom/jquery-ui-1.8.9.custom.min.css']" />
+		<!--exclude test="" message="Redirections vers une URL d'authentification (login)"/-->
+
+		<!-- Vraiment nécessaire?? -->
+		<exclude test="starts-with(lower-case(url), 'http://permalien.bib.umontreal.ca')" message="Lien vers permalien.bib.umontreal.ca" />
+		<!--exclude test="starts-with(lower-case(url), 'http://atrium.umontreal.ca')" message="Lien vers atrium.umontreal.ca" /-->
+
+		<!--
+            Exclusions liées aux feedbacks du personnel
+        -->
+
+		<!--error error-code="user-feedback-no-error" error-level="info" test=".[matches(url, '^https?://\w+\.oecd-ilibrary\.org')][starts-with(valid/@result, '500')]/url" use="yes" description="Ressource signalée à ignorer par notre personnel."/-->
+		<exclude test="matches(url, '^https?://\w+\.oecd-ilibrary\.org') and starts-with(valid/@result, '500')" message="Ressource signalée à ignorer par notre personnel." />
+
+		<!-- temporaire -->
+		<exclude test="url[contains(., 'http://www.umontreal.ca/moteur_rech/index.html?sitesearch=bib.umontreal.ca')]" />
+	</excludes>
+	<errors>
+		<!--
+            Chaque élément <error> définit une règle qui permet d'identifier une erreur dans les données (un lien brisé).
+            L'erreur en question reçoit un code d'erreur (voir @error-code et @error-level) et peut facultativement être
+            retirée (voir @use).
+
+            = Attributs =
+
+            @test - Expression XPath qui sera évaluée à partir du contexte du noeud <urldata>. Si cette expression retourne
+                    au moins un noeud, alors on considérera le lien comme étant défectueux.
+
+            @error-code - Code d'erreur à associer à cette règle. Le nom du code d'erreur ne doit pas contenir d'espaces.
+
+            @error-level - Type d'erreur que l'on souhaite associer à la règle. Les valeurs possibles sont:
+                            . info
+                            . warning
+                            . error
+
+            @use (facultatif, yes | no) - Indiquer si on souhaite conserver les erreurs (use="yes") ou retirer le noeud
+                                          <urldata> (use="no") de la suite du traitement. Si l'attribut est absent, alors la
+                                          règle est conservée (identique à use="yes").
+        -->
+		<!-- <error error-code="bot-cookie-sent" error-level="info" test="infos/info[starts-with(., 'Sent Cookie:')]" use="no" description="Message 'Sent Cookie:'" /> -->
+		<!-- <error error-code="bot-url-checked" error-level="info" test="infos/info[contains(lower-case(.), 'urls parsed.') or contains(lower-case(.), 'url parsed.')]" description="Message 'URL checked'" use="no" /> -->
+		<error error-code="bot-url-outside-domain-filter" error-level="info" test="valid[@result = 'filtered']" use="no" />
+
+		<error error-code="http-robots-denied" error-level="info" test="warnings/warning[@tag = 'http-robots-denied']" use="no" />
+
+		<!-- <error error-code="http-301" error-level="error" test="warnings/warning[@tag = 'http-moved-permanent']" description="Redirection permanente." /> -->
+		<!-- <error error-code="http-30x" error-level="info" use="no" test="infos/info[contains(., 'Redirected to')]" description="Redirection." /> -->
+		<error error-code="http-30x-recursive-redirection" use="no" error-level="info" test="valid[contains(lower-case(@result), 'recursive redirection encountered')]" />
+		<error error-code="http-30x-redirect-with-secure-downgrade" use="no" error-level="warning" test="
+			warnings/warning
+			[@tag = 'http-wrong-redirect']
+			[starts-with(ancestor::urldata[1]/url, 'https:')]
+			[starts-with(ancestor::urldata[1]/realurl, 'http:')]
+			[not(replace(ancestor::urldata[1]/url, '^https://([^/]+).*$', '$1') = replace(ancestor::urldata[1]/realurl, '^http://([^/]+).*$', '$1'))]
+			" description="Redirection à partir d'un domaine sécurisé (https) vers un autre domaine non sécurisé (http)."/>
+		<error error-code="http-30x-redirect-with-secure-upgrade" use="no" error-level="warning" test="
+			warnings/warning
+			[@tag = 'http-wrong-redirect']
+			[starts-with(ancestor::urldata[1]/url, 'http:')]
+			[starts-with(ancestor::urldata[1]/realurl, 'https:')]
+			[
+				not(replace(ancestor::urldata[1]/url, '^http://([^/]+).*$', '$1') = replace(ancestor::urldata[1]/realurl, '^https://([^/]+).*$', '$1'))
+				and
+				not(replace(ancestor::urldata[1]/url, '^http://www\.([^/]+).*$', '$1') = replace(ancestor::urldata[1]/realurl, '^https://([^/]+).*$', '$1'))
+			]
+				" description="Redirection à partir d'un domaine non sécurisé (http) vers un autre domaine sécurisé (https)."/>
+		<error error-code="http-30x-secure-upgrade" use="no" error-level="info" test="warnings/warning
+			[@tag = 'http-wrong-redirect']
+			(:  :)
+			[
+				replace(ancestor::urldata[1]/url, '^http://([^/]+).*$', '$1') = replace(ancestor::urldata[1]/realurl, '^https://([^/]+).*$', '$1')
+				or
+				replace(ancestor::urldata[1]/url, '^http://www\.([^/]+).*$', '$1') = replace(ancestor::urldata[1]/realurl, '^https://([^/]+).*$', '$1')
+			]
+			" description="Redirection vers la version sécurisée (https) du même domaine. Le reste de l'URL peut différer."/>
+		<error error-code="http-400" error-level="error" test="valid[starts-with(@result, '400 Bad Request')]" description="La syntaxe de la requête est invalide." />
+		<error error-code="http-401" error-level="error" test="warnings/warning[@tag = 'http-auth-unauthorized']" description="Une authentification est nécessaire pour accéder à la ressource." />
+		<error error-code="http-403" error-level="warning" test="valid[starts-with(@result, '403 Forbidden')]" description="Accès refusé. Les droits d'accès ne permettent pas au client d'accéder à la ressource." />
+		<error error-code="http-404" error-level="error" test="valid[starts-with(@result, '404 Not Found')]" description="Fichier manquant." />
+		<error error-code="http-405" error-level="warning" use="no" test="valid[starts-with(@result, '405 Method Not Allowed')]" description="Méthode de requête non autorisée." />
+		<error error-code="http-410" error-level="error" test="valid[starts-with(@result, '410 Gone')]" description="La ressource est indisponible et aucune adresse de redirection n’est connue." />
+		<error error-code="http-500" error-level="info" test="valid[contains(@result, '500 Internal Server Error')]" description="Erreur interne du serveur." />
+		<error error-code="http-501" error-level="warning" use="no" test="valid[contains(@result, '501 Not Implemented')]" description="Fonctionnalité réclamée non supportée par le serveur." />
+		<error error-code="http-502" error-level="error" test="valid[contains(@result, '502 Bad Gateway')]" description="Mauvaise réponse envoyée à un serveur intermédiaire par un autre serveur." />
+		<error error-code="http-503" error-level="error" test="valid[contains(@result, '503 Service Unavailable')]" description="Service temporairement indisponible ou en maintenance." />
+		<error error-code="http-550" error-level="error" test="valid[contains(@result, 'error_perm: 550 File not found')]" />
+		<error error-code="http-auth-unknonwn" error-level="info" use="no" test="warnings/warning[@tag = 'http-auth-unknonwn']" description="Échec de l'authentification." />
+		<error error-code="http-server-block-head-request" error-level="info" use="no" test="infos/info[contains(., 'servers block HTTP HEAD')]" />
+		<error error-code="http-server-block-head-request" error-level="info" use="no" test="infos/info[contains(., 'Using GET method for Amazon server')]" />
+		<error error-code="https-certificate-error" error-level="info" use="no" test="warnings/warning[@tag = 'https-certificate-error']" />
+		<error error-code="https-certificate-verify-failed" error-level="info" use="no" test="valid[starts-with(@result, 'SSLError: [Errno 1]')]" />
+
+		<error error-code="mail-missing-at" error-level="error" test="valid[contains(@result, 'Missing `@')]" description="&quot;@&quot; manquant dans l'adresse de courriel (mailto:)." />
+		<!-- <error error-code="mail-no-connection" error-level="info" test="warnings/warning[@tag='mail-no-connection']" use="no" /> -->
+		<!-- <error error-code="mail-no-mx-host" error-level="warning" test="warnings/warning[@tag='mail-no-mx-host']" /> -->
+		<!-- <error error-code="mail-unverified-address" error-level="info" test="warnings/warning[@tag='mail-unverified-address']" use="no" /> -->
+		<!-- <error error-code="mail-unverified-address" error-level="info" test="infos/info[starts-with(. , 'Unverified but presumably valid address')]" use="no" /> -->
+
+		<!-- <error error-code="net-errno-10053" error-level="warning" test="valid[contains(lower-case(@result), '[errno 10053]')]" use="no" /> -->
+		<!-- <error error-code="net-errno-10054" error-level="warning" test="valid[contains(lower-case(@result), '[errno 10054]')]" use="no" description="Le serveur a fermé la connexion." /> -->
+		<!-- <error error-code="net-errno-10055" error-level="warning" test="valid[contains(lower-case(@result), '[errno 10055]')]" use="no" /> -->
+		<!-- <error error-code="net-errno-10060" error-level="warning" test="valid[contains(lower-case(@result), '[errno 10060]')]" use="no" /> -->
+		<!-- <error error-code="net-errno-10061" error-level="warning" test="valid[contains(lower-case(@result), '[errno 10061]')]" description="Le serveur a refusé d'établir la connexion." /> -->
+		<!-- <error error-code="net-errno-11001" error-level="error" test="valid[contains(lower-case(@result), '[errno 11001]')]" use="no" /> -->
+		<!-- <error error-code="net-errno-11004" error-level="warning" test="valid[contains(lower-case(@result), '[errno 11004]')]" description="Le site n'a pas été trouvé." /> -->
+		<!-- <error error-code="net-badstatusline" error-level="info" test="valid[contains(lower-case(@result), 'badstatusline:')]" use="no" /> -->
+		<!-- <error error-code="net-timeout" error-level="warning" test="valid[contains(lower-case(@result), 'timeout: timed out')]" /> -->
+
+
+		<!-- <error error-code="misc-urls-parsed" error-level="info" test="infos/info[contains(lower-case(.), 'urls parsed.')]" use="no" /> -->
+		<!-- <error error-code="misc-urls-parsed" error-level="info" test="warnings/warning[contains(lower-case(.), 'urls parsed.')]" use="no" /> -->
+		<error error-code="url-bad-syntax" error-level="error" test="valid[contains(@result, 'URL')][contains(@result, 'est pas reconnue ou n')][contains(@result, 'a pas une syntaxe valide.')]" description="La syntaxe de l'URL n'est pas valide." />
+		<error error-code="url-bad-syntax" error-level="error" test="url[contains(., '\')]" description="Le caractère illégal &quot;\&quot; (barre oblique inversée) a été trouvé dans l'URL." />
+		<error error-code="url-bad-syntax" error-level="error" test="valid[contains(@result, 'InvalidURL')]" description="La syntaxe de l'URL n'est pas valide." />
+		<error error-code="url-content-duplicate" error-level="warning" test="warnings/warning[@tag='url-content-duplicate']" use="no" />
+		<error error-code="url-content-size-unequal" error-level="info" test="warnings/warning[@tag='url-content-size-unequal']" use="no" description="The URL content size and download size are unequal." />
+		<error error-code="url-effective-url" error-level="warning" test="warnings/warning[@tag='url-effective-url']" use="no" />
+		<error error-code="url-too-long" error-level="warning" test="warnings/warning[@tag='url-too-long']" use="no" description="Message natif de Linkchecker de type 'url-too-long'" />
+		<error error-code="url-warnregex-found" error-level="info" test="warnings/warning[@tag='url-warnregex-found']" use="no" />
+		<error error-code="urlerror-3" error-level="warning" test="valid[contains(lower-case(@result), 'urlopen error [error 3]')]" />
+		<error error-code="urlerror-unknown" error-level="warning" test="valid[contains(@result, 'urlopen error unknown url type')]" />
+
+		<!-- À FAIRE
+                . 'url-content-size-zero' : <warning tag="url-content-size-zero">Content size is zero.</warning>
+                . 'url-error-getting-content' : <warning tag="url-error-getting-content">could not get content: "error: [Errno 10060] Une tentative de connexion a \xe9chou\xe9 car le parti connect\xe9 n'a pas r\xe9pondu convenablement au-del\xe0 d'une certaine dur\xe9e ou une connexion \xe9tablie a \xe9chou\xe9 car l'h\xf4te de connexion n'a pas r\xe9pondu"</warning>
+                    Attention: il existe déjà une règle pour [Errno 10060]
+                .
+        -->
+
+		<!-- DEBUG -->
+		<error test="infos/info[starts-with(., 'test-')]" error-level="info" error-code="test-debug" />
+	</errors>
+	<custom-errors>
+		<!--
+            ??Le contexte d'évaluation de l'expression XPath @test est le noeud 'urldata', et doit retourner une valeur
+            booléenne.
+
+
+            = Attributs =
+
+            @test: Expression XPath. Le contexte d'évaluatio est le noeud 'urldata'. Si l'expression retourne au moins un
+                   noeud, alors le test est considéré réussi, et une erreur de niveau '@error-level', au code '@error-code'
+                   est ajoutée au noeud 'urldata'.
+
+            @error-code - Définit un code d'erreur à associer à cette règle. Le nom du code d'erreur ne doit pas contenir
+                          d'espaces.
+
+            @error-level - permet d'identifier le niveau d'erreur que l'on souhaite associer à la règle.
+                           Valeurs possibles: info | warning | error
+
+            @use: Facultatif. Indiquer si les erreurs identifiés par l'élément <error> doivent être inclues ou exclues de la
+                 corvée.
+                 Valeurs possibles: yes (défaut) | no
+
+            @description: Facultatif. Description de l'erreur pour fins de documentation.
+
+            À FAIRE
+                . liens telnet:
+        -->
+
+		<error error-code="atrium-ancien-aide-http-30x" error-level="warning" test="url[contains(lower-case(.), 'atrium.umontreal.ca')][contains(lower-case(.), 'helphandler.do')]" description="Ancien URL de l'aide Atrium." />
+		<error error-code="atrium-ancien-interface-http-30x" error-level="warning" use="yes" test="url[contains(lower-case(.), 'atrium.umontreal.ca/primo_library')][ancestor::urldata[1]/realurl[contains(., '/primo-explore/')][(contains(., '/search') and contains(., 'query=')) or (contains(., '/fulldisplay') and contains(., 'docid=') )]]" description="Lien vers l'ancienne interface d'Atrium (atrium.umontreal.ca/primo_library/...)." />
+		<error error-code="atrium-ancien-interface-http-40x" error-level="error" use="yes" test="url[contains(lower-case(.), 'atrium.umontreal.ca/primo_library')][ancestor::urldata[1]/realurl[not(contains(., 'primo-explore/'))]]" description="Lien vers l'ancienne interface d'Atrium (atrium.umontreal.ca/primo_library/...)." />
+		<error error-code="atrium-ancien-interface1-http-40x" error-level="error" use="yes" test="url[contains(lower-case(.), 'atrium.umontreal.ca/primo_library')][ancestor::urldata[1]/realurl[contains(., '/primo-explore/')][not(contains(., '/search') and contains(., 'query=')) and not(contains(., '/fulldisplay') and contains(., 'docid=') )]]" description="Lien vers l'ancienne interface d'Atrium (atrium.umontreal.ca/primo_library/...)." />
+		<error error-code="bib-ancien-atrium" error-level="error" test="url[contains(lower-case(.), '://jupiter.bib.umontreal.ca/geoweb5/') or contains(lower-case(.), '://proxy.umontreal.ca/cgi-bin/bib/geoweb5/')]" />
+		<error error-code="bib-ancien-atrium" error-level="error" test="url[starts-with(lower-case(.), 'http://www-atrium.bib.umontreal.ca')]" />
+		<error error-code="bib-courriel-non-encode" error-level="error" test="url[contains(lower-case(.), 'mailto:')][contains(lower-case(.), '@umontreal.ca')]" />
+		<error error-code="bib-courriel-dans-libelle" error-level="error" test="name[contains(lower-case(.), '@umontreal.ca')]" />
+		<error error-code="bib-exclude-page" error-level="info" test="url[. = '/disciplines-impression']" use="no" />
+		<error error-code="bib-exclude-page" error-level="info" test="parent[starts-with(lower-case(.), 'http://guides.bib.umontreal.ca/disciplines/247-') and name[starts-with(lower-case(normalize-space(.)), 'http://')]]" use="no" />
+		<error error-code="bib-lien-bibres" error-level="error" test="url[matches(lower-case(.), '//bibres\.bib\.umontreal\.ca:[89]')]" description="Lien vers notre environnement de développement." />
+		<error error-code="bib-lien-recaptcha" error-level="warning" test="url[contains(lower-case(.), '//api.recaptcha.net') or contains(lower-case(.), '//www.google.com/recaptcha/api/')]" use="no" />
+		<error error-code="bib-lien-obtenir-article" error-level="error" test="url[lower-case(.) = 'http://opurl.bib.umontreal.ca:9003/sfx_local/a-z?param_perform_value=citation']" description="Lien Obtenir un article" />
+		<error error-code="bib-lien-primo-test" error-level="error" test="url[contains(lower-case(.), '://primo-test.bib.umontreal.ca')]" />
+		<error error-code="bib-lien-simplifie-atrium" error-level="warning" test="url[contains(lower-case(.), 'www.bib.umontreal.ca/atrium')]" />
+		<error error-code="bib-lien-simplifie-gif" error-level="error" test="url[contains(lower-case(.), 'www.bib.umontreal.ca/gif/formation.htm') or contains(lower-case(.), 'www.bib.umontreal.ca/gif/formations.htm')]" />
+		<error error-code="bib-lien-libelle" error-level="warning" test="name[matches(lower-case(normalize-space(.)), 'https?://')]" description="Lien dont le texte cliquable est une URL." />
+		<error error-code="bib-missing-slash" error-level="info" test="warnings/warning[@tag = 'http-moved-permanent'][lower-case(concat(resolve-uri(replace(ancestor::urldata[1]/url, '&quot;', '%22'), replace(ancestor::urldata[1]/parent, '&quot;', '%22')), '/')) = lower-case(replace(ancestor::urldata[1]/realurl/text(), '&quot;', '%22'))]" use="no" />
+		<error error-code="bib-rel-canadiana" error-level="error" test="url[contains(lower-case(.), 'canadiana.org/eco')]" />
+		<error error-code="bib-rel-direct-link" error-level="info" test="url[. = 'http://search.proquest.com/francis/advanced?accountid=12543']" />
+		<error error-code="bib-wrong-domain" error-level="error" test="url[starts-with(lower-case(.), 'http://bib.umontreal.ca')]" description="Le lien débute par &quot;http://bib.umontreal.ca&quot; au lieu de &quot;http://www.bib.umontreal.ca&quot;." />
+		<error error-code="atrium-www-domain" error-level="warning" test="url[starts-with(lower-case(.), 'http://www.atrium.umontreal.ca')]" description="Lien menant au domaine 'www.atrium.umontreal.ca'." />
+		<error error-code="bib-retrait-di" error-level="error" test="url[starts-with(lower-case(.), 'http://www.bib.umontreal.ca/di/')]" />
+		<error error-code="http-404" error-level="error" test="infos/info[contains(., 'http://web.ebscohost.com/Legacy/Views/static/html/Error.htm')]" />
+		<!--error error-code="http-30x-redirect-secure" error-level="info" test="infos/info[starts-with(lower-case(.), concat('redirection to url `', lower-case(replace(../../url, 'http:', 'https:'))))]" description="Redirection vers la version sécurisée (https) du même site."/-->
+
+	</custom-errors>
+	<custom-filters>
+		
+		<error use="no" error-code="bib-redirection-cas" error-level="info" test="infos/info[starts-with(lower-case(.), 'redirected to `https://identification.umontreal.ca/cas/login')]"/>
+		<error use="no" error-code="http-wrong-redirect" error-level="info" test="warnings/warning[@tag='http-wrong-redirect']"/>
+		
+		<!--
+            Retouches en fonction du feedback du personnel (via le statut d'un lien)
+        -->
+
+		<error use="no" error-code="user-ignore" error-level="info" test="warnings/warning[@tag = 'bib-lien-libelle'][starts-with(lower-case(ancestor::urldata[1]/parent), 'http://guides.bib.umontreal.ca/disciplines/141-')][contains(lower-case(ancestor::urldata[1]/parent), '?tab=2909')]" />
+		<error use="no" error-code="user-ignore" error-level="info" test="warnings/warning[@tag = 'bib-lien-libelle'][starts-with(lower-case(ancestor::urldata[1]/parent), 'http://guides.bib.umontreal.ca/disciplines/247-')][contains(lower-case(ancestor::urldata[1]/parent), '?tab=1004')]" />
+		<error use="no" error-code="user-ignore" error-level="info" test="warnings/warning[@tag = 'bib-lien-libelle'][starts-with(lower-case(ancestor::urldata[1]/parent), 'http://guides.bib.umontreal.ca/disciplines/257-')][contains(lower-case(ancestor::urldata[1]/parent), '?tab=1040')]" />
+		<error use="no" error-code="user-ignore" error-level="info" test="warnings/warning[@tag = 'bib-lien-libelle'][starts-with(lower-case(ancestor::urldata[1]/parent), 'http://guides.bib.umontreal.ca/disciplines/483-')][contains(lower-case(ancestor::urldata[1]/parent), '?tab=2191')]" />
+		<error use="no" error-code="user-ignore" error-level="info" test="warnings/warning[@tag = 'bib-lien-libelle'][starts-with(lower-case(ancestor::urldata[1]/parent), 'http://guides.bib.umontreal.ca/disciplines/483-')][contains(lower-case(ancestor::urldata[1]/parent), '?tab=2731')]" />
+		<error use="no" error-code="user-ignore" error-level="info" test="warnings/warning[@tag = 'bib-lien-libelle'][starts-with(lower-case(ancestor::urldata[1]/parent), 'http://guides.bib.umontreal.ca/disciplines/517-')][contains(lower-case(ancestor::urldata[1]/parent), '?tab=2408')]" />
+		<error use="no" error-code="user-ignore" error-level="info" test="warnings/warning[@tag = 'bib-lien-libelle'][starts-with(lower-case(ancestor::urldata[1]/parent), 'http://guides.bib.umontreal.ca/disciplines/517-')][contains(lower-case(ancestor::urldata[1]/parent), '?tab=2409')]" />
+
+
+	</custom-filters>
+	<messages>
+		<!--
+            Définition des textes descriptifs pour chaque type d'erreur (custom ou standard).
+        -->
+
+		<!-- Erreurs standards -->
+
+		<message error-code="mail-no-mx-host" regex="pour (.+)\." substitution="La portion 'hôte' de l'adresse de courriel (%1) n'est pas valide." />
+
+		<!-- Erreurs personnalisées -->
+		<message error-code="atrium-ancien-interface-http-30x">Ce lien pointe vers l'ancienne interface d'Atrium. Veuillez le mettre à jour (<a href="http://mentor.bib.umontreal.ca/form-doc/guides/Documents%20partages/Instructions%20aux%20auteurs%20de%20guides%20ALC%20Atrium%20nouvel%20UI.pdf" target="_blank">aide</a>).</message>
+		<message error-code="atrium-ancien-interface-http-40x">Ce lien pointe vers l'ancienne interface d'Atrium, et ne fonctionne probablement pas. Veuillez le mettre à jour (<a href="http://mentor.bib.umontreal.ca/form-doc/guides/Documents%20partages/Instructions%20aux%20auteurs%20de%20guides%20ALC%20Atrium%20nouvel%20UI.pdf" target="_blank">aide</a>).</message>
+		<message error-code="atrium-ancien-interface1-http-40x">Ce lien pointe vers l'ancienne interface d'Atrium, et ne fonctionne probablement pas. Veuillez le mettre à jour (<a href="http://mentor.bib.umontreal.ca/form-doc/guides/Documents%20partages/Instructions%20aux%20auteurs%20de%20guides%20ALC%20Atrium%20nouvel%20UI.pdf" target="_blank">aide</a>).</message>
+		<message error-code="atrium-ancien-aide-http-30x">Le lien vers l'aide d'Atrium est désormais: <code><a href="http://atrium.umontreal.ca/aide" target="_blank">http://atrium.umontreal.ca/aide</a></code></message>
+		<message error-code="atrium-www-domain">Lien pointant vers <code><strong>www</strong>.atrium.umontreal.ca</code> au lieu de <code>atrium.umontreal.ca</code>.</message>
+		<message error-code="bib-ancien-atrium">Ce lien pointe vers l'ancienne adresse d'Atrium (jupiter.bib.umontreal.ca/geoweb5/...). Veuillez le mettre à jour (<a href="http://guides.bib.umontreal.ca/disciplines/339-Atrium?tab=1508" target="_blank">aide</a>)</message>
+		<message error-code="bib-courriel-non-encode">L'adresse courriel derrière ce lien doit être encodée (lutte anti-spam). Vérifiez avec votre responsable sectoriel de site Web.</message>
+		<message error-code="bib-courriel-dans-libelle">L'adresse courriel est utilisée comme texte cliquable. Utilisez plutôt le nom de la personne, ou encore une expression du genre «&#xa0;nous joindre&#xa0;» ou «&#xa0;courriel&#xa0;» <span class="texte-petit">(<a href="http://mentor.bib.umontreal.ca/comite-web/bpub/outils/Contribute/Aide-mémoire%20Contribute.docx" target="_blank">plus d'infos</a>)</span>.</message>
+		<message error-code="bib-lien-bibres">Ce lien pointe vers WebPublic ou WebTest (http://bibres.bib.umontreal.ca:8...). Veuillez utiliser un lien pointant vers le site public (http://www.bib.umontreal.ca/...)</message>
+		<message error-code="bib-lien-libelle">Il est préférable d'utiliser des mots significatifs (par exemple le titre de la page) plutôt que l'adresse URL comme texte cliquable. Exception fréquentes : lorsque l'URL est citée dans une référence bibliographique; ou encore lorsqu'on on cite une adresse simplifiée. <span class="texte-petit">(<a href="http://mentor.bib.umontreal.ca/comite-web/bpub/outils/Contribute/Aide-m%C3%A9moire%20Contribute.docx" target="_blank">plus d'infos</a>)</span>.</message>
+		<message error-code="bib-lien-obtenir-article">Le lien a changé (avril 2018). Veuillez utiliser <a href="http://opurl.bib.umontreal.ca:9003/sfx_local/a-z?param_perform_value=citation&amp;browse_type=not_mobile">http://opurl.bib.umontreal.ca:9003/sfx_local/a-z?param_perform_value=citation&amp;browse_type=not_mobile</a></message>
+		<message error-code="bib-lien-primo-test">Ce lien pointe vers la version de tests d'<em>Atrium</em> (<code>http://primo-test.bib.umontreal.ca</code>...). Veuillez utiliser l'instance publique d'Atrium (<code>http://atrium.umontreal.ca/</code>...)</message>
+		<message error-code="bib-lien-simplifie-atrium">Lien simplifié désuet. Veuillez utiliser <code>http://atrium.umontreal.ca</code></message>
+		<message error-code="bib-lien-simplifie-gif">Lien simplifié désuet. L'extension de fichier <code>.htm</code> a été remplacée par <code>.aspx</code>.</message>
+		<!-- Changements survenus aux abonnements de ressources électroniques -->
+		<message error-code="bib-rel-canadiana">La ressource Early Canadian Online / Notre mémoire en ligne a changé d'adresse (ancien: <a href="http://canadiana.org/ECO" target="_blank">http://canadiana.org/ECO</a>; nouveau: <a href="http://eco.canadiana.ca/?usrlang=fr" target="_blank">http://eco.canadiana.ca/?usrlang=fr</a>) - <a href="\\mentor.bib.umontreal.ca\grel\bpub\Modifications_REL\Modifications REL dans outils  guides et page Web – Early Canadiana Online   Notre mémoire en ligne.msg" target="_blank">aide</a></message>
+		<message error-code="bib-rel-direct-link">Lien direct vers une ressource électronique. Il est préférable d'utiliser le lien permanent OPURL de SFX.</message>
+		<message error-code="bib-wrong-domain">Veuillez utiliser une adresse débutant par <code>http://<strong>www.</strong>bib.umontreal.ca</code> dans les liens hypertextes plutôt que <code>http://bib.umontreal.ca</code>. Ceci évite une redirection inutile.</message>
+		<message error-code="bib-retrait-di">Le site de la Didacthèque a été retiré. Veuillez corriger le lien.</message>
+
+		<message error-code="bot-url-outside-domain-filter">La cible du lien est exclue de la vérification.</message>
+
+		<message error-code="http-empty-content">Le lien fonctionne mais il n'y a pas de contenu. Vérifiez ce lien.</message>
+		<!--message error-code="http-moved-permanent">Document déplacé de façon permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien.</message-->
+
+		<message error-code="http-204">Veuillez vérifier ce lien.</message>
+		<message error-code="http-301">Redirection permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien.</message>
+		<message error-code="http-302" regex="`([^']+)'" substitution="Redirection temporaire vers %1.">Lien redirigé temporairement.</message>
+		<message error-code="http-303">Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien.</message>
+		<message error-code="http-30x-recursive-redirection">Redirections circulaires rencontrées. Vérifiez le lien.</message>
+		<message error-code="http-30x-redirect-with-secure-downgrade" regex="^[^`]+`([^']+)'" substitution="Redirection vers &lt;code class=&quot;cvw-url&quot;>%1&lt;/code>.  Veuillez vérifier ce lien.">Redirection. Veuillez vérifier ce lien.</message>
+		<message error-code="http-30x-redirect-with-secure-upgrade" regex="^[^`]+`([^']+)'" substitution="Redirection vers &lt;code class=&quot;cvw-url&quot;>%1&lt;/code>.  Veuillez vérifier ce lien.">Redirection. Veuillez vérifier ce lien.</message>
+		<message error-code="http-30x-secure-upgrade" regex="^[^`]+`([^']+)'" substitution="Redirection vers une version sécurisée (&lt;code>https&lt;/code>) du même site (%1).">Redirection vers une version sécurisée (<code>https</code>)du même site.</message>
+		<message error-code="http-400">Veuillez vérifier ce lien.</message>
+		<message error-code="http-401">Une authentification est nécessaire pour accéder à la ressource.</message>
+		<message error-code="http-403">L'accès au contenu du dossier est interdit. Vérifiez le lien.</message>
+		<message error-code="http-404">Lien brisé. Vérifiez le lien.</message>
+		<message error-code="http-410">Cette page a été retirée.</message>
+		<message error-code="http-500">Erreur interne du serveur. Vérifiez le lien.</message>
+		<message error-code="http-501">Le serveur ne comprend pas la requête.</message>
+		<message error-code="http-502">Un serveur Proxy a refusé l'accès. Vérifiez le lien.</message>
+		<message error-code="http-503">Impossible de vérifier le lien. Service temporairement indisponible ou en maintenance. Vérifiez le lien.</message>
+		<message error-code="http-550">Le fichier n'a pas été trouvé.</message>
+		<message error-code="https-certificate-error" regex="(.+)" substitution="%1">L'hôte indiqué dans le certificat d'encryption ne correspond pas à l'hôte inscrit dans l'URL de la cible. Assurez-vous que le lien hypertexte pointe vers la bonne cible.</message>
+		<message error-code="https-certificate-verify-failed">Le robot n'a pas été en mesure de vérifier le certificat d'encryption (https) utilisé.</message>
+
+		<message error-code="mail-missing-at">"@" manquant dans l'adresse de courriel (<code>mailto:</code>).</message>
+
+		<message error-code="misc-urls-parsed" regex="(\d+) URLs parsed\." substitution="%1 URLs vérifiées." />
+
+		<message error-code="net-errno-10053">Le serveur a abandonné la connexion. Vérifiez le lien.</message>
+		<message error-code="net-errno-10054">Le serveur a fermé la connexion. Vérifiez le lien.</message>
+		<message error-code="net-errno-10060">La tentative de connexion a échoué car le serveur n’a pas répondu au-delà du délais fixé. Vérifiez le lien.</message>
+		<message error-code="net-errno-10061">Le serveur a refusé d'établir la connexion. Vérifiez le lien.</message>
+		<message error-code="net-errno-11001">La page n'a pas été trouvée. Vérifiez le lien.</message>
+		<message error-code="net-errno-11004">Le site n'a pas été trouvé. Vérifiez le lien.</message>
+		<message error-code="[Errno ">Erreur réseau rencontrée lors de la vérification du lien. Vérifiez le lien.</message>
+		<message error-code="net-timeout">Le serveur n'a pas répondu au-delà du délais fixé. Vérifiez le lien.</message>
+		<message error-code="net-badstatusline">Erreur LinkChecker. Veuillez vérifier le lien.</message>
+
+		<message error-code="url-bad-syntax">L'URL n'est pas reconnue ou n'a pas une syntaxe valide.</message>
+		<message error-code="url-content-duplicate" regex="is the same as in URLs(.+)" substitution="Cette cible a un contenu identique à %1">Contenu dupliqué</message>
+		<message error-code="urlerror-unknown" substitution="Schème d'URL inconnu: “ %1 “." regex="type:\s*(.+)&amp;">Schème d'URL inconnu.</message>
+		<message error-code="urlerror-3" substitution="Le chemin d'accès spécifié est introuvable: %1." regex="u'(.+)'">Le chemin d'accès spécifié est introuvable.</message>
+
+		<!-- DEBUG -->
+		<message error-code="test-debug" regex="test\-(.+)" substitution="Test de débug: %1">Test debug</message>
+	</messages>
+	<icônes>
+		<icon name="warning">Mise en garde</icon>
+		<icon name="info">Information</icon>
+		<icon name="error">Erreur</icon>
+	</icônes>
+</configs>

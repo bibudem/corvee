@@ -1,0 +1,33 @@
+
+
+    RewriteEngine On
+    #RewriteBase /
+
+    RewriteRule redir/301-source /redir/301-target [R=301,L]
+    RewriteRule redir/301-target /plain.html [PT,L]
+    
+    RewriteRule redir/page1 /redir/page2 [R=301,L]
+    RewriteRule redir/page2 /redir/page3 [R=301,L]
+    RewriteRule redir/page3 /plain.html [PT,L]
+
+    RewriteRule redir/302-source /redir/302-target [R=302,L]
+    RewriteRule redir/302-target /plain.html [PT,L]
+
+    RewriteRule css/redirected-source.css css/redirected-step-1.css [R=301,L]
+    RewriteRule css/redirected-step-1.css css/redirected-step-2.css [R=302,L]
+    RewriteRule css/redirected-step-2.css css/redirected-target.css [R=301,L]
+    RewriteRule css/redirected-target css/style.css [PT,L]
+
+    RewriteRule css/index.css /css/style.css [PT,L]
+
+    RewriteRule redirected-source.pdf redirected-target.pdf [R=301,L]
+    RewriteRule redirected-target.pdf doc.pdf [PT,L]
+
+    RewriteCond %{REQUEST_URI} http/300.header
+    #Header always set Location "/other.html"
+    RewriteRule ^(.*)$ /other.html [R=300,L]
+
+    RewriteCond %{REQUEST_URI} http/300.body
+    #Header always set Location "/other.html"
+    RewriteRule ^(.*)$ 300.body.html [L]
+    

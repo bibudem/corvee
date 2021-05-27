@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+</head>
+
+<body>
+  <script>
+    var n = 10;
+    var INTERNLINKS = /^https?:\/\/(.+\.)?bib\.umontreal\.ca|^https?:\/\/atrium\.umontreal\.ca/;
+    var excludedGroups = [null, 'http-moved-permanent', 'url-content-duplicate', 'url-warnregex-found',
+      'url-whitespace'
+    ]
+
+    var codeMap = {};
+    fetch('samples.json')
+      .then(res => res.json())
+      .then(samples => {
+
+        samples
+          // .filter(group => (group[0] !== null) || !excludedGroups.includes(group[0]))
+          .filter(group => group[0] === 'ignore-url')
+          .forEach(sampleGroup => {
+
+            var code = sampleGroup[0];
+            var items = sampleGroup[1];
+            var heading = document.createElement('h2')
+            heading.innerText = code;
+            var list = document.createElement('ol');
+
+            console.log(code)
+
+            for (var i = 0; i < Math.min(n, items.length); i++) {
+              var li = document.createElement('li');
+              var a = document.createElement('a')
+              var item = items[i];
+              a.href = item.url;
+              a.innerHTML = item.url;
+              ['errCode', 'realurl'].forEach(prop => a.dataset[prop] = item[prop])
+              li.appendChild(a)
+              list.appendChild(li)
+            }
+
+            document.body.appendChild(heading)
+            document.body.appendChild(list)
+
+          })
+
+
+      })
+  </script>
+
+</html>

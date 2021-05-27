@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<linkchecker>
+    <urldata id="1">
+        <url/>
+        <realUrl>http://132.204.52.60:8080/</realUrl>
+        <parent>corvee:startpage</parent>
+        <extern>0</extern>
+        <checktime>300.1549999898998</checktime>
+        <level>0</level>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="">0</valid>
+    </urldata>
+    <urldata id="2">
+        <url>mailto:catherine.bernier@umontreal.ca</url>
+        <realUrl>mailto:catherine.bernier@umontreal.ca</realUrl>
+        <parent>http://132.204.52.60:8080</parent>
+        <extern>1</extern>
+        <checktime/>
+        <level>1</level>
+        <infos>
+        </infos>
+        <warnings>
+        </warnings>
+        <errors>
+        </errors>
+        <valid result="">0</valid>
+    </urldata>
+</linkchecker>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+</head>
+
+<body>
+    <ul>
+        {{#each routes}}
+            {{#unless private}}
+                <li>
+                    <a href="/{{path}}">{{path}}</a>
+                </li>
+                {{#if @root.checkExtern}}
+                    <li>
+                        <a href="http://extern.com/{{path}}">http://extern.com/{{path}}</a>
+                    </li>
+                {{/if}}
+            {{/unless}}
+        {{/each}}
+    </ul>
+</body>
+
+</html>
