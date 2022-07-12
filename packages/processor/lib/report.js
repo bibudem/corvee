@@ -1,11 +1,12 @@
 export class Report {
-    constructor(code, {
+    constructor(code = null, {
         message = null,
         _fixme,
         _from,
         ...data
     } = {}) {
         this.code = code;
+        this.finalUrl = null;
 
         if (message) {
             this.message = message;

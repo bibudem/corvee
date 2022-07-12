@@ -3,7 +3,7 @@ export default {
     description: 'Matches redirects from a domain URL to a welcome page. Ex: http://www.exemple.com -> http://www.exemple.com/welcome.html',
     test: record => {
 
-        if (!(typeof record.finalUrl === 'string' && record.finalUrl.length > 0)) {
+        if (record.finalUrl && !(typeof record.finalUrl === 'string' && record.finalUrl.length > 0)) {
             return;
         }
 

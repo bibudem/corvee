@@ -3,7 +3,7 @@ export default {
     description: 'Matches any redirects that includes a http -> https upgrade AND a change in the origin/pathname. Ex: http://store.exemple.com -> https://exemple.com/new-store',
     test: record => {
 
-        if (!(typeof record.finalUrl === 'string' && record.finalUrl.length > 0)) {
+        if (record.finalUrl && !(typeof record.finalUrl === 'string' && record.finalUrl.length > 0)) {
             return;
         }
 
@@ -17,7 +17,7 @@ export default {
         }
 
         // Stop processing if any http-3* error has already been detected
-        if (record.reports.some(report => report.code.startsWith('http-3') && report.level !== 'info')) {
+        if (record.reports.some(report => report.code && report.code.startsWith('http-3') && report.level !== 'info')) {
             return false;
         }
 

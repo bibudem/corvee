@@ -128,35 +128,41 @@ export class CorveeProcessor extends EventEmitter {
             const result = [];
 
             records.forEach((record, i) => {
-                const testResult = filter.test(record);
+                try {
+                    const testResult = filter.test(record);
 
-                if (testResult) {
-                    filter.matches++;
-                    filteredrecords.add(record.id);
-                    if (filter.exclude) {
-                        excludedCount++;
-                        if (typeof excluded[record.id] === 'undefined') {
-                            excluded[record.id] = filter.code;
-                        }
-                        self.emit(filter.code, record);
-                        return;
-                    } else {
-                        if (isPlainObject(testResult)) {
-                            record = testResult;
+                    if (testResult) {
+                        filter.matches++;
+                        filteredrecords.add(record.id);
+                        if (filter.exclude) {
+                            excludedCount++;
+                            if (typeof excluded[record.id] === 'undefined') {
+                                excluded[record.id] = filter.code;
+                            }
+                            self.emit(filter.code, record);
+                            return;
                         } else {
-                            const report = {
-                                code: filter.code,
-                                level: 'level' in filter ? filter.level : 'error'
+                            if (isPlainObject(testResult)) {
+                                record = testResult;
+                            } else {
+                                const report = {
+                                    code: filter.code,
+                                    level: 'level' in filter ? filter.level : 'error'
+                                }
+                                if (typeof testResult === 'string') {
+                                    report.content = testResult
+                                }
+                                record.reports.push(report)
+                                // record[i] = record;
                             }
-                            if (typeof testResult === 'string') {
-                                report.content = testResult
-                            }
-                            record.reports.push(report)
-                            // record[i] = record;
                         }
-                    }
 
-                    self.emit(filter.code, record);
+                        self.emit(filter.code, record);
+                    }
+                } catch (e) {
+                    console.error(e)
+                    console.info('At record %o', record)
+                    process.exit()
                 }
 
                 // Adding messages
