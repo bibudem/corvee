@@ -4,12 +4,12 @@ export default {
         if (!('reports' in record) || !Array.isArray(record.reports) || record.reports.length === 0) {
             return false;
         }
-        if (!record.reports.some(report => report.code.startsWith('net-'))) {
+        if (!record.reports.some(report => report.code && report.code.startsWith('net-'))) {
             return false;
         }
 
         record.reports = record.reports.map(report => {
-            if (report.code.startsWith('net-')) {
+            if (report.code && report.code.startsWith('net-')) {
                 const ret = {
                     code: 'net-*',
                     level: 'warning'
