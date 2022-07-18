@@ -7,6 +7,7 @@ export class Report {
     } = {}) {
         this.code = code;
         this.finalUrl = null;
+        this.url = null;
 
         if (message) {
             this.message = message;

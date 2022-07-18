@@ -11,19 +11,17 @@ export default {
                 return [301, 308].includes(r.status) || (r.status === 307 && r.statusText === 'Internal Redirect');
             });
 
-            // return permanentRedirects.length > 0 ? permanentRedirects[permanentRedirects.length - 1].url : false;
             if (permanentRedirects.length > 0) {
 
                 report.finalUrl = permanentRedirects[permanentRedirects.length - 1].url;
                 report.reports.push({
                     code: 'http-30x-permanent-redirect',
-                    level: 'error'
+                    level: 'info'
                 })
                 return report;
-                // return true;
             }
         }
     },
-    level: 'warning',
+    level: 'info',
     priority: -1
 }

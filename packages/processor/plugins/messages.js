@@ -25,6 +25,24 @@ export default {
         msg: "Redirection permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien."
     },
 
+    "http-30x-https-upgrade": {
+        code: "http-30x-https-upgrade",
+        pattern: "(.+)",
+        substitution: "Redirection vers <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
+        msg: "Redirection vers une version sécurisée (<code>https</code>) du même site."
+    },
+
+    "http-30x-https-upgrade-any": {
+        pattern: "(.+)",
+        substitution: "Redirection vers une nouvelle URL sécurisée <code class=\"cvw-url\">$1</code>.",
+        msg: "Redirection vers une nouvelle URL sécurisée (<code>https</code>)."
+    },
+
+    "http-30x-https-upgrade-loose": {
+        code: "http-30x-https-upgrade-loose",
+        msg: "Redirige vers une version sécurisée (<code>https</code>) du site. L'URL a aussi possiblement changé. Vérifiez ce lien."
+    },
+
     "http-30x-permanent-redirect": {
         code: "http-30x-permanent-redirect",
         msg: "Redirection permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien."
@@ -60,24 +78,6 @@ export default {
     //     substitution: "Redirection vers <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
     //     msg: "Redirection. Veuillez vérifier ce lien."
     // },
-
-    "http-30x-https-upgrade": {
-        code: "http-30x-https-upgrade",
-        pattern: "(.+)",
-        substitution: "Redirection vers <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
-        msg: "Redirection vers une version sécurisée (<code>https</code>) du même site."
-    },
-
-    "http-30x-https-upgrade-loose": {
-        code: "http-30x-https-upgrade-loose",
-        msg: "Redirige vers une version sécurisée (<code>https</code>) du site. L'URL a aussi possiblement changé. Vérifiez ce lien."
-    },
-
-    "http-30x-https-upgrade-any": {
-        pattern: "(.+)",
-        substitution: "Redirection vers une nouvelle URL sécurisée <code class=\"cvw-url\">$1</code>.",
-        msg: "Redirection vers une nouvelle URL sécurisée (<code>https</code>)."
-    },
 
     "http-400": {
         code: "http-400",

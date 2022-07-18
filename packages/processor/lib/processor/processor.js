@@ -94,46 +94,17 @@ export class CorveeProcessor extends EventEmitter {
             excludedCount = 0,
             self = this;
 
-        function doCustomErrors(records, customError) {
-            const result = [];
-
-            records.forEach((record, i) => {
-                const testResult = customError.test(record);
-
-                if (testResult) {
-                    customError.matches++;
-                    if (isPlainObject(testResult)) {
-                        record = testResult;
-                    } else {
-                        const report = {
-                            code: error.code,
-                            level: 'level' in customError ? customError.level : 'error'
-                        }
-                        if (typeof testResult === 'string') {
-                            report.content = testResult
-                        }
-                        record.reports.push(report)
-                        // record[i] = record;
-                    }
-                    self.emit(customError.code, record);
-                }
-
-                result.push(record)
-
-            })
-            return result;
-        }
-
         function doFilter(records, filter) {
             const result = [];
 
             records.forEach((record, i) => {
                 try {
                     const testResult = filter.test(record);
-
+                    self.emit('beforeProcess', record, filter)
                     if (testResult) {
                         filter.matches++;
                         filteredrecords.add(record.id);
+                        self.emit('filtered', record, filter)
                         if (filter.exclude) {
                             excludedCount++;
                             if (typeof excluded[record.id] === 'undefined') {
@@ -153,7 +124,6 @@ export class CorveeProcessor extends EventEmitter {
                                     report.content = testResult
                                 }
                                 record.reports.push(report)
-                                // record[i] = record;
                             }
                         }
 

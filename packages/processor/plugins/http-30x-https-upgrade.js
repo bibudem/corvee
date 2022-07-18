@@ -1,11 +1,4 @@
-import {
-    canonicalizeUrl
-    // } from '../../../harvester/lib/uri'
-} from '../../core'
-
-// import {
-//     Plugin
-// } from '../lib/plugin'
+import { canonicalizeUrl } from '../../core'
 
 export const name = 'http-30x-https-upgrade';
 

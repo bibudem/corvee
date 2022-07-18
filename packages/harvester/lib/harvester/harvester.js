@@ -619,7 +619,7 @@ export class Harvester extends EventEmitter {
 
                     } catch (e) {
                         console.error(e)
-                        process.exit();
+                        // process.exit();
                     }
 
                     resolve();
