@@ -110,7 +110,7 @@ export class CorveeProcessor extends EventEmitter {
                             if (typeof excluded[record.id] === 'undefined') {
                                 excluded[record.id] = filter.code;
                             }
-                            self.emit(filter.code, record);
+                            self.emit(filter.code, record, filter);
                             return;
                         } else {
                             if (isPlainObject(testResult)) {
@@ -127,7 +127,7 @@ export class CorveeProcessor extends EventEmitter {
                             }
                         }
 
-                        self.emit(filter.code, record);
+                        self.emit(filter.code, record, filter);
                     }
                 } catch (e) {
                     console.error(e)
