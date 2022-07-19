@@ -99,7 +99,7 @@ export class CorveeProcessor extends EventEmitter {
 
             records.forEach((record, i) => {
                 try {
-                    const testResult = filter.test(record);
+                    const testResult = filter.test(record, filter);
                     self.emit('beforeProcess', record, filter)
                     if (testResult) {
                         filter.matches++;
