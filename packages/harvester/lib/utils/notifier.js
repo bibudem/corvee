@@ -1,11 +1,3 @@
-// function notify() {
-//     this._notifyHandle = setInterval(() => {
-//         const end = Date.now();
-//         const duration = humanDuration(end - this._startTime)
-//         console.me(`[notify] Execution time: ${duration}, current processes: ${this.crawlers.find(item => item.constructor.name === 'PuppeteerCrawler').basicCrawler.autoscaledPool.currentConcurrency}`)
-//     }, this.config.notify)
-// }
-
 export default class Notifier {
     constructor(messages = [], {
         autoStart = false,
