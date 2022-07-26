@@ -586,12 +586,9 @@ export class Harvester extends EventEmitter {
                             if (reqInfo.wasAlreadyPresent) {
 
                                 // The URL is in the request queue, but it has not yet been processed
-                                // console.z(reqInfo)
-                                // console.z(requestData)
                                 let i = 0;
                                 tryAgain(async () => {
                                     i++;
-                                    // console.warn(`[${i}] waiting for url in queue to be processed: ${requestData.url}`)
                                     if (self.linkStore.has(requestData.url)) {
                                         try {
                                             const record = await self.linkStore.recordFromData(requestData.userData);
@@ -603,8 +600,6 @@ export class Harvester extends EventEmitter {
                                             console.error(e);
                                             process.exit();
                                         }
-
-                                        console.warn(`[${i}] found url in queue to be processed: ${requestData.url}`)
 
                                         return true;
                                     }
