@@ -21,5 +21,8 @@
         "underscore": "^1.9.1",
         "uri-js": "^4.2.2",
         "winston": "^3.2.1"
+    },
+    "devDependencies": {
+        "esm": "^3.2.25"
     }
 }
