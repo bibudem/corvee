@@ -1,23 +1,13 @@
-import {
-    inspect
-} from 'util'
+import { inspect } from 'util'
 import * as chromiumNetErrors from 'chromium-net-errors';
-import createHttpError, {
-    HttpError
-} from 'http-errors'
+import createHttpError, { HttpError } from 'http-errors'
 import statuses from 'statuses'
 import _ from 'underscore'
 import isNumber from 'is-number'
-import {
-    normalizeError
-} from './normalize'
-import {
-    Report
-} from '../../../processor/lib/report'
+import { normalizeError } from './normalize'
+import { Report } from '../../../processor/lib/report'
 
-import {
-    console
-} from '../../../core/lib/logger';
+import { console } from '../../../core/lib/logger';
 
 function makeReport(rawData) {
     try {
@@ -81,26 +71,24 @@ export function captureError(errorOrString) {
         }
         // HttpError class
         if (errorOrString instanceof HttpError) {
-            // var props = [];
-            // for (var prop in errorOrString) {
-            //     if (!['expose', 'statusCode'].includes(prop)) {
-            //         props.push(prop)
-            //     }
-            // }
-            // return _.extend(_.pick(errorOrString, props), {
-            //     name: errorOrString.constructor.name
-            // })
 
             return makeReport(_.extend(normalizeError(errorOrString), {
                 _from: 'errorOrString instanceof HttpError'
             }))
         }
 
-        return makeReport(_.extend(normalizeError(errorOrString), {
+        const normalizedError = normalizeError(errorOrString);
+        const normalizedErrorDefaults = {
             _from: 'unhandledError',
-            _original: _.pick(errorOrString, ['code', 'message', 'name', 'stack', 'input', 'type', 'description', 'error']),
-            _fixme: true
-        }))
+            _original: _.pick(errorOrString, ['code', 'message', 'name', 'stack', 'input', 'type', 'description', 'error'])
+        }
+
+        if (typeof normalizedErrorDefaults.code === 'undefined') {
+            normalizedErrorDefaults.code = 'unhandled-error';
+            normalizedErrorDefaults._fixme = true;
+        }
+
+        return makeReport(_.extend(normalizedError, normalizedErrorDefaults))
     }
 
     return makeReport({
