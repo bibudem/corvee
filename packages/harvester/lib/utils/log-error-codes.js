@@ -1,11 +1,5 @@
 import fs from 'fs'
-
-import {
-    console
-}
-from '../../../core/lib/logger';
-
-// var i = 1;
+import { console } from '../../../core/lib/logger';
 
 export function logErrorCodes(harvester, filePath) {
 
@@ -17,9 +11,8 @@ export function logErrorCodes(harvester, filePath) {
 
     harvester.on('record', function onRecord(record) {
         if ('reports' in record && Array.isArray(record.reports)) {
-            // console.info(`[record] ${i++}`)
             record.reports.forEach(report => {
-                //console.me(report)
+                //console.debug(report)
                 let errorCode = null;
 
                 if ('code' in report) {
@@ -27,12 +20,10 @@ export function logErrorCodes(harvester, filePath) {
                 } else if (report && 'normalized' in report && 'code' in report.normalized) {
                     errorCode = report.normalized.code
                 } else {
-                    console.me('??????????????????????????????????????????')
-                    console.me(report)
+                    console.todo('??????????????????????????????????????????')
+                    console.todo(report)
                     errorCode = '???'
                 }
-
-                // console.me(errorCode)
 
                 if (!errorCodes.has(errorCode)) {
                     errorCodes.add(errorCode)

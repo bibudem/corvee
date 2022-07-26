@@ -2,14 +2,8 @@ import Apify from 'apify';
 import LRU from 'lru'
 import v from 'io-validate'
 import extend from 'extend';
-import {
-    omit,
-    pick
-} from 'underscore'
-import {
-    idFromUrl,
-    console
-} from '../../../core'
+import { omit, pick } from 'underscore'
+import { idFromUrl, console } from '../../../core'
 
 /*
 Link props:
@@ -61,8 +55,6 @@ export class LinkStore {
 
     has(url) {
         v(url, 'url').isString();
-        // console.info(url)
-        // console.info(Array.from(this._linkIdx.values()))
         const key = idFromUrl(url);
         return this._linkIdx.has(key);
     }
@@ -72,7 +64,6 @@ export class LinkStore {
         options = {}) {
 
         v(linkData.url, 'url').isString();
-        // console.log(`Adding ${linkData.url}`)
         const linkId = idFromUrl(linkData.url);
 
         if (this._linkIdx.has(linkId)) {

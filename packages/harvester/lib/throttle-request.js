@@ -1,16 +1,10 @@
 import EventEmitter from 'events'
-
-function domainFor(url) {
-    return new URL(url).hostname;
-}
+import { console } from './logger'
 
 function sleep(millis) {
     return new Promise(res => setTimeout(res, millis));
 };
 
-import {
-    console
-} from './logger'
 
 // function RequestQueueProxy(target, self) {
 //     return new Proxy(target, {
@@ -23,7 +17,7 @@ import {
 //                 }
 
 //                 await sleep(500)
-//                 console.me(`###### fetchNextRequest ${nextRequest.url}`)
+//                 console.todo(`###### fetchNextRequest ${nextRequest.url}`)
 //                 return nextRequest;
 
 //             }

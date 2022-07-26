@@ -787,8 +787,8 @@ export class Harvester extends EventEmitter {
                     self.emit('record', record, self.session.recordCount)
 
                     if (self.isExternLink(record.parent)) {
-                        console.me('Parent is external. This should not happen.')
-                        console.me(record)
+                        console.todo('Parent is external. This should not happen.')
+                        console.todo(record)
                         process.exit()
                     }
 
@@ -870,14 +870,14 @@ export class Harvester extends EventEmitter {
 
                 try {
                     if (self.config.linkParserDelay) {
-                        console.me('waiting ' + self.config.linkParserDelay + 'ms before parsing links')
+                        console.debug('waiting ' + self.config.linkParserDelay + 'ms before parsing links')
                         await page.waitFor(self.config.linkParserDelay)
                         // TODO
                         await page.screenshot({
                             path: 'D:/projets/corvee-bib/t.png',
                             fullPage: true
                         })
-                        console.me('waiting done')
+                        console.debug('waiting done')
                     }
                     links = await page.evaluate(self.linkParser, { version: 'toto' })
 
@@ -1009,8 +1009,6 @@ export class Harvester extends EventEmitter {
                                     reject(new Error('test'));
                                     return;
                                 }
-
-                                // console.warn(response.ok)
 
                                 if (!isMaxPagesExceeded()) {
                                     const record = handleResponse(request, response);
@@ -1299,7 +1297,6 @@ export class Harvester extends EventEmitter {
                                             await addRecord(record);
 
                                             request.ignore = true;
-
                                             request.noRetry = true;
 
                                             return Promise.resolve()
@@ -1307,12 +1304,11 @@ export class Harvester extends EventEmitter {
                                     }
 
                                     if (request.retryCount < self.config.maxRequestRetries) {
-
                                         return;
                                     }
 
                                     // Retry count maxed out.
-                                    console.todo('This request failure has not been handled.')
+                                    console.todo(`This request failure has not been handled: ${displayUrl(url)}`)
                                     console.todo(pupRequest.failure())
                                     request.userData.reports.push(pupRequest.failure().errorText);
                                 }
@@ -1388,14 +1384,12 @@ export class Harvester extends EventEmitter {
                                             try {
                                                 meta.size = (await pupResponse.buffer()).length;
                                             } catch (e) {
-                                                console.error(`${UNHANDLED_ERROR} at ${pageUrl}`)
-                                                console.error(e)
+                                                console.todo(`${UNHANDLED_ERROR} at ${pageUrl}`)
+                                                console.todo(e)
                                             }
 
                                             meta.timing = await getTimingFor(pupResponse.url(), page);
                                             meta.perfResponse = await getPerformanceData(page, pupResponse.url())
-
-                                            console.info(`### [${pupResponse.status()}] ${pupResponse.headers()['content-type']}`);
 
                                             // Is the asset loaded?
                                             if (pupResponse.ok()) {

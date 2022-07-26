@@ -39,7 +39,7 @@ export function normalizeError(err, defName) {
     let found = false;
     for (const errorDef of errorDefs) {
         if ((typeof defName === 'string' && defName === errorDef.name) || errorDef.test(err)) {
-            // console.me(`is ${errorDef.name}`);
+            // console.debug(`is ${errorDef.name}`);
             translator = errorDef.props;
             prefix = errorDef.prefix;
             found = true;
@@ -48,15 +48,15 @@ export function normalizeError(err, defName) {
     }
 
     if (!found) {
-        console.me('Didn\' find a definition for this error:')
-        console.me(err)
-        console.me(`err.name: ${err.name}`)
-        console.me(`err.constructor.name: ${err.constructor.name}`)
-        console.me(`err instanceof Error: ${err instanceof Error}`)
-        console.me(`err.message: ${err.message}`)
-        console.me(`err.code: ${err.code}`)
-        console.me(Object.keys(err))
-        console.me(err.stack)
+        console.todo('Didn\' find a definition for this error:')
+        console.todo(err)
+        console.todo(`err.name: ${err.name}`)
+        console.todo(`err.constructor.name: ${err.constructor.name}`)
+        console.todo(`err instanceof Error: ${err instanceof Error}`)
+        console.todo(`err.message: ${err.message}`)
+        console.todo(`err.code: ${err.code}`)
+        console.todo(Object.keys(err))
+        console.todo(err.stack)
 
         translator = {}
         Object.keys(err).forEach(prop => translator[prop] = prop)
@@ -64,7 +64,6 @@ export function normalizeError(err, defName) {
         //process.exit()
     }
 
-    // console.me(err)
     Object.keys(translator).forEach(oldProp => {
         if (typeof (err[oldProp]) !== 'undefined') {
             const translatorPropMap = Array.isArray(translator[oldProp]) ? translator[oldProp] : [translator[oldProp]];

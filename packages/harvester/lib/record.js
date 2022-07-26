@@ -1,21 +1,11 @@
-import {
-    inspect
-} from 'util';
+import { inspect } from 'util';
 
 import dotProp from 'dot-prop';
 
 const extend = require('extend');
-import {
-    absUrl,
-    normalizeUrl,
-    console
-} from './../../core'
-import {
-    ResourceType
-} from './resource-type';
-import {
-    captureErrors
-} from './errors';
+import { absUrl, normalizeUrl, console } from './../../core'
+import { ResourceType } from './resource-type';
+import { captureErrors } from './errors';
 
 export const defaultOpts = {
     url: null,
@@ -309,7 +299,7 @@ export function handleResponse(request, response, meta) {
 
 export function handleFailedRequest(request, error, meta) {
     // apify request class
-    console.me(inspect(request))
+    console.debug(inspect(request))
     const reports = captureErrors(request.userData.reports);
     delete request.userData.reports;
 
