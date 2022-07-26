@@ -104,30 +104,33 @@ export class CorveeProcessor extends EventEmitter {
                     if (testResult) {
                         filter.matches++;
                         filteredrecords.add(record.id);
+
+                        if (isPlainObject(testResult)) {
+                            record = testResult;
+                        } else {
+                            const report = {
+                                code: filter.code,
+                                level: 'level' in filter ? filter.level : 'error'
+                            }
+                            if (typeof testResult === 'string') {
+                                report.content = testResult
+                            }
+                            record.reports.push(report)
+                        }
+
                         self.emit('filtered', record, filter)
+                        self.emit(filter.code, record, filter);
+
                         if (filter.exclude) {
                             excludedCount++;
                             if (typeof excluded[record.id] === 'undefined') {
                                 excluded[record.id] = filter.code;
                             }
-                            self.emit(filter.code, record, filter);
+                            self.emit('excluded', record, filter)
                             return;
-                        } else {
-                            if (isPlainObject(testResult)) {
-                                record = testResult;
-                            } else {
-                                const report = {
-                                    code: filter.code,
-                                    level: 'level' in filter ? filter.level : 'error'
-                                }
-                                if (typeof testResult === 'string') {
-                                    report.content = testResult
-                                }
-                                record.reports.push(report)
-                            }
                         }
 
-                        self.emit(filter.code, record, filter);
+
                     }
                 } catch (e) {
                     console.error(e)
@@ -190,7 +193,7 @@ export class CorveeProcessor extends EventEmitter {
                 // Filtering reports priorities by level
 
                 errorLevels.forEach(errorLevel => {
-                    // console.log(`=== ${errorLevel} ==========================`)
+
                     const reportsByLevel = record.reports.filter(report => report.level === errorLevel);
 
                     if (reportsByLevel.length > 0) {
@@ -209,7 +212,7 @@ export class CorveeProcessor extends EventEmitter {
                         reports = reports.concat(filteredReportsForThisLevel);
                     }
                 })
-                // console.log(`==============================================`)
+
                 record.reports = reports;
                 // console.log(reports);
                 // process.exit();

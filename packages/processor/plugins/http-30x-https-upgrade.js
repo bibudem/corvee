@@ -5,7 +5,8 @@ export const name = 'http-30x-https-upgrade';
 const defaultLevel = 'warning';
 
 const defaultOptions = {
-    ignoreWww: true
+    ignoreWww: true,
+    limit: Infinity
 }
 
 export default class Http30xHttpsUpgrade {
@@ -31,12 +32,16 @@ export default class Http30xHttpsUpgrade {
             enumerable: true
         })
 
-        this.test = (report) => {
+        this.test = (report, filter) => {
             if (!report.finalUrl) {
                 return
             }
 
             if (report.httpStatusCode >= 400) {
+                return
+            }
+
+            if (filter.matches >= this.options.limit) {
                 return
             }
 
