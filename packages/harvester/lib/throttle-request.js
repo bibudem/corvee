@@ -47,14 +47,8 @@ export class ThrottleRequests extends EventEmitter {
         this._activeSlotAvailable = true;
     }
 
-    // async init() {
-    //     setInterval(() => {
-    //         this.fetchNextRequest()
-    //     }, this.minDelayBetweenRequests)
-    // }
-
     async fetchNextRequest() {
-        console.z(`active requests: ${this._activeRequests.length}`)
+        console.debug(`active requests: ${this._activeRequests.length}`)
         if (this._activeRequests.length < this.options.maxConcurrency && this._activeSlotAvailable) {
 
             if (this._requestQueuePromises.length > 0) {
@@ -62,12 +56,12 @@ export class ThrottleRequests extends EventEmitter {
                 const nextQueueItem = this._requestQueuePromises.shift()
                 const newActiveRequest = await nextQueueItem._fetchNextRequest.apply(nextQueueItem.requestQueue)
                 this._activeRequests.push(newActiveRequest.id)
-                console.z(`[active] ${newActiveRequest.url}`)
+                console.debug(`[active] ${newActiveRequest.url}`)
                 setTimeout(() => {
                     this._activeSlotAvailable = true;
-                    console.z('slot available')
+                    console.debug('slot available')
                 }, this.options.minDelayBetweenRequests)
-                // return Promise.resolve(nextQueueItem._fetchNextRequest.apply(nextQueueItem.requestQueue))
+
                 return Promise.resolve(newActiveRequest)
             }
 
@@ -83,10 +77,7 @@ export class ThrottleRequests extends EventEmitter {
 
         const _fetchNextRequest = requestQueue.fetchNextRequest;
         requestQueue.fetchNextRequest = async function fetchNextRequest() {
-            // console.z(`before sleep`)
             await sleep(self.minDelayBetweenRequests)
-            // console.z(`after sleep`)
-            // return Promise.resolve(await _fetchNextRequest.apply(requestQueue))
 
             self._requestQueuePromises.push({
                 _fetchNextRequest,
@@ -103,13 +94,12 @@ export class ThrottleRequests extends EventEmitter {
             if (request) {
                 let data
                 try {
-                    // const data = await _markRequestHandled.apply(request);
                     data = await _markRequestHandled.call(requestQueue, request);
                 } catch (e) {
-                    console.z(e)
+                    console.debug(e)
                     process.exit()
                 }
-                console.z('[done]', request.url)
+                console.debug('[done]', request.url)
 
                 self._activeRequests = self._activeRequests.filter(url => url !== request.url)
 

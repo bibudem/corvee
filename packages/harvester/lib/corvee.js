@@ -26,9 +26,9 @@ export class Corvee extends EventEmitter {
             this.emit('end')
         })
 
-        this._harvester.on('response', ev => {
-            // console.z(ev.data)
-        })
+        // this._harvester.on('response', ev => {
+
+        // })
     }
 
     async run() {

@@ -162,15 +162,9 @@ export class Harvester extends EventEmitter {
         this.autoscaledPoolOptions = {
             ...defaultAutoscaledPoolOptions,
             isTaskReadyFunction: function isTaskReady() {
-                //return requestHandler.ready;
-                // return requestHandler.size  < self.config.maxConcurrency;
-                // console.me('########### autoscaled pool isTaskReadyFunction')
                 return true;
             },
             runTaskReadyFunction: function runTaskReady() {
-                //return requestHandler.ready;
-                // return requestHandler.size  < self.config.maxConcurrency;
-                // console.me('########### autoscaled pool runTaskReadyFunction')
                 return true;
             }
         }
@@ -572,8 +566,8 @@ export class Harvester extends EventEmitter {
                                     return resolve()
                                 }
 
-                                console.error('[TODO] This should not happpen: record wasAlreadyHandled, but is not in the linkStore')
-                                console.error(JSON.stringify(reqInfo, null, 2))
+                                console.todo('This should not happpen: record wasAlreadyHandled, but is not in the linkStore')
+                                console.todo(JSON.stringify(reqInfo, null, 2))
                             }
 
                             if (reqInfo.wasAlreadyPresent) {
@@ -688,7 +682,7 @@ export class Harvester extends EventEmitter {
 
                     // This should not occur
                     if (self.isExternLink(requestData.userData.parent)) {
-                        console.warn(`[TODO] Intercepted an URL hosted on an external page that was submitted to fetch queue: ${requestData.userData.parent} -> ${requestData.url}.`)
+                        console.todo(`Intercepted an URL hosted on an external page that was submitted to fetch queue: ${requestData.userData.parent} -> ${requestData.url}.`)
                         return;
                     }
 
@@ -764,10 +758,6 @@ export class Harvester extends EventEmitter {
                     record.id = self.session.recordCount;
                     record.extern = self.isExternLink(record.url); // ??? parfois la propriété est absente
 
-                    // if (parentsStore.has(record.url)) {
-                    //     record.parents.push(...Array.from(parentsStore.get(record.url).values()))
-                    // }
-
                     if (self.config.fetchLinksOnce) {
                         Object.keys(record).forEach(key => linkProps.add(key));
                         // console.log(record);
@@ -809,14 +799,13 @@ export class Harvester extends EventEmitter {
             }
 
             async function getPerformanceData(page, name) {
-                // console.z(name)
                 if (typeof page === 'undefined') {
                     return null;
                 }
 
                 async function logConsole(msg) {
                     for (let i = 0; i < msg.args().length; ++i) {
-                        console.z(`${i}: ${msg.args()[i]}`);
+                        console.warn(`${i}: ${msg.args()[i]}`);
                     }
                 }
 
@@ -842,7 +831,6 @@ export class Harvester extends EventEmitter {
             }
 
             async function getTimingFor(resource, page) {
-                // console.z(resource)
                 const perfData = await getPerformanceData(page, resource);
 
                 if (!perfData) {
@@ -865,8 +853,7 @@ export class Harvester extends EventEmitter {
                 // _bwowsingContextStack = []
             }) {
                 const ret = [];
-                const nextLevel = currentLevel + 1
-                // console.z(page.url())
+                const nextLevel = currentLevel + 1;
                 if (nextLevel > self.config.maxDepth) {
                     return ret;
                 }
@@ -1033,9 +1020,7 @@ export class Harvester extends EventEmitter {
                                 resolve(response)
                             })
                             .catch(e => {
-                                //requestFailedData.pushData(e);
-                                console.error('ici')
-                                console.error(e)
+                                console.todo(e)
                                 reject(e)
                                 throw e;
                             });
@@ -1113,20 +1098,11 @@ export class Harvester extends EventEmitter {
 
                                     request.userData.reports.push(urlErr);
                                     // TODO: This seams to be working...
-                                    // console.z(request);
                                     try {
                                         const req = await puppeteerRequestQueue.getRequest(request.id);
-                                        // if (req) {
-                                        //     // The request is in the requestQueue
-                                        //     console.me('request exists')
-                                        //     console.me(req)
-                                        //     // await puppeteerRequestQueue.markRequestHandled(request);
-                                        //     // return reject(urlErr);
-                                        // }
                                     } catch (e) {
-                                        console.me('fix me too')
-                                        console.error(e)
-                                        // process.exit()
+                                        console.todo('fix me')
+                                        console.todo(e)
                                     }
 
                                     return reject(urlErr);
@@ -1293,7 +1269,6 @@ export class Harvester extends EventEmitter {
                                 console.verbose(`${pupRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pupRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pupRequest.failure().errorText} at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
 
                                 if (pupRequest.isNavigationRequest()) {
-                                    // console.z(pupRequest.url())
 
                                     //
                                     // This is a navigation error
@@ -1337,8 +1312,8 @@ export class Harvester extends EventEmitter {
                                     }
 
                                     // Retry count maxed out.
-                                    console.me('TODO: this request failure has not been handled.')
-                                    console.me(pupRequest.failure())
+                                    console.todo('This request failure has not been handled.')
+                                    console.todo(pupRequest.failure())
                                     request.userData.reports.push(pupRequest.failure().errorText);
                                 }
 
@@ -1457,8 +1432,6 @@ export class Harvester extends EventEmitter {
                             })
 
                             page.on('response', async function onNavigationResponse(pupResponse) {
-                                // console.me(pupResponse.request())
-                                // console.me(pupResponse)
 
                                 //
                                 // Here we process some navigation responses only.
@@ -1510,7 +1483,6 @@ export class Harvester extends EventEmitter {
                                             pupResponse.request().userData.reports.push(httpError);
                                         }
 
-                                        //console.info(`FIXME: [${request.retryCount}] got a status = ${pupResponse.status()} for ${pupResponse.request().url()}`)
                                     }
                                 }
 
@@ -1538,8 +1510,8 @@ export class Harvester extends EventEmitter {
                                 });
                         })
                     }).catch(e => {
-                        console.error('[TODO] Unhandled error:')
-                        console.error(e)
+                        console.todo('Unhandled error:')
+                        console.todo(e)
                     })
                 },
                 autoscaledPoolOptions: self.autoscaledPoolOptions,
@@ -1580,14 +1552,17 @@ export class Harvester extends EventEmitter {
                     //
 
                     if (typeof pupResponse === 'undefined') {
-                        console.error(`[TODO] response is undefined at [${request.userData.trials}] ${request.url}`)
-                        console.error(request)
+                        if (self.shouldIgnoreUrl(request.url)) {
+                            return
+                        }
+                        console.todo(`Response is undefined at [${request.userData.trials}] ${request.url}`)
+                        console.todo(request)
                         throw '';
                     }
 
                     if (typeof pupResponse === null) {
-                        console.error(`[TODO] response is null at [${request.userData.trials}] ${request.url}`)
-                        console.error(request)
+                        console.todo(`Response is null at [${request.userData.trials}] ${request.url}`)
+                        console.todo(request)
                         throw '';
                     }
 
@@ -1609,18 +1584,17 @@ export class Harvester extends EventEmitter {
                     try {
                         request.userData.timing = await getTimingFor(pupResponse.url(), page)
                     } catch (e) {
-                        console.warn(`[TODO] getTimingFor() failed. Request url: ${request.url}`)
-                        console.warn(e)
+                        console.todo(`getTimingFor() failed. Request url: ${request.url}`)
+                        console.todo(e)
                     }
 
-                    // console.log(pupResponse)
                     const data = await responseData(pupResponse.request()._requestId, pupResponse)
 
                     try {
                         data.timing = await getTimingFor(pupResponse.url(), page)
                     } catch (e) {
-                        console.warn(`[TODO] getTimingFor() failed. Request url: ${request.url}`)
-                        console.warn(e)
+                        console.todo(`getTimingFor() failed. Request url: ${request.url}`)
+                        console.todo(e)
                     }
 
                     self.emit('response', {
@@ -1643,8 +1617,8 @@ export class Harvester extends EventEmitter {
                     //         })
                     //     }
                     // } catch (e) {
-                    //     console.z(`[TODO] Request url: ${request.url}`)
-                    //     console.z(e)
+                    //     console.todo(`Request url: ${request.url}`)
+                    //     console.todo(e)
                     // }
 
                     try {
@@ -1691,11 +1665,6 @@ export class Harvester extends EventEmitter {
                                 // _bwowsingContextStack: request.userData.resourceIsEmbeded ? [] : request.userData._bwowsingContextStack
                             });
 
-                            // console.me(`Page ${page.url()}`)
-                            // links.forEach((link, i) => console.me(` ${`${i+1}`.padStart(3 - `${i}`.length, ' ')} - ${link.url}`))
-
-                            // console.me(inspect(links, false, 4))
-
                             await addToRequestQueue('pup', links)
 
                             try {
@@ -1714,11 +1683,8 @@ export class Harvester extends EventEmitter {
                                         const link = new Link(frameUrl, {
                                             parent: pageFinalUrl,
                                             level: request.userData.level,
-                                            // _bwowsingContextStack: [...(request.userData._bwowsingContextStack || []), pageFinalUrl],
                                             resourceIsEmbeded: true
                                         })
-
-                                        // console.me(inspect(link, false, 4))
 
                                         await addToRequestQueue('pup', link)
                                     }
@@ -1750,7 +1716,7 @@ export class Harvester extends EventEmitter {
 
                     const url = normalizeUrl(request.url);
 
-                    console.info(`[${request.retryCount}] url: ${displayUrl(url)}`)
+                    console.info(`[try: ${request.retryCount}] url: ${displayUrl(url)}`)
 
                     _activeRequestsCount.delete(request.url)
 
@@ -1775,7 +1741,6 @@ export class Harvester extends EventEmitter {
                 },
                 maxRequestsPerCrawl: self.config.maxRequests,
                 maxConcurrency: self.config.maxConcurrency,
-                //minConcurrency: Math.min(100, Math.ceil(self.config.maxConcurrency * .95))
             });
 
             puppeteerCrawler.pause = function pause(timeout) {

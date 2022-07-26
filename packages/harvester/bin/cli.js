@@ -141,7 +141,6 @@ if (urls && urls.length) {
 
         // process.env.APIFY_LOCAL_STORAGE_DIR = harvester.config.apifyLocalStorageDir;
         //     const assetsLinkStore = await Apify.openDataset('assets-urls');
-        //     console.z(assetsLinkStore)
         //     const data = await assetsLinkStore.getData({
         //         format: 'csv',
         //         clean: true
