@@ -1,7 +1,4 @@
-import {
-    re_weburl,
-    re_weburl_dev
-} from './regex-weburl';
+import { re_weburl, re_weburl_dev } from './regex-weburl';
 import v from 'io-validate'
 
 const re = process.env.NODE_ENV === 'production' ? re_weburl : re_weburl_dev
