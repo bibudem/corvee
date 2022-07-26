@@ -1,7 +1,6 @@
 import {
     inspect
 } from 'util';
-import v from 'io-validate';
 
 import dotProp from 'dot-prop';
 
@@ -17,23 +16,6 @@ import {
 import {
     captureErrors
 } from './errors';
-
-
-// class AbstractRecord {
-//     constructor(data) {
-//         v(data).is('object', 'string');
-//         if (typeof data === 'string') {
-//             this.urlData = data;
-//             return;
-//         }
-//     }
-// }
-
-// class Record extends AbstractRecord {
-//     constructor(data) {
-//         super();
-//     }
-// }
 
 export const defaultOpts = {
     url: null,
@@ -59,7 +41,6 @@ export function getFinalStatus(report) {
         statuses.push(...report.redirectChain.map(r => r.status))
     }
 
-    // return Math.max(...status);
     return statuses.reduce((winner, current) => {
 
         const currentLvl = Math.floor(current / 100),
@@ -121,18 +102,6 @@ function getFinalUrl({
         if ('location' in headers) {
             finalUrl = headers.location;
         }
-        // else if (body && typeof body === 'string') {
-        //     finalUrl = Array.from(getUrls(body, {
-        //         stripAuthentication: false,
-        //         stripWWW: false,
-        //         removeQueryParameters: false,
-        //         removeTrailingSlash: false,
-        //         sortQueryParameters: false
-        //     }))
-        // }
-        // else {
-        //     finalUrl = null;
-        // }
     }
 
     if (redirectChain) {
@@ -145,35 +114,15 @@ function getFinalUrl({
         if (httpStatusCode >= 200 && httpStatusCode <= 299) {
             // Pick the last redirect
             finalUrl = redirectChain[redirectChain.length - 1].url;
-
-
-
-            // // ... unless there is a temporary redirect in the redirect chain
-            // const firstTempRedirectIdx = redirectChain.findIndex(redirect => [302, 309].includes(redirect.status));
-
-            // if (firstTempRedirectIdx > -1) {
-            //     // Set the finalUrl as the last redirect before a temporary redirect, OR ELSE, the original url.
-            //     try {
-            //         finalUrl = [{
-            //             url: record.url
-            //         }].concat(redirectChain)[firstTempRedirectIdx].url;
-            //         // finalUrl&& record.redirectChain.length > 0 ? record.redirectChain[redirectChain.length - 1].location : record.url;
-            //     } catch (e) {
-            //         console.error(e)
-            //         process.exit();
-            //     }
-            // }
         }
     }
 
     return {
-        // finalUrl: normalizeUrl(finalUrl)
         finalUrl
     };
 }
 
 export function handleResponse(request, response, meta) {
-    // console.info(Object.keys(response))
     let reports;
 
     if (dotProp.get(request, 'userData.reports')) {
@@ -201,7 +150,8 @@ export function handleResponse(request, response, meta) {
 
         const record = extend(
             true, {},
-            baseReport, {
+            baseReport,
+            {
                 url: request.url(),
                 httpStatusCode: response.status(),
                 isNavigationRequest: request.isNavigationRequest(),
@@ -231,7 +181,6 @@ export function handleResponse(request, response, meta) {
 
         delete record.userData;
 
-        // record.body = null;
         return record;
     }
 
@@ -240,7 +189,8 @@ export function handleResponse(request, response, meta) {
         // This is a navigation response
         const record = extend(
             true,
-            baseReport, {
+            baseReport,
+            {
                 /** @member {string} [urlData] - Url as found when crawling */
                 url: request.url,
                 httpStatusCode: response.status(),
@@ -290,7 +240,8 @@ export function handleResponse(request, response, meta) {
 
         const record = extend(
             true,
-            baseReport, {
+            baseReport,
+            {
                 /** @member {string} [urlData] - Url as found when crawling */
                 url: request.url,
                 httpStatusCode: response.statusCode,
@@ -337,7 +288,8 @@ export function handleResponse(request, response, meta) {
 
     const record = extend(
         true, {},
-        baseReport, {
+        baseReport,
+        {
             /** @member {string} [urlData] - Url as found when crawling */
             url: request.url,
             finalUrl: normalizeUrl(request.url),
@@ -359,22 +311,20 @@ export function handleFailedRequest(request, error, meta) {
     // apify request class
     console.me(inspect(request))
     const reports = captureErrors(request.userData.reports);
-    //const _reports = request.userData.reports;
     delete request.userData.reports;
 
     const baseReport = extend(true, {}, defaultOpts, {
         reports,
-        //_reports,
         trials: request.retryCount,
         created: new Date().toISOString(),
         status: null
     });
 
     if (meta._from === 'onNavigationRequestFailed') {
-        // console.me(captureErrors(request.errorMessages))
         const record = extend(
             true, {},
-            baseReport, {
+            baseReport,
+            {
                 url: request.url,
                 isNavigationRequest: true,
                 redirectChain: [],
@@ -385,7 +335,6 @@ export function handleFailedRequest(request, error, meta) {
         );
 
         delete record.userData;
-        // console.z(record)
         return record;
     }
 
@@ -394,7 +343,8 @@ export function handleFailedRequest(request, error, meta) {
 
         const record = extend(
             true, {},
-            baseReport, {
+            baseReport,
+            {
                 url: request.url,
                 isNavigationRequest: pupRequest.isNavigationRequest(),
                 redirectChain: pupRequest.redirectChain(),
@@ -413,7 +363,6 @@ export function handleFailedRequest(request, error, meta) {
 }
 
 export function getRedirectionChain(chain, sourceUrl) {
-    //console.error(chain)
     return chain
         .map(item => {
             if ('_client' in item) {

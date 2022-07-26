@@ -1,5 +1,6 @@
 export default {
     code: 'net-*',
+    priority: -1,
     test: record => {
         if (!('reports' in record) || !Array.isArray(record.reports) || record.reports.length === 0) {
             return false;
@@ -9,7 +10,11 @@ export default {
         }
 
         record.reports = record.reports.map(report => {
-            if (report.code && report.code.startsWith('net-')) {
+            if (
+                report.code
+                && report.code.startsWith('net-')
+                && !report.code.startsWith('net-cert-')
+            ) {
                 const ret = {
                     code: 'net-*',
                     level: 'warning'

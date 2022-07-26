@@ -96,10 +96,6 @@ export class LinkStore {
         return this._store.getValue(linkId);
     }
 
-    // async recordFromData({
-    //     url,
-    //     ...linkData
-    // } = {}) {
     async recordFromData(data) {
 
         let {
@@ -107,8 +103,6 @@ export class LinkStore {
             ...linkData
         } = data;
         v(url, 'url').isString();
-
-        // console.log(`record from data ${url}`)
 
         const linkId = idFromUrl(url);
 
@@ -127,7 +121,6 @@ export class LinkStore {
         }
 
         if (typeof linkData.userData !== 'undefined') {
-            // console.z(linkData)
             linkData = {
                 ...linkData,
                 ...linkData.userData

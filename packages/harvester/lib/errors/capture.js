@@ -60,7 +60,6 @@ export function captureError(errorOrString) {
     }
 
     if (typeof errorOrString === 'object') {
-        //console.me(normalizeError(errorOrString))
         switch (errorOrString.constructor.name) {
             case 'TimeoutError':
                 // Puppeteer TimeoutError class
