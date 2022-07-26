@@ -43,7 +43,6 @@ async function getDataFromResponse(response) {
         try {
             size = (await response.buffer()).length;
         } catch (e) {
-            // console.error(`${UNHANDLED_ERROR} at ${pageUrl}`)
             console.error(e)
         }
     }
