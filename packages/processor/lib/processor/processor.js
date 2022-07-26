@@ -244,13 +244,13 @@ export class CorveeProcessor extends EventEmitter {
             return result;
         }
 
-        console.log('Adding custom errors...');
+        console.log(`Adding ${this._errors.length} custom errors...`);
 
         this._errors.forEach(error => {
             this.records = doErrors(this.records, error)
         });
 
-        console.log('Filtering reports...');
+        console.log(`Filtering ${this._filters.length} reports...`);
 
         this._filters.forEach(filter => {
             this.records = doFilter(this.records, filter)
