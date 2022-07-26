@@ -548,15 +548,8 @@ export class Harvester extends EventEmitter {
 
                         if (self.config.fetchLinksOnce) {
 
-                            // console.info(`linkStore has ${requestData.url} ? ${self.linkStore.has(requestData.url)}`)
-
                             if (self.linkStore.has(requestData.url)) {
                                 const record = await self.linkStore.recordFromData(requestData.userData)
-                                // console.z('request was already handled')
-                                // console.z(requestData)
-                                // console.info('------------------------------')
-                                // console.z(record)
-                                // process.exit()
                                 record._from = 'linkStore#direct'
 
                                 try {
@@ -1308,10 +1301,7 @@ export class Harvester extends EventEmitter {
 
                                     // Catch download navigation (pdf, zip, docx, etc.) occuring on first try before puppeteer throws an net::ERR_ABORTED error
                                     if (pupRequest.failure().errorText === 'net::ERR_ABORTED') {
-                                        // console.z('=====================================')
                                         const pupResponse = pupRequest.response();
-                                        // console.error(`This is a document?: ${request.url}`)
-                                        // console.error(`Has response ? ${!!resp}`)
                                         if (pupResponse) {
 
                                             let record;
@@ -1320,8 +1310,6 @@ export class Harvester extends EventEmitter {
                                                 resourceType: 'document',
                                                 trials: request.retryCount
                                             }
-
-                                            // setRedirectChain(meta, pupRequest.redirectChain())
 
                                             try {
 
@@ -1432,7 +1420,6 @@ export class Harvester extends EventEmitter {
                                             meta.timing = await getTimingFor(pupResponse.url(), page);
                                             meta.perfResponse = await getPerformanceData(page, pupResponse.url())
 
-                                            //console.log(`[response] userData from pupResponse`)
                                             console.info(`### [${pupResponse.status()}] ${pupResponse.headers()['content-type']}`);
 
                                             // Is the asset loaded?
@@ -1529,10 +1516,6 @@ export class Harvester extends EventEmitter {
 
                             })
 
-                            // if (self.config.useCache) {
-                            //     await apifyUtils.puppeteer.cacheResponses(page, self.responseCache, [/./])
-                            // }
-
                             console.verbose('Request begin:', request.url)
 
                             page.goto(request.url, {
@@ -1555,6 +1538,7 @@ export class Harvester extends EventEmitter {
                                 });
                         })
                     }).catch(e => {
+                        console.error('[TODO] Unhandled error:')
                         console.error(e)
                     })
                 },
