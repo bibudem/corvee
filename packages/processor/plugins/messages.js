@@ -28,14 +28,14 @@ export default {
     "http-30x-https-upgrade": {
         code: "http-30x-https-upgrade",
         pattern: "(.+)",
-        substitution: "Redirection vers <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
+        substitution: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
         msg: "Redirection vers une version sécurisée (<code>https</code>) du même site."
     },
 
     "http-30x-https-upgrade-any": {
         pattern: "(.+)",
-        substitution: "Redirection vers une nouvelle URL sécurisée <code class=\"cvw-url\">$1</code>.",
-        msg: "Redirection vers une nouvelle URL sécurisée (<code>https</code>)."
+        substitution: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>.",
+        msg: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>)."
     },
 
     "http-30x-https-upgrade-loose": {
@@ -154,7 +154,12 @@ export default {
 
     "net-*": {
         code: "net-*",
-        msg: "Le serveur n'a pas été trouvé. Vérifiez le liens."
+        msg: "Une erreur réseau est survenue. Vérifiez le liens."
+    },
+
+    "net-cert-*": {
+        code: "net-cert-*",
+        msg: "La connection au site Web n'est pas sécurisée. Des individus malveillants tentent peut-être de subtiliser vos informations personnelles sur le site"
     },
 
     // "net-errno-10053": {

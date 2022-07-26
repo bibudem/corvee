@@ -21,8 +21,10 @@ import http550 from './http-550'
 import http5xx from './http-5xx'
 
 import net from './net'
+import netCert from './net-cert'
 
 import urlIgnoreThese from './url-ignore-these'
+import urlInvalidUrl from './url-invalid-url'
 import urlShorten from './url-shorten'
 
 export const plugins = {
@@ -49,12 +51,14 @@ export const plugins = {
     // http5xx,
 
     net,
+    netCert,
 
-    urlShorten,
     urlIgnoreThese,
+    urlInvalidUrl,
+    urlShorten,
 }
 
 export {
     default as messages
 }
-from './messages'
+    from './messages'
