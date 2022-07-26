@@ -1,6 +1,4 @@
-import {
-    URL
-} from 'url';
+import { URL } from 'url';
 import fs, { promises as fsPromises } from 'fs'
 import EventEmitter from 'events'
 import { promisify, inspect } from 'util'
@@ -581,9 +579,8 @@ export class Harvester extends EventEmitter {
                                     return resolve()
                                 }
 
-                                console.error('this should not happpen: record wasAlreadyHandled, but is not in the linkStore')
-                                console.error(reqInfo)
-                                // process.exit();
+                                console.error('[TODO] This should not happpen: record wasAlreadyHandled, but is not in the linkStore')
+                                console.error(JSON.stringify(reqInfo, null, 2))
                             }
 
                             if (reqInfo.wasAlreadyPresent) {
@@ -908,8 +905,7 @@ export class Harvester extends EventEmitter {
                         console.me('waiting done')
                     }
                     links = await page.evaluate(self.linkParser, { version: 'toto' })
-                    console.me(JSON.stringify(links, null, 2))
-                    // process.exit()
+
                 } catch (e) {
                     console.error(e)
                 }
@@ -919,9 +915,6 @@ export class Harvester extends EventEmitter {
                 if (!Array.isArray(links)) {
                     links = [links];
                 }
-
-                // console.log(links)
-                // process.exit()
 
                 links
                     .map(link => {
@@ -1553,8 +1546,8 @@ export class Harvester extends EventEmitter {
                                 .then(response => {
                                     resolve(response);
                                 }).catch(error => {
-                                    console.z(`[${request.retryCount}] ${request.url}`)
-                                    console.z(error)
+                                    console.warn(`[${request.retryCount}] ${request.url}`)
+                                    console.warn(error)
 
                                     if (request.retryCount >= self.config.maxRequestRetries) {
                                         console.info(`Request failed after ${request.retryCount} tries: ${request.url}`)
@@ -1589,6 +1582,9 @@ export class Harvester extends EventEmitter {
                 }) {
 
                     page.on('console', function onConsole(msg) {
+                        if (msg.text().indexOf('ERR_BLOCKED_BY_CLIENT') > 0) {
+                            return
+                        }
                         for (let i = 0; i < msg.args().length; ++i) {
                             console[msg.type()](msg.args()[i]);
                         }
@@ -1606,6 +1602,12 @@ export class Harvester extends EventEmitter {
 
                     if (typeof pupResponse === 'undefined') {
                         console.error(`[TODO] response is undefined at [${request.userData.trials}] ${request.url}`)
+                        console.error(request)
+                        throw '';
+                    }
+
+                    if (typeof pupResponse === null) {
+                        console.error(`[TODO] response is null at [${request.userData.trials}] ${request.url}`)
                         console.error(request)
                         throw '';
                     }

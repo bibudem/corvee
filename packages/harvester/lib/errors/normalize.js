@@ -1,9 +1,7 @@
 import _ from 'underscore'
 import paramCase from 'param-case'
 
-import {
-    console
-} from '../../../core/lib/logger';
+import { console } from '../../../core/lib/logger';
 
 import {
     PREFIX_SEPARATOR,
@@ -25,7 +23,7 @@ const TIMEOUT_ERROR_DEF = {
     props: _.extend({}, ERROR_PROPS, {
         name: 'code'
     }),
-    test: function(err) {
+    test: function (err) {
         return err.constructor.name === 'TimeoutError'
     }
 }
@@ -68,13 +66,11 @@ export function normalizeError(err, defName) {
 
     // console.me(err)
     Object.keys(translator).forEach(oldProp => {
-        if (typeof(err[oldProp]) !== 'undefined') {
+        if (typeof (err[oldProp]) !== 'undefined') {
             const translatorPropMap = Array.isArray(translator[oldProp]) ? translator[oldProp] : [translator[oldProp]];
             translatorPropMap.forEach(translatorProp => {
                 if (typeof translatorProp === 'string') {
                     ret[translatorProp] = '' + err[oldProp]
-                    // } else if (Array.isArray(translatorProp)) {
-                    //     translatorProp.forEach(prop => ret[prop] = '' + err[oldProp])
                 } else {
                     ret[translatorProp.prop] = translatorProp.val(err[oldProp])
                 }
