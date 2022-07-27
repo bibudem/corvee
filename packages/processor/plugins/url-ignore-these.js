@@ -1,8 +1,6 @@
-import {
-    isFunction
-} from 'underscore'
+import { isFunction } from 'underscore'
 
-export default function(urls = [], {
+export default function (urls = [], {
     exclude = true,
     level = 'info'
 } = {}) {

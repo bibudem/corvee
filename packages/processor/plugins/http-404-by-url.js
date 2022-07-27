@@ -1,4 +1,4 @@
-export default function(urlList) {
+export default function (urlList) {
     return {
         code: 'http-404',
         description: 'Matches any report who\'s finalURL is known to be used as a 404 page.',

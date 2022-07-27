@@ -29,7 +29,7 @@ export function pluginFactory({
     description = null,
     test = null
 } = {}) {
-    return function({
+    return function ({
         exclude = false,
         ...options
     } = {}) {

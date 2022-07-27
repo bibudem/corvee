@@ -2,7 +2,7 @@ export function messageFactory(messages) {
 
     Object.keys(messages).forEach(m => {
         if ('pattern' in messages[m] && typeof messages[m].pattern === 'string') {
-            messages[m].pattern = new RegExp(messages[m].pattern, )
+            messages[m].pattern = new RegExp(messages[m].pattern,)
         }
     })
 
@@ -33,11 +33,3 @@ export function messageFactory(messages) {
         return msg.msg;
     }
 }
-
-// (async () => {
-//     // process.nextTick(async () => {
-//     const messages = await messageFactory();
-//     console.log(messages('http-30x-redirect-with-secure-upgrade'))
-
-//     // })
-// })();
