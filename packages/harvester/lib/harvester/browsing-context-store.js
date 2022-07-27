@@ -1,6 +1,4 @@
-import {
-    normalizeUrl
-} from '../../../core'
+import { normalizeUrl } from '../../../core'
 
 export class BrowsingContextStore {
 
@@ -35,9 +33,6 @@ export class BrowsingContextStore {
 
         const findParentsFor = (url) => {
             return [...this._cache.keys()].filter(key => {
-                // console.log([...this._cache.get(key)]);
-                // console.log(normalizeUrl(url))
-                // console.log([...this._cache.get(key)].includes(normalizeUrl(url)))
                 return [...this._cache.get(key)].includes(normalizeUrl(url))
             })
         }
@@ -52,10 +47,6 @@ export class BrowsingContextStore {
                         ret.push(parents)
                     }
                     return ret;
-                    // return {
-                    //     url,
-                    //     parents: doFind(url)
-                    // }
                 })
             }
         }

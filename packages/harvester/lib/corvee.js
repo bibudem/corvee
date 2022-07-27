@@ -1,12 +1,8 @@
 import EventEmitter from 'events'
 import Apify from 'apify';
-import {
-    Harvester
-} from './harvester'
+import { Harvester } from './harvester'
 
-import {
-    console
-} from '../../core/lib/logger';
+import { console } from '../../core/lib/logger';
 
 export class Corvee extends EventEmitter {
 

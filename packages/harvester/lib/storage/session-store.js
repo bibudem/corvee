@@ -1,9 +1,4 @@
-import {
-    openKeyValueStore
-} from 'apify';
-
-// import v from 'io-validate'
-// import extend from 'extend';
+import { openKeyValueStore } from 'apify';
 
 export async function sessionStore({
     interval = 5000,

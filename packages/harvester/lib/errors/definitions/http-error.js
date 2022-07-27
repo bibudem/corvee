@@ -1,7 +1,5 @@
 import _ from 'underscore'
-import createHttpError, {
-    HttpError as HttpErrorClass
-} from 'http-errors'
+import createHttpError, { HttpError as HttpErrorClass } from 'http-errors'
 
 export const HTTP_ERROR_DEF = {
     name: 'HTTP_ERROR',
@@ -14,7 +12,7 @@ export const HTTP_ERROR_DEF = {
         message: 'message',
         status: ['code', 'errno']
     },
-    test: function(err) {
+    test: function (err) {
         return err instanceof HttpErrorClass
     }
 }

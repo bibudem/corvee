@@ -1,6 +1,4 @@
-import {
-    RequestQueue as ApifyRequestQueue
-} from 'Apify/build/request_queue';
+import { RequestQueue as ApifyRequestQueue } from 'Apify/build/request_queue';
 
 export class RequestQueue extends ApifyRequestQueue {
     constructor() {

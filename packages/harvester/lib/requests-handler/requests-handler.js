@@ -1,8 +1,6 @@
 // Adapted from https://gitlab.com/vsichka/request-many.npm
 
-import {
-    QueueCount
-} from './queue-count';
+import { QueueCount } from './queue-count';
 
 // Constants.
 const DEFAULT_MAX_REQUESTS_AMOUNT = 1;
@@ -28,7 +26,7 @@ export class RequestsHandler {
     constructor({
         maxRequestsAmount = DEFAULT_MAX_REQUESTS_AMOUNT,
         maxConcurrencyPerOrigin = DEFAULT_MAX_REQUESTS_AMOUNT,
-        waitInterval = DEFAULT_WAIT_INTERVAL, 
+        waitInterval = DEFAULT_WAIT_INTERVAL,
         // rules = DEFAULT_ORIGINS_RULE
     }) {
         // Init.
@@ -62,7 +60,7 @@ export class RequestsHandler {
             throw new TypeError(ERROR_MESSAGE_WRONG_OPTIONS_PARAM);
         }
         this.activeRequestsQueueCount.increment();
-console.info(`requestHandler queue: ${this.activeRequestsQueueCount.length}`)
+        console.info(`requestHandler queue: ${this.activeRequestsQueueCount.length}`)
         // Wait if need it.
         await this.waitInQueueIfNeedIt();
 

@@ -1,6 +1,4 @@
-import {
-    constructPseudoUrlInstances
-} from 'apify/build/enqueue_links/shared'
+import { constructPseudoUrlInstances } from 'apify/build/enqueue_links/shared'
 
 export class PseudoUrls {
     constructor(purls) {

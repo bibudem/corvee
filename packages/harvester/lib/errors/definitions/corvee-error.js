@@ -1,8 +1,4 @@
-import * as chromiumNetErrors from 'chromium-net-errors'
-
-import {
-    ERROR_PROPS
-} from './error'
+import { ERROR_PROPS } from './error'
 
 export const CORVEE_ERROR_DEF = {
     name: 'CORVEE_ERROR',
@@ -12,7 +8,7 @@ export const CORVEE_ERROR_DEF = {
         message: 'message',
         code: 'code'
     }),
-    test: function(err) {
+    test: function (err) {
         return err instanceof CorveeError;
     }
 };

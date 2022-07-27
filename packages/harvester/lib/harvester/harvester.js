@@ -13,55 +13,35 @@ import rp from 'request-promise-native'
 // import createHttpError from 'http-errors'
 import rimraf from 'rimraf';
 import Apify, { BasicCrawler, PuppeteerCrawler, utils as apifyUtils } from 'apify';
-
 import { launchPuppeteer } from 'apify/build/puppeteer'
-
 import { computeUniqueKey } from 'apify/build/request'
-
 import v from 'io-validate'
-// import dotProp from 'dot-prop'
 import assert from 'assert-plus'
 const extend = require('extend')
-
 import { responseData, requestData } from '../net'
-
-import { normalizeUrl, isValidUrl, idFromUrl, getRandomUserAgent } from '../../../core'
-
+import { normalizeUrl, isValidUrl, getRandomUserAgent } from '../../../core'
 import { MemCache } from './cache'
-
 import { CorveeError, HttpError } from '../errors'
-
 import { humanDuration } from '../utils'
-
 import { LinkStore, sessionStore } from '../storage'
-
 import { Link } from '../link'
-
 import { handleResponse, handleFailedRequest } from '../record'
-
 import { RequestQueue } from '../request-queue'
-
 import { PseudoUrls } from '../pseudoUrls'
-
-import pkg from '../../package.json'
-
 import { console } from '../../../core/lib/logger';
-
 import Notifier from '../utils/notifier'
 
-console.setLevel('verbose')
-
 import { defaultHarvesterOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
-
 import { setRedirectChain } from './redirection-pool';
-import wait from '../utils/wait';
+
+console.setLevel('verbose')
 
 process.on('unhandledRejection', (reason, p) => {
     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
     // application specific logging, throwing an error, or other logic here
 });
 
-const UNHANDLED_ERROR = '# unhandled error #';
+const UNHANDLED_ERROR = 'CV::UNHANDLED_ERROR';
 
 const linkProps = new Set();
 
@@ -87,9 +67,6 @@ export class Harvester extends EventEmitter {
      */
 
     constructor(config = {}) {
-        // config validation
-
-        //v(config.proxy, 'config.proxy').is('string', 'object', 'undefined')
 
         super();
 
@@ -102,7 +79,6 @@ export class Harvester extends EventEmitter {
 
         this.linkParser = defaultLinkParser;
 
-        // this.notifyHandle = null;
         if (this.config.notify) {
             this.notify = new Notifier([], {
                 logger: console,
@@ -181,7 +157,6 @@ export class Harvester extends EventEmitter {
         } else {
             this.urlList.push(...urls.map(url => new Link(url)))
         }
-        // return this;
     }
 
     setLinkParser(fn) {
@@ -298,10 +273,6 @@ export class Harvester extends EventEmitter {
         this._pausedAt = 0;
         this.isPaused = false;
 
-        // if (this.config.notify) {
-        //     notify.call(this)
-        // }
-
         if (this.notify) {
             this.notify.resume();
         }
@@ -333,8 +304,8 @@ export class Harvester extends EventEmitter {
 
         self.runOptions = runOptions;
 
-        console.info(this.config);
-        console.info(runOptions)
+        console.info(`Running with config: ${this.config}`);
+        console.info(`Running with run options: ${runOptions}`)
 
         const cleanupFolderPromises = [];
 
@@ -394,7 +365,6 @@ export class Harvester extends EventEmitter {
             this.notify.stop();
             const end = Date.now();
             const duration = humanDuration(end - this.session.startTime);
-            // console.info(self.browsingContextStore.entries())
 
             this.emit('browsing-contexts', self.browsingContextStore.entries())
 
@@ -727,9 +697,6 @@ export class Harvester extends EventEmitter {
                     .catch(e => {
                         console.error(e)
                     });
-                // .then(queueOperationInfos => {
-                //     console.info(stringify(queueOperationInfos, null, 2))
-                // })
             }
 
             if (self.config.startUrl) {
@@ -953,11 +920,7 @@ export class Harvester extends EventEmitter {
                             return true;
                         }
 
-                        // if (isMaxDepthExceeded()) {
-                        //     return true;
-                        // }
                         if (!puppeteerRequestQueueIsFinished) {
-                            //console.info(`puppeteerRequestQueue info: ${stringify(puppeteerRequestQueue.getInfo(), null, 2)}`)
                             return false;
                         }
                         return basicRequestQueueIsFinished;
@@ -968,10 +931,6 @@ export class Harvester extends EventEmitter {
                     autoscaledPool
                 }) {
                     console.verbose(`# Processing [${request.retryCount}] ${request.url}`)
-                    //console.log(`[basicCrawler] userData: `, request.userData);
-
-                    // const d = await basicRequestQueue.getInfo();
-                    //console.log(d)
 
                     if (request.url === 'corvee:dummy-url') {
                         return Promise.reject();
@@ -1038,7 +997,7 @@ export class Harvester extends EventEmitter {
                         return;
                     }
 
-                    console.warn(request)
+                    console.info(request)
                 },
                 maxRequestRetries: self.config.maxRequestRetries,
                 handlePageTimeoutSecs: self.config.PageTimeout
@@ -1122,19 +1081,6 @@ export class Harvester extends EventEmitter {
                                 request.userData.reports.push(e)
                                 return Promise.reject();
                             }
-
-                            // if (self.config.fetchLinksOnce) {
-                            //     // const record = await self.getRecordFromLinkStore(request);
-                            //     // console.info(request)
-                            //     const record = await self.linkStore.recordFromData(request.userData);
-
-                            //     if (record) {
-                            //         console.warn(record);
-                            //         await addRecord(record);
-                            //     } else {
-                            //         // console.warn(`no record in linkStore for ${request.url}`)
-                            //     }
-                            // }
 
                             page.setUserAgent(getRandomUserAgent());
 
@@ -1494,10 +1440,7 @@ export class Harvester extends EventEmitter {
                                     console.warn(error)
 
                                     if (request.retryCount >= self.config.maxRequestRetries) {
-                                        console.info(`Request failed after ${request.retryCount} tries: ${request.url}`)
-                                        if (error) {
-                                            console.info(error)
-                                        }
+                                        console.verbose(`Request failed after ${request.retryCount} tries: ${request.url}`)
                                     }
 
                                     reject(error)
@@ -1530,6 +1473,11 @@ export class Harvester extends EventEmitter {
                         if (msg.text().indexOf('ERR_BLOCKED_BY_CLIENT') > 0) {
                             return
                         }
+
+                        if (msg.text().indexOf('Preflight request for request with keepalive specified is currently not supported') > 0) {
+                            return
+                        }
+
                         for (let i = 0; i < msg.args().length; ++i) {
                             console[msg.type()](msg.args()[i]);
                         }
@@ -1550,7 +1498,7 @@ export class Harvester extends EventEmitter {
                             return
                         }
                         console.todo(`Response is undefined at [${request.userData.trials}] ${request.url}`)
-                        console.todo(request)
+                        console.todo(`${request}`)
                         throw '';
                     }
 
@@ -1722,7 +1670,6 @@ export class Harvester extends EventEmitter {
                     // This is a navigation error
                     //
 
-                    // console.info(arguments)
                     const record = handleFailedRequest(request, error, {
                         _from: 'onNavigationRequestFailed',
                         resourceType: 'document',

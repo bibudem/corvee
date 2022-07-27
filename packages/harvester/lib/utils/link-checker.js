@@ -2,15 +2,10 @@ import fs from "fs";
 import path from "path";
 import moment from "moment";
 import convert from "xml-js";
-import SqlString from "sqlstring";
 import escapeHtml from "escape-html";
-import {
-    parseString
-} from "xml2js";
+import { parseString } from "xml2js";
 
-import {
-    console
-} from "../../../core/lib/logger";
+import { console } from "../../../core/lib/logger";
 
 // export const errorMapping = {
 //       'http-auth-unknonwn',
@@ -72,8 +67,8 @@ export function toXML(dir, dataSet) {
                 httpStatusCode,
                 httpStatusText
             } = {
-                ...item
-            }) => {
+                    ...item
+                }) => {
                 const {
                     infos,
                     warnings,
@@ -96,15 +91,13 @@ export function toXML(dir, dataSet) {
                     errors
                 };
 
-                const valid =
-                    httpStatusCode && httpStatusCode >= 200 && httpStatusCode < 400 ? 1 : 0;
+                const valid = httpStatusCode && httpStatusCode >= 200 && httpStatusCode < 400 ? 1 : 0;
                 const result = httpStatusCode ?
                     `${httpStatusCode} ${httpStatusText}` :
                     reports && reports.length ?
-                    `[${reports[reports.length - 1].code}] ${
-            reports[reports.length - 1].message
-          }` :
-                    "";
+                        `[${reports[reports.length - 1].code}] ${reports[reports.length - 1].message
+                        }` :
+                        "";
 
                 urldata.valid = {
                     _attributes: {
@@ -153,7 +146,8 @@ export function mapReportsToLinkChecker(reports = []) {
 async function parseMessages(xmlString) {
     return new Promise((resolve, reject) => {
         parseString(
-            xmlString, {
+            xmlString,
+            {
                 explicitRoot: false,
                 explicitArray: false,
                 mergeAttrs: true
@@ -200,20 +194,20 @@ DELETE FROM corvee.dbo.liens WHERE projectId = 'site-web' AND jobId = '${jobId}'
 
     function sql(data) {
         return `${sqlPrologue}'${sqlColumns
-      .map(key => {
-        return typeof data[key] === "string"
-          ? data[key].replace(/'/g, "''")
-          : data[key];
-      })
-      .join("', '")}'${sqlEpilogue}`;
+            .map(key => {
+                return typeof data[key] === "string"
+                    ? data[key].replace(/'/g, "''")
+                    : data[key];
+            })
+            .join("', '")}'${sqlEpilogue}`;
     }
 
     function errFor(errCode) {
         const code = escapeHtml(errCode);
         if (errCode in messages) {
             return `<li data-error-code="${code}">${escapeHtml(
-        messages[errCode]
-      )}</li>`;
+                messages[errCode]
+            )}</li>`;
         }
         return `<li data-error-code="${code}">${errCode}</li>`;
     }
@@ -221,9 +215,9 @@ DELETE FROM corvee.dbo.liens WHERE projectId = 'site-web' AND jobId = '${jobId}'
     dataSet
         .filter(
             d =>
-            ("httpStatusCode" in d && d.httpStatusCode >= 400) ||
-            ("redirectionChain" in d &&
-                d.redirectionChain.some(r => [301, 307].includes(r.status)))
+                ("httpStatusCode" in d && d.httpStatusCode >= 400) ||
+                ("redirectionChain" in d &&
+                    d.redirectionChain.some(r => [301, 307].includes(r.status)))
         )
         .forEach(
             ({
@@ -237,8 +231,8 @@ DELETE FROM corvee.dbo.liens WHERE projectId = 'site-web' AND jobId = '${jobId}'
                 httpStatusCode,
                 httpStatusText
             } = {
-                ...item
-            }) => {
+                    ...item
+                }) => {
                 const errCode = `http-${httpStatusCode}`;
                 const sqlData = {
                     lienId,
@@ -257,16 +251,15 @@ DELETE FROM corvee.dbo.liens WHERE projectId = 'site-web' AND jobId = '${jobId}'
 
                 const valid =
                     httpStatusCode && httpStatusCode >= 200 && httpStatusCode < 400 ?
-                    1 :
-                    0;
+                        1 :
+                        0;
 
                 const result = httpStatusCode ?
                     `${httpStatusCode} ${httpStatusText}` :
                     reports && reports.length ?
-                    `[${reports[reports.length - 1].code}] ${
-              reports[reports.length - 1].message
-            }` :
-                    "";
+                        `[${reports[reports.length - 1].code}] ${reports[reports.length - 1].message
+                        }` :
+                        "";
 
                 sqlQuery.push(sql(sqlData));
             }

@@ -1,7 +1,5 @@
 import v from 'io-validate'
-import {
-    isObject
-} from 'underscore'
+import { isObject } from 'underscore'
 const extend = require('extend')
 
 const userDataDefaults = {

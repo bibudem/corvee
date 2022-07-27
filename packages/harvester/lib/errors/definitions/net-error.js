@@ -1,8 +1,6 @@
 import * as chromiumNetErrors from 'chromium-net-errors'
 
-import {
-    ERROR_PROPS
-} from './error'
+import { ERROR_PROPS } from './error'
 
 export const NET_ERROR_DEF = {
     name: 'NET_ERROR',
@@ -14,7 +12,7 @@ export const NET_ERROR_DEF = {
         description: 'code',
         type: 'type'
     }),
-    test: function(err) {
+    test: function (err) {
         return err instanceof chromiumNetErrors.ChromiumNetError;
     }
 };

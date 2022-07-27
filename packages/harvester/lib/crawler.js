@@ -1,23 +1,10 @@
-import process from 'process'
-import {
-    checkParamOrThrow
-} from 'apify-client/build/utils';
+import { checkParamOrThrow } from 'apify-client/build/utils';
 import log from 'apify-shared/log';
 import _ from 'underscore';
-//import BasicCrawler from './basic_crawler';
-//import PuppeteerPool from './puppeteer_pool';
-import {
-    addTimeoutToPromise
-} from 'apify/build/utils';
-import {
-    BASIC_CRAWLER_TIMEOUT_MULTIPLIER
-}
-from 'apify/build/constants';
+import { addTimeoutToPromise } from 'apify/build/utils';
+import { BASIC_CRAWLER_TIMEOUT_MULTIPLIER } from 'apify/build/constants';
 
-import {
-    BasicCrawler,
-    PuppeteerPool
-} from 'apify'
+import { BasicCrawler, PuppeteerPool } from 'apify'
 
 const DEFAULT_OPTIONS = {
     gotoFunction: async ({
@@ -247,9 +234,9 @@ class PuppeteerCrawler {
         });
         // puppeteerPoolOptions can be null or undefined or Object, so we merge it this way, because null is not replaced by defaults above.
         this.puppeteerPoolOptions = _.defaults({}, {
-                launchPuppeteerFunction,
-                launchPuppeteerOptions
-            },
+            launchPuppeteerFunction,
+            launchPuppeteerOptions
+        },
             deprecatedPuppeteerPoolOptions,
             puppeteerPoolOptions,
         );

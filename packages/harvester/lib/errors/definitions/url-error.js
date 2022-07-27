@@ -1,7 +1,4 @@
-import {
-    PREFIX_SEPARATOR,
-    ERROR_PROPS
-} from '..'
+import { PREFIX_SEPARATOR, ERROR_PROPS } from '..'
 
 export const URL_ERROR_DEF = {
     name: 'URL_ERROR',
@@ -13,7 +10,7 @@ export const URL_ERROR_DEF = {
         //     val: () => 'UrlError'
         // }
     }),
-    test: function(err) {
+    test: function (err) {
         return 'input' in err || ('code' in err && err.code.startsWith(`url${PREFIX_SEPARATOR}`))
     }
 }

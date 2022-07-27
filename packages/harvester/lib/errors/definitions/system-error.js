@@ -1,6 +1,4 @@
-import {
-    ERROR_PROPS
-} from './error'
+import { ERROR_PROPS } from './error'
 
 export const SYSTEM_ERROR_DEF = {
     name: 'SYSTEM_ERROR',

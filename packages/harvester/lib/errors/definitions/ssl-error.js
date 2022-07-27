@@ -1,6 +1,4 @@
-import {
-    ERROR_PROPS
-} from './error'
+import { ERROR_PROPS } from './error'
 
 export const SSL_ERROR_DEF = {
     name: 'SSL_ERROR',

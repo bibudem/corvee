@@ -4,18 +4,10 @@ Function = Function //;node --module "$0" "$@";exit
 
 'use strict';
 
-import {
-    inspect
-} from 'util'
-
+import { inspect } from 'util'
 import yargs from 'yargs'
-
-import {
-    Corvee as Harvester
-} from '../lib'
-import {
-    console
-} from '../../core/lib/logger';
+import { Corvee as Harvester } from '../lib'
+import { console } from '../../core/lib/logger';
 
 import webScrapingPlugin from '../plugins/web-scraping-protection'
 

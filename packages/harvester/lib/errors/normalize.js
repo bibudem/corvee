@@ -3,18 +3,7 @@ import paramCase from 'param-case'
 
 import { console } from '../../../core/lib/logger';
 
-import {
-    PREFIX_SEPARATOR,
-    ERROR_PROPS,
-    CORVEE_ERROR_DEF,
-    NET_ERROR_DEF,
-    SSL_ERROR_DEF,
-    HTTP_ERROR_DEF,
-    URL_ERROR_DEF,
-    SYSTEM_ERROR_DEF,
-    NODE_ERROR_DEF,
-    ERROR_DEF
-} from '.'
+import { PREFIX_SEPARATOR, ERROR_PROPS, CORVEE_ERROR_DEF, NET_ERROR_DEF, SSL_ERROR_DEF, HTTP_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF } from '.'
 
 
 const TIMEOUT_ERROR_DEF = {
@@ -29,9 +18,6 @@ const TIMEOUT_ERROR_DEF = {
 }
 
 export function normalizeError(err, defName) {
-    // console.warn(err)
-    // console.warn(defName)
-    // throw new Error('t')
     const ret = {};
     const errorDefs = [CORVEE_ERROR_DEF, NET_ERROR_DEF, HTTP_ERROR_DEF, TIMEOUT_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, SSL_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF];
     let translator;
@@ -55,7 +41,7 @@ export function normalizeError(err, defName) {
         console.todo(`err instanceof Error: ${err instanceof Error}`)
         console.todo(`err.message: ${err.message}`)
         console.todo(`err.code: ${err.code}`)
-        console.todo(Object.keys(err))
+        console.todo(`Properties: ${Object.keys(err)}`)
         console.todo(err.stack)
 
         translator = {}
