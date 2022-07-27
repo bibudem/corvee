@@ -1,12 +1,8 @@
 import EventEmitter from 'eventemitter3';
 import isPlainObject from 'is-plain-object'
-import {
-    LEVELS
-} from './levels'
+import { LEVELS } from './levels'
 
-import {
-    messageFactory
-} from '../messages'
+import { messageFactory } from '../messages'
 
 class FilterPriorities extends Map {
 
