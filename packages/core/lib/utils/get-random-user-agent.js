@@ -1,6 +1,4 @@
-import {
-    utils as apifyUtils
-} from 'apify';
+import { utils as apifyUtils } from 'apify';
 import isMobile from 'ismobilejs'
 
 export function getRandomUserAgent(allowMobile = false) {

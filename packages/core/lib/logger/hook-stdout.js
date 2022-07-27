@@ -1,6 +1,3 @@
-// var util = require('util')
-// var events = require('events')
-
 export function hookStdout(callback) {
     var oldWrite = process.stdout.write
 
@@ -15,18 +12,3 @@ export function hookStdout(callback) {
         process.stdout.write = oldWrite
     }
 }
-
-// console.log('a')
-// console.log('b')
-
-// var unhook = hook_stdout(function (string, encoding, fd) {
-//     util.debug('stdout: ' + util.inspect(string))
-// })
-
-// console.log('c')
-// console.log('d')
-
-// unhook()
-
-// console.log('e')
-// console.log('f')

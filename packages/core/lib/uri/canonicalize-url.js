@@ -1,10 +1,5 @@
-import {
-    URL
-} from 'url'
-
-import {
-    normalizeUrl
-} from '.'
+import { URL } from 'url'
+import { normalizeUrl } from '.'
 
 export function canonicalizeUrl(url = '') {
     const normalized = new URL(normalizeUrl(url.toLowerCase(), {

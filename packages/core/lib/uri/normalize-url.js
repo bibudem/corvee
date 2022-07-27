@@ -1,12 +1,8 @@
 import fs from "fs";
 import * as URI from 'uri-js'
 import URL from "url";
-// import xmlbuilder from "xmlbuilder";
 import apifyUtils from "apify-shared/utilities";
-import {
-    isObject
-}
-from "underscore";
+import { isObject } from "underscore";
 
 /**
  * Returns a normalized url
@@ -69,10 +65,10 @@ export const normalizeUrl = (url, options) => {
     const path = urlObj.path.replace(/\/$/, "");
     const params = urlObj.query ?
         urlObj.query
-        .split("&")
-        .filter(param => {
-            return !/^utm_/.test(param);
-        }) : [];
+            .split("&")
+            .filter(param => {
+                return !/^utm_/.test(param);
+            }) : [];
     if (options.sortParams) {
         params.sort();
 
@@ -88,12 +84,10 @@ export const normalizeUrl = (url, options) => {
     }
 
     return `${urlObj.protocol
-    .trim()
-    .toLowerCase()}://${urlObj.host.trim().toLowerCase()}${port}${path.trim()}${
-    params.length ? `?${params.join("&").trim()}` : ""
-  }${
-    options.keepFragment && urlObj.fragment ? `#${urlObj.fragment.trim()}` : ""
-  }`;
+        .trim()
+        .toLowerCase()}://${urlObj.host.trim().toLowerCase()}${port}${path.trim()}${params.length ? `?${params.join("&").trim()}` : ""
+        }${options.keepFragment && urlObj.fragment ? `#${urlObj.fragment.trim()}` : ""
+        }`;
 };
 
 export function toXML(data) {
@@ -113,8 +107,8 @@ export function toXML(data) {
         status,
         statusText
     } = {
-        ...item
-    }) => {
+            ...item
+        }) => {
         const {
             infos,
             warnings,

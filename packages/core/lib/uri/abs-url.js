@@ -1,6 +1,4 @@
-import {
-    console
-} from '../../../core'
+import { console } from '../../../core'
 
 export function absUrl(url, baseUrl) {
     let newUrl;

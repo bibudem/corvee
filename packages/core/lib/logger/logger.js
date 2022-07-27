@@ -32,14 +32,14 @@ const tracerLevelColors = {
     todo: [colors.white, colors.bgRed]
 }
 
-const defaultLevel = 'debug'
+const DEFAULT_LEVEL = 'debug'
 
 try {
     fs.unlinkSync(path.join(process.mainModule.path, 'console.log'))
 } catch (e) { }
 
 const fileLogger = createLogger({
-    level: defaultLevel,
+    level: DEFAULT_LEVEL,
     levels: winstonLevels,
     format: combine(timestamp({
         format: 'HH:mm:ss.SSS'
@@ -68,7 +68,7 @@ hookStdout((string) => {
 
 const consoleLogger = tracer.colorConsole({
     methods: tracerLevels,
-    level: defaultLevel,
+    level: DEFAULT_LEVEL,
     filters: tracerLevelColors,
     format: '{{timestamp}} <{{title}}> {{file}}:{{line}} {{method}} {{message}}',
     preprocess: data => {
