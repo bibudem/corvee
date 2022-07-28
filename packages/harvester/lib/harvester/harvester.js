@@ -807,8 +807,7 @@ export class Harvester extends EventEmitter {
             }
 
             async function parseLinksInPage(page, {
-                currentLevel,
-                // _bwowsingContextStack = []
+                currentLevel
             }) {
                 const ret = [];
                 const nextLevel = currentLevel + 1;
@@ -837,6 +836,7 @@ export class Harvester extends EventEmitter {
                         })
                         console.debug('waiting done')
                     }
+
                     links = await page.evaluate(self.linkParser, { version: 'toto' })
 
                 } catch (e) {
@@ -1015,7 +1015,8 @@ export class Harvester extends EventEmitter {
 
                     return new Promise(async (resolve, reject) => {
                         self.queue.add(async () => {
-                            console.info(`request url: ${request.url}`);
+
+                            self.emit('request', request)
 
                             request.userData.trials = request.retryCount;
 
