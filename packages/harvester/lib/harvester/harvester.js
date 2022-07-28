@@ -33,7 +33,7 @@ import Notifier from '../utils/notifier'
 import { defaultHarvesterOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
 import { setRedirectChain } from './redirection-pool';
 
-console.setLevel('verbose')
+console.setLevel(defaultHarvesterOptions.defaultLogLevel)
 
 process.on('unhandledRejection', (reason, p) => {
     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);

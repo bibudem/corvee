@@ -33,6 +33,8 @@ export const defaultHarvesterOptions = {
     waitInterval: 50,
     linkParserDelay: 0,
 
+    defaultLogLevel: 'verbose',
+
     //
     // Apify.launchPuppeteer options
     userAgent: 'Mozilla/5.0 (Corvee/1.0.0)',
