@@ -87,6 +87,7 @@ export function captureError(errorOrString) {
             }))
         }
 
+        // Unhandled errors
         const normalizedError = normalizeError(errorOrString);
         const normalizedErrorDefaults = {
             _from: 'unhandledError',

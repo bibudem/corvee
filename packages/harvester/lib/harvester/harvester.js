@@ -842,7 +842,7 @@ export class Harvester extends EventEmitter {
                     links = await page.evaluate(self.linkParser, { version: 'toto' })
 
                 } catch (e) {
-                    console.error(e)
+                    console.error(`Could not parse links in page ${page.url()}. Error: ${inspect(e)}`)
                 }
 
                 assert(_.isObject(links) || Array.isArray(links), 'The return value from the parser function muse be an object or an array.')
@@ -988,7 +988,7 @@ export class Harvester extends EventEmitter {
                         return;
                     }
 
-                    console.info(request)
+                    console.degub(request)
                 },
                 maxRequestRetries: self.config.maxRequestRetries,
                 handlePageTimeoutSecs: self.config.PageTimeout
@@ -1355,8 +1355,8 @@ export class Harvester extends EventEmitter {
                                                 return;
                                             }
                                             console.error('This response is not handled:', pupResponse.url())
-                                            console.error('request url:', pupResponse.request().url())
-                                            console.error('parent:', request.url)
+                                            console.error('Request url:', pupResponse.request().url())
+                                            console.error('Parent:', request.url)
                                             console.error(pupResponse.headers())
                                             process.exit()
                                         }
@@ -1465,20 +1465,20 @@ export class Harvester extends EventEmitter {
                     page
                 }) {
 
-                    page.on('console', function onConsole(msg) {
-                        if (msg.text().indexOf('ERR_BLOCKED_BY_CLIENT') > 0) {
-                            return
-                        }
+                    // page.on('console', function onConsole(msg) {
+                    //     if (msg.text().indexOf('ERR_BLOCKED_BY_CLIENT') > 0) {
+                    //         return
+                    //     }
 
-                        if (msg.text().indexOf('Preflight request for request with keepalive specified is currently not supported') > 0) {
-                            return
-                        }
+                    //     if (msg.text().indexOf('Preflight request for request with keepalive specified is currently not supported') > 0) {
+                    //         return
+                    //     }
 
-                        for (let i = 0; i < msg.args().length; ++i) {
-                            console[msg.type()](msg.args()[i]);
-                        }
-                        console[msg.type()](msg.text())
-                    });
+                    //     for (let i = 0; i < msg.args().length; ++i) {
+                    //         console[msg.type()](msg.args()[i]);
+                    //     }
+                    //     console[msg.type()](msg.text())
+                    // });
 
                     await page.exposeFunction('harvester', () => {
                         return self
@@ -1523,6 +1523,8 @@ export class Harvester extends EventEmitter {
                         request.userData.timing = await getTimingFor(pupResponse.url(), page)
                     } catch (e) {
                         console.todo(`getTimingFor() failed. Request url: ${request.url}`)
+                        console.toto(`request: ${inspect(request)}`)
+                        console.todo(`response: ${inspect(pupResponse)}`)
                         console.todo(e)
                     }
 
@@ -1532,6 +1534,8 @@ export class Harvester extends EventEmitter {
                         data.timing = await getTimingFor(pupResponse.url(), page)
                     } catch (e) {
                         console.todo(`getTimingFor() failed. Request url: ${request.url}`)
+                        console.toto(`request: ${inspect(request)}`)
+                        console.todo(`response: ${inspect(pupResponse)}`)
                         console.todo(e)
                     }
 
@@ -1571,8 +1575,10 @@ export class Harvester extends EventEmitter {
                         try {
                             meta.size = (await pupResponse.buffer()).length;
                         } catch (e) {
-                            console.error(`${UNHANDLED_ERROR} at ${pageUrl}`)
-                            console.error(e)
+                            console.todo(`${UNHANDLED_ERROR} at ${pageUrl}`)
+                            console.todo(request)
+                            console.todo(pupResponse)
+                            console.todo(`error: ${inspect(e)}`)
                         }
 
                         if (self.plugins.onNavigationResponse.length) {

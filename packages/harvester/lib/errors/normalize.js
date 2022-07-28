@@ -35,7 +35,7 @@ export function normalizeError(err, defName) {
 
     if (!found) {
         console.todo('Didn\' find a definition for this error:')
-        console.todo(err)
+        console.todo(inspect(err))
         console.todo(`err.name: ${err.name}`)
         console.todo(`err.constructor.name: ${err.constructor.name}`)
         console.todo(`err instanceof Error: ${err instanceof Error}`)
