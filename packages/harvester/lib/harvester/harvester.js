@@ -507,6 +507,8 @@ export class Harvester extends EventEmitter {
                                 const record = await self.linkStore.recordFromData(requestData.userData)
                                 record._from = 'linkStore#direct'
 
+                                console.debug(`This link has already been fetched. Will skip fetching. Record: ${inspect(record)}`)
+
                                 try {
                                     await addRecord(record);
                                     activeRequestsCount++;
