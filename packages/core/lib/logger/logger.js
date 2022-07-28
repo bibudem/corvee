@@ -25,7 +25,7 @@ const tracerLevels = ['verbose', 'debug', 'info', 'log', 'warn', 'error', 'todo'
 const tracerLevelColors = {
     verbose: colors.gray,
     debug: colors.cyan,
-    info: colors.green,
+    info: colors.white,
     log: colors.white,
     warn: colors.yellow,
     error: colors.red,
