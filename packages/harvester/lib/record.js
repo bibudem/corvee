@@ -1,13 +1,12 @@
 import { inspect } from 'util';
-
 import dotProp from 'dot-prop';
-
 const extend = require('extend');
+
 import { absUrl, normalizeUrl, console } from './../../core'
 import { ResourceType } from './resource-type';
 import { captureErrors } from './errors';
 
-export const defaultOpts = {
+export const defaultOptions = {
     url: null,
     finalUrl: null,
     httpStatusCode: null,
@@ -120,7 +119,7 @@ export function handleResponse(request, response, meta) {
         delete request.userData.reports;
     }
 
-    const baseReport = extend(true, {}, defaultOpts, {
+    const baseReport = extend(true, {}, defaultOptions, {
         reports,
         created: new Date().toISOString()
     });
@@ -315,7 +314,7 @@ export function handleFailedRequest(request, error, meta) {
     const baseReport = extend(
         true,
         {},
-        defaultOpts,
+        defaultOptions,
         {
             reports,
             trials: request.retryCount,
