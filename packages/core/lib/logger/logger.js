@@ -1,4 +1,4 @@
-import path from 'path'
+import { join, basename, relative } from 'path'
 import fs from 'fs'
 
 import { createLogger, format, transports } from 'winston';
@@ -6,8 +6,37 @@ import tracer from 'tracer';
 import colors from 'colors/safe';
 
 import { hookStdout } from './hook-stdout'
+import yargs from 'yargs';
 
-const PROJECT_ROOT = path.join(__dirname, '..');
+const PROJECT_ROOT = join(__dirname, '..');
+
+const today = new Date();
+const year = today.getFullYear();
+const month = `${today.getMonth() + 1}`.padStart(2, '0');
+const day = `${today.getDate()}`.padStart(2, '0');
+
+const defaultTodayDashedPrefix = `${year}-${month}-${day}`;
+
+const argv = yargs
+    .options({
+        j: {
+            alias: 'job',
+            default: defaultTodayDashedPrefix,
+            describe: `Job id. Defaults to today\'s date.`,
+            type: 'string'
+        },
+        r: {
+            alias: 'resume',
+            default: false,
+            type: 'boolean',
+            describe: 'Resumes a previously stoped job. Requires --job options.',
+            implies: 'j'
+        }
+    })
+    .help()
+    .argv;
+
+const job = argv.job;
 
 const { combine, timestamp, printf } = format;
 
@@ -34,8 +63,11 @@ const tracerLevelColors = {
 
 const DEFAULT_LEVEL = 'debug'
 
+// const logFilePath = join(process.mainModule.path, `console.log`)
+const logFilePath = join(process.mainModule.path, 'logs', `console-${argv.$0.split('.')[0]}-${job}.log`)
+
 try {
-    fs.unlinkSync(path.join(process.mainModule.path, 'console.log'))
+    fs.unlinkSync(logFilePath)
 } catch (e) { }
 
 const fileLogger = createLogger({
@@ -51,7 +83,7 @@ const fileLogger = createLogger({
 
     transports: [
         new transports.File({
-            filename: path.join(process.mainModule.path, 'console.log'),
+            filename: logFilePath,
         })
     ]
 });
@@ -122,10 +154,10 @@ function getStackInfo(stackIndex) {
     if (sp && sp.length === 5) {
         return {
             method: sp[1],
-            relativePath: path.relative(PROJECT_ROOT, sp[2]),
+            relativePath: relative(PROJECT_ROOT, sp[2]),
             line: sp[3],
             pos: sp[4],
-            file: path.basename(sp[2]),
+            file: basename(sp[2]),
             stack: stacklist.join('\n')
         }
     }
