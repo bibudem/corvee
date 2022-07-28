@@ -35,7 +35,7 @@ import { setRedirectChain } from './redirection-pool';
 
 console.setLevel(defaultHarvesterOptions.defaultLogLevel)
 
-process.on('unhandledRejection', (reason, p) => {
+process.on('unhandledRejection', function onUnhandledRejection(reason, p) {
     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
     // application specific logging, throwing an error, or other logic here
 });
@@ -360,7 +360,7 @@ export class Harvester extends EventEmitter {
             })
         }
 
-        process.on('exit', () => {
+        process.on('exit', function onExit() {
             this.notify.stop();
             const end = Date.now();
             const duration = humanDuration(end - this.session.startTime);
@@ -1082,7 +1082,7 @@ export class Harvester extends EventEmitter {
                                 maxTotalBufferSize: 1024 * 1204 * 400,
                             })
 
-                            page.on('error', (err) => {
+                            page.on('error', function onError(err) {
                                 request.userData.reports.push(err);
                                 console.error(`Page crashed at ${request.url}`)
                                 console.error(err)
@@ -1165,7 +1165,7 @@ export class Harvester extends EventEmitter {
                                 const ignoreRule = self.shouldIgnoreUrl(request.url)
                                 if (ignoreRule) {
                                     const msg = `Ignoring this url based on config.ignore rule \`${ignoreRule}\`: [${request.url}] -> ${url}`;
-                                    console.deguv(msg);
+                                    console.debug(msg);
                                     const e = new CorveeError(msg, 'skip-ignore')
                                     pupRequest.userData.reports.push(e)
                                     return pupRequest.abort('blockedbyclient')
@@ -1442,6 +1442,7 @@ export class Harvester extends EventEmitter {
                     }).catch(e => {
                         console.todo('Unhandled error:')
                         console.todo(e)
+                        console.todo(request)
                     })
                 },
                 autoscaledPoolOptions: self.autoscaledPoolOptions,
