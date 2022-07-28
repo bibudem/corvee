@@ -1,3 +1,5 @@
+import { console } from '../../../core'
+
 function getDataFromRequest(request) {
     let url, method, headers, isNavigationRequest, resourceType;
     if ('uniqueKey' in request) {

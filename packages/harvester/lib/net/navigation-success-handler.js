@@ -1,3 +1,5 @@
+import { console } from '../../../core'
+
 export async function onNavigationRequest({
     request,
     response: pupResponse,

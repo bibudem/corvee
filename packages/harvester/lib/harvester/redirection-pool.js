@@ -1,6 +1,6 @@
 import v from 'io-validate'
 import { isRelativeUrl } from '../../../core'
-import { console } from '../../../core/lib/logger';
+import { console } from '../../../core';
 
 export function setRedirectChain(record, redirectChain) {
     if (redirectChain.length === 0) {

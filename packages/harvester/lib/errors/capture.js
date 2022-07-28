@@ -5,9 +5,10 @@ import statuses from 'statuses'
 import _ from 'underscore'
 import isNumber from 'is-number'
 import { normalizeError } from './normalize'
-import { Report } from '../../../processor/lib/report'
+import { FailedToLaunchError } from './definitions';
+import { Report } from '../../../processor'
 
-import { console } from '../../../core/lib/logger';
+import { console } from '../../../core';
 
 function makeReport(rawData) {
     try {
@@ -45,18 +46,28 @@ export function captureError(errorOrString) {
         errorOrString = errorOrString.message
     }
 
-    if (typeof errorOrString === 'string' && /net::ERR_([^ ]+)/i.test(errorOrString)) {
+    if (typeof errorOrString === 'string') {
 
-        const desc = /(?:net::ERR_)([^ ]+)/i.exec(errorOrString)[1];
+        if (/net::ERR_([^ ]+)/i.test(errorOrString)) {
+            const desc = /(?:net::ERR_)([^ ]+)/i.exec(errorOrString)[1];
 
-        const Err = chromiumNetErrors.getErrorByDescription(desc);
+            const Err = chromiumNetErrors.getErrorByDescription(desc);
 
-        let err = new Err();
+            let err = new Err();
 
-        return makeReport(_.extend(normalizeError(err), {
-            _from: 'typeof errorOrString === \'string\'',
-            _original: Object.assign({}, err)
-        }))
+            return makeReport(_.extend(normalizeError(err), {
+                _from: 'typeof errorOrString === \'string\'',
+                _original: Object.assign({}, err)
+            }))
+        }
+
+        if (errorOrString.indexOf('Error: Failed to launch chrome!') > 0) {
+            let err = new FailedToLaunchError('Failed to launch chrome.')
+
+            return makeReport(_.extend(normalizeError(err), {
+                _from: 'Error: Failed to launch chrome!'
+            }))
+        }
     }
 
     if (typeof errorOrString === 'object') {
