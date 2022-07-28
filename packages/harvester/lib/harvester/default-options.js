@@ -44,13 +44,7 @@ export const defaultHarvesterOptions = {
     },
     // proxyUrl -> proxy,
     stealth: true,
-    // stealthOptions: {
-
-    // }
-
-    // ---
-    //
-
+    blockRequestsFromUrlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com']
 }
 
 export const defaultAutoscaledPoolOptions = {

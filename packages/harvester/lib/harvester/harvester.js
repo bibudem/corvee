@@ -901,7 +901,6 @@ export class Harvester extends EventEmitter {
                 autoscaledPoolOptions: {
                     ...self.autoscaledPoolOptions,
                     loggingIntervalSecs: Infinity,
-                    //maybeRunIntervalSecs: 10,
                     isFinishedFunction: async function isFinished() {
                         const puppeteerRequestQueueIsFinished = await puppeteerRequestQueue.isFinished();
                         const basicRequestQueueIsFinished = await basicRequestQueue.isFinished();
@@ -1095,7 +1094,7 @@ export class Harvester extends EventEmitter {
                             // don't request assets if this is an external page
                             if (self.isExternLink(request.url)) {
                                 apifyUtils.puppeteer.blockRequests(page, {
-                                    urlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com']
+                                    urlPatterns: self.config.blockRequestsFromUrlPatterns
                                 })
                             }
 
@@ -1535,7 +1534,9 @@ export class Harvester extends EventEmitter {
 
                     self.emit('response', {
                         type: 'navigation',
-                        data
+                        data,
+                        request: pupResponse.request(),
+                        response: pupResponse
                     })
 
                     self.session.counts.success++;
