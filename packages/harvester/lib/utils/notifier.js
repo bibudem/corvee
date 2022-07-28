@@ -1,3 +1,5 @@
+import { console } from '../../../core'
+
 export default class Notifier {
     constructor(messages = [], {
         autoStart = false,

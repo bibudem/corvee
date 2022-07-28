@@ -1,3 +1,5 @@
+import { console } from '../../../core'
+
 // Adapted from https://gitlab.com/vsichka/request-many.npm
 
 import { QueueCount } from './queue-count';

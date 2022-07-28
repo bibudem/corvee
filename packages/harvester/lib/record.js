@@ -139,7 +139,8 @@ export function handleResponse(request, response, meta) {
         );
 
         const record = extend(
-            true, {},
+            true,
+            {},
             baseReport,
             {
                 url: request.url(),
@@ -179,6 +180,7 @@ export function handleResponse(request, response, meta) {
         // This is a navigation response
         const record = extend(
             true,
+            {},
             baseReport,
             {
                 /** @member {string} [urlData] - Url as found when crawling */
@@ -230,6 +232,7 @@ export function handleResponse(request, response, meta) {
 
         const record = extend(
             true,
+            {},
             baseReport,
             {
                 /** @member {string} [urlData] - Url as found when crawling */
@@ -277,7 +280,8 @@ export function handleResponse(request, response, meta) {
     // The request argument only has a .userData property.
 
     const record = extend(
-        true, {},
+        true,
+        {},
         baseReport,
         {
             /** @member {string} [urlData] - Url as found when crawling */
@@ -300,25 +304,34 @@ export function handleResponse(request, response, meta) {
 export function handleFailedRequest(request, error, meta) {
     // apify request class
     console.debug(inspect(request))
-    const reports = captureErrors(request.userData.reports);
+    let reports = captureErrors(request.userData.reports);
     delete request.userData.reports;
 
-    const baseReport = extend(true, {}, defaultOpts, {
-        reports,
-        trials: request.retryCount,
-        created: new Date().toISOString(),
-        status: null
-    });
+    if (typeof request.errorMessages !== 'undefined') {
+        const errorMessages = captureErrors(request.errorMessages)
+        reports = reports.concat(errorMessages)
+    }
+
+    const baseReport = extend(
+        true,
+        {},
+        defaultOpts,
+        {
+            reports,
+            trials: request.retryCount,
+            created: new Date().toISOString(),
+            status: null
+        });
 
     if (meta._from === 'onNavigationRequestFailed') {
         const record = extend(
-            true, {},
+            true,
+            {},
             baseReport,
             {
                 url: request.url,
                 isNavigationRequest: true,
                 redirectChain: [],
-                requestErrorMessages: request.errorMessages
             },
             request.userData,
             meta
@@ -332,7 +345,8 @@ export function handleFailedRequest(request, error, meta) {
         const pupRequest = error;
 
         const record = extend(
-            true, {},
+            true,
+            {},
             baseReport,
             {
                 url: request.url,

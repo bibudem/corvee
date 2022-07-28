@@ -1,5 +1,5 @@
-import { console } from '../../core/lib/logger';
-import { Report } from '../../processor/lib/report'
+import { console } from '../../core';
+import { Report } from '../../processor'
 
 export default function (options = {}) {
     return {

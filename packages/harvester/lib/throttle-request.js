@@ -1,5 +1,5 @@
 import EventEmitter from 'events'
-import { console } from './logger'
+import { console } from '../../core'
 
 function sleep(millis) {
     return new Promise(res => setTimeout(res, millis));

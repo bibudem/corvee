@@ -11,11 +11,18 @@ export const CORVEE_ERROR_DEF = {
     test: function (err) {
         return err instanceof CorveeError;
     }
-};
+}
+
+export const errorCodes = {
+    'error': '',
+    'skip-ignore': 'Ignoring this url based on `config.ignore` settings.',
+    'skip-extern': 'Skipping this url based on `config.extern` settings.',
+    'unsupported-scheme': 'Unsupported scheme.'
+}
 
 export class CorveeError extends Error {
     constructor(msg, code, properties) {
-        code = code || 'error'
+        code = code || `${CORVEE_ERROR_DEF.prefix}-error`
         if (code in errorCodes) {
             msg = msg || errorCodes[code];
             super(msg)
@@ -44,10 +51,3 @@ export class CorveeError extends Error {
 
 //     throw new RangeError(`The code provided does not exist: ${code}`)
 // }
-
-export const errorCodes = {
-    'error': '',
-    'skip-ignore': 'Ignoring this url based on `config.ignore` settings.',
-    'skip-extern': 'Skipping this url based on `config.extern` settings.',
-    'unsupported-scheme': 'Unsupported scheme.'
-}

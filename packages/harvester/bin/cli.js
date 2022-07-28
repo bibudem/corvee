@@ -7,7 +7,7 @@ Function = Function //;node --module "$0" "$@";exit
 import { inspect } from 'util'
 import yargs from 'yargs'
 import { Corvee as Harvester } from '../lib'
-import { console } from '../../core/lib/logger';
+import { console } from '../../core';
 
 import webScrapingPlugin from '../plugins/web-scraping-protection'
 

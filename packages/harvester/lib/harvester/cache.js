@@ -1,9 +1,6 @@
-import fs from 'fs'
-import path from 'path'
 import LRU from 'lru-cache'
 import sizeof from 'object-sizeof'
-import filesize from 'filesize'
-import { console } from '../../../core/lib/logger'
+import { console } from '../../../core'
 
 const defaultCacheOptions = {
     max: 40 * 1024 * 1024, // 40Mo

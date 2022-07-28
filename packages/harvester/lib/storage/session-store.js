@@ -1,4 +1,5 @@
 import { openKeyValueStore } from 'apify';
+import { console } from '../../../core'
 
 export async function sessionStore({
     interval = 5000,
@@ -33,30 +34,3 @@ export async function sessionStore({
 
     return ret;
 }
-
-// export class SessionStore {
-
-//     constructor({
-//         interval = 500,
-//         props = {}
-//     } = {}) {
-//         this._store = null;
-//         this._interval = interval;
-//         this.props = props;
-
-//         this.init();
-
-//         return new Proxy(this.props, {})
-
-//     }
-
-//     async init() {
-//         this._store = await openKeyValueStore('session');
-//         await this.save();
-//     }
-
-//     async save() {
-//         await this._store.setValue('data', this.props);
-//         setTimeout(this.save, this._interval);
-//     }
-// }

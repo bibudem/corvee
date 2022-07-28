@@ -10,7 +10,6 @@ import stringify from 'json-stringify-safe'
 import _ from 'underscore'
 
 import rp from 'request-promise-native'
-// import createHttpError from 'http-errors'
 import rimraf from 'rimraf';
 import Apify, { BasicCrawler, PuppeteerCrawler, utils as apifyUtils } from 'apify';
 import { launchPuppeteer } from 'apify/build/puppeteer'
@@ -28,7 +27,7 @@ import { Link } from '../link'
 import { handleResponse, handleFailedRequest } from '../record'
 import { RequestQueue } from '../request-queue'
 import { PseudoUrls } from '../pseudoUrls'
-import { console } from '../../../core/lib/logger';
+import { console } from '../../../core';
 import Notifier from '../utils/notifier'
 
 import { defaultHarvesterOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
@@ -304,8 +303,8 @@ export class Harvester extends EventEmitter {
 
         self.runOptions = runOptions;
 
-        console.info(`Running with config: ${this.config}`);
-        console.info(`Running with run options: ${runOptions}`)
+        console.info(`Running with config: ${inspect(this.config)}`);
+        console.info(`Running with run options: ${inspect(runOptions)}`)
 
         const cleanupFolderPromises = [];
 
@@ -431,9 +430,9 @@ export class Harvester extends EventEmitter {
 
             self.browsingContextStore = new BrowsingContextStore();
 
-            self.notify.addMessage(() => {
-                return `[browsingContextStore] size: ${self.browsingContextStore.size}`
-            })
+            // self.notify.addMessage(() => {
+            //     return `[browsingContextStore] size: ${self.browsingContextStore.size}`
+            // })
 
             self.assetsLinksStore = await Apify.openDataset('assets-urls');
             // self.screenshotsStore = await Apify.openKeyValueStore('screenshots');
@@ -454,8 +453,6 @@ export class Harvester extends EventEmitter {
             }, 500)
 
             if (self.config.fetchLinksOnce) {
-                // self.linkStore = await Apify.openKeyValueStore('links');
-
                 self.linkStore = new LinkStore();
                 await self.linkStore.init();
             }
@@ -468,17 +465,12 @@ export class Harvester extends EventEmitter {
 
             const basicRequestQueue = await Apify.openRequestQueue('basic');
 
-            // self.notify.addMessage(() => {
-            //     return `Request queue size: ${self.queue.size} Pending: ${self.queue.pending}`
-            // })
-
             self.notify.addMessage(async () => {
                 const info = await puppeteerRequestQueue.getInfo();
                 return `Request queue size: ${info.totalRequestCount} Handled: ${info.handledRequestCount}`
             })
 
             function isMaxPagesExceeded() {
-                // console.log(activeRequestsCount)
                 return self.config.maxRequests !== -1 && activeRequestsCount > self.config.maxRequests && finishedRequestsCount >= self.config.maxRequests;
             }
 
@@ -500,7 +492,6 @@ export class Harvester extends EventEmitter {
 
                 return new Promise(async resolve => {
                     try {
-                        // console.log(requestData)
                         if (runOptions.resume) {
                             // resuming previously fetched links
                             if (self._handledRequests.has(`${requestData.url}#${requestData.userData.parent}`)) {
@@ -867,7 +858,6 @@ export class Harvester extends EventEmitter {
                     .map(link => (Object.assign(link, {
                         url: normalizeUrl(link.url),
                         parent,
-                        // _bwowsingContextStack,
                         isNavigationRequest: true
                     })))
                     .filter(link => {
@@ -1042,7 +1032,7 @@ export class Harvester extends EventEmitter {
                                     const urlErr = {
                                         name: 'UrlError',
                                         message: `Invalid URL: ${request.url}`,
-                                        code: 'invalid-url',
+                                        code: 'url-invalid-url',
                                         input: request.url,
                                         level: 'error'
                                     };
@@ -1059,6 +1049,7 @@ export class Harvester extends EventEmitter {
                                         const req = await puppeteerRequestQueue.getRequest(request.id);
                                     } catch (e) {
                                         console.todo('fix me')
+                                        console.todo(request)
                                         console.todo(e)
                                     }
 
@@ -1281,7 +1272,9 @@ export class Harvester extends EventEmitter {
                                 if (request.retryCount <= self.config.maxRequestRetries) {
                                     return Promise.reject();
                                 }
+
                                 console.log(pupRequest.userData)
+
                                 pupRequest.userData.reports.push(pupRequest.failure().errorText)
 
                                 requestFailedData.pushData({
@@ -1330,7 +1323,7 @@ export class Harvester extends EventEmitter {
                                             try {
                                                 meta.size = (await pupResponse.buffer()).length;
                                             } catch (e) {
-                                                console.todo(`${UNHANDLED_ERROR} at ${pageUrl}`)
+                                                console.todo(`Can not get pupResponse.buffer().length at ${pageUrl}`)
                                                 console.todo(e)
                                             }
 
@@ -1436,7 +1429,7 @@ export class Harvester extends EventEmitter {
                                 .then(response => {
                                     resolve(response);
                                 }).catch(error => {
-                                    console.warn(`[${request.retryCount}] ${request.url}`)
+                                    console.warn(`page.goto() failed at try [${request.retryCount}] ${request.url}`)
                                     console.warn(error)
 
                                     if (request.retryCount >= self.config.maxRequestRetries) {
@@ -1699,11 +1692,11 @@ export class Harvester extends EventEmitter {
                     basicCrawler
                         .run()
                         .then(() => {
-                            console.info('basic crawler is done.')
+                            console.info('Basic crawler is done.')
                             resolve();
                         })
                         .catch(e => {
-                            console.error('basic crawler ended with error.')
+                            console.error('Basic crawler ended with error.')
                             reject(e)
                         })
 
@@ -1727,13 +1720,12 @@ export class Harvester extends EventEmitter {
                 puppeteerCrawler
                     .run()
                     .then(() => {
-                        console.info('puppeteer crawler is done.')
+                        console.info('Puppeteer crawler is done.')
                         return Promise.resolve();
                     })
                     .catch(e => {
-                        console.error('puppeteer crawler ended with error.')
+                        console.error('Puppeteer crawler ended with error.')
                         throw e;
-                        process.exit()
                     }),
                 launchBasicCrawler()
             ])

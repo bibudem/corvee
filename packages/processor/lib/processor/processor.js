@@ -3,6 +3,7 @@ import isPlainObject from 'is-plain-object'
 import { LEVELS } from './levels'
 
 import { messageFactory } from '../messages'
+import { console } from '../../../core'
 
 class FilterPriorities extends Map {
 
