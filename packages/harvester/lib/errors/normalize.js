@@ -1,7 +1,6 @@
 import _ from 'underscore'
 import paramCase from 'param-case'
-
-import { console } from '../../../core';
+import { inspect, console } from '../../../core'
 
 import { PREFIX_SEPARATOR, ERROR_PROPS, CORVEE_ERROR_DEF, PUP_ERROR_DEF, NET_ERROR_DEF, SSL_ERROR_DEF, HTTP_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF } from '.'
 

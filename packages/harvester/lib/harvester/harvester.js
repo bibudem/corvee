@@ -1,7 +1,7 @@
 import { URL } from 'url';
 import fs, { promises as fsPromises } from 'fs'
 import EventEmitter from 'events'
-import { promisify, inspect } from 'util'
+import { promisify } from 'util'
 
 import minimatch from 'minimatch'
 import * as URI from 'uri-js'
@@ -27,13 +27,11 @@ import { Link } from '../link'
 import { handleResponse, handleFailedRequest } from '../record'
 import { RequestQueue } from '../request-queue'
 import { PseudoUrls } from '../pseudoUrls'
-import { console } from '../../../core';
+import { console, inspect } from '../../../core';
 import Notifier from '../utils/notifier'
 
 import { defaultHarvesterOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
 import { setRedirectChain } from './redirection-pool';
-
-console.setLevel(defaultHarvesterOptions.defaultLogLevel)
 
 process.on('unhandledRejection', function onUnhandledRejection(reason, p) {
     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -68,6 +66,8 @@ export class Harvester extends EventEmitter {
     constructor(config = {}) {
 
         super();
+
+        console.setLevel(defaultHarvesterOptions.defaultLogLevel)
 
         this.version = 'ALLO';
         this.isPaused = null;
@@ -507,7 +507,7 @@ export class Harvester extends EventEmitter {
                                 const record = await self.linkStore.recordFromData(requestData.userData)
                                 record._from = 'linkStore#direct'
 
-                                console.debug(`This link has already been fetched. Will skip fetching. Record: ${inspect(record)}`)
+                                console.verbose(`This link has already been fetched. Will skip fetching. Record: ${inspect(record)}`)
 
                                 try {
                                     await addRecord(record);
@@ -529,8 +529,7 @@ export class Harvester extends EventEmitter {
                                     return resolve()
                                 }
 
-                                console.todo('This should not happpen: record wasAlreadyHandled, but is not in the linkStore')
-                                console.todo(JSON.stringify(reqInfo, null, 2))
+                                console.todo(`This should not happpen: record wasAlreadyHandled, but is not in the linkStore: ${reqInfo}`)
                             }
 
                             if (reqInfo.wasAlreadyPresent) {
@@ -821,7 +820,7 @@ export class Harvester extends EventEmitter {
 
                 const noFollowUrl = self.shouldNotFollowUrl(parent)
                 if (noFollowUrl) {
-                    console.debug(`Stop parsing links in ${parent} since a noFollow rule was detected: ${noFollowUrl}`)
+                    console.verbose(`Stop parsing links in ${parent} since a noFollow rule was detected: ${noFollowUrl}`)
                     return ret;
                 }
 
@@ -1443,7 +1442,7 @@ export class Harvester extends EventEmitter {
                         })
                     }).catch(e => {
                         console.todo('Unhandled error:')
-                        console.todo(e)
+                        console.todo(inspect(e))
                         console.todo(request)
                     })
                 },

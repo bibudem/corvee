@@ -1,9 +1,10 @@
 import fs from 'fs'
 import path from 'path'
-import util from 'util'
 
 import xml2js from 'xml2js'
 import yargs from 'yargs'
+
+import { inspect } from '../../core'
 
 const argv = yargs
     .usage(`Usage
@@ -34,7 +35,7 @@ fs.readFile(path.join(process.cwd(), argv._[0]), (err, data) => {
             throw err;
         }
         // console.log(JSON.stringify(result))
-        console.log(util.inspect(result.urldata[0], false, null))
+        console.log(inspect(result.urldata[0], false, null))
 
         const reports = [];
 
@@ -51,6 +52,6 @@ fs.readFile(path.join(process.cwd(), argv._[0]), (err, data) => {
             ['infos']
 
         });
-        console.log(util.inspect(result.urldata[0], false, null))
+        console.log(inspect(result.urldata[0], false, null))
     })
 })

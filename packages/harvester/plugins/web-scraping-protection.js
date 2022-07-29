@@ -1,5 +1,4 @@
-import { console } from '../../core';
-import { Report } from '../../processor'
+import { console, Report } from '../../core'
 
 export default function (options = {}) {
     return {

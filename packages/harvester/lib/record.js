@@ -1,8 +1,7 @@
-import { inspect } from 'util';
 import dotProp from 'dot-prop';
 const extend = require('extend');
 
-import { absUrl, normalizeUrl, console } from './../../core'
+import { absUrl, normalizeUrl, console, inspect } from './../../core'
 import { ResourceType } from './resource-type';
 import { captureErrors } from './errors';
 

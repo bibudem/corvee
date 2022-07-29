@@ -1,14 +1,11 @@
-import { inspect } from 'util'
-import * as chromiumNetErrors from 'chromium-net-errors';
+import * as chromiumNetErrors from 'chromium-net-errors'
 import createHttpError, { HttpError } from 'http-errors'
 import statuses from 'statuses'
 import _ from 'underscore'
 import isNumber from 'is-number'
 import { normalizeError } from './normalize'
-import { FailedToLaunchError } from './definitions';
-import { Report } from '../../../processor'
-
-import { console } from '../../../core';
+import { FailedToLaunchError } from './definitions'
+import { Report, console, inspect } from '../../../core'
 
 function makeReport(rawData) {
     try {

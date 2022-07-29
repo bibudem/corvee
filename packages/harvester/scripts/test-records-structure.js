@@ -1,7 +1,6 @@
-import fs from 'fs';
 import path from 'path';
 import yargs from 'yargs';
-import util from 'util';
+import { inspect } from '../../core';
 
 (async () => {
 
@@ -41,7 +40,7 @@ import util from 'util';
             }
             wrongRecords.push(wrongRec)
             console.log('--------------------------------------------------------')
-            console.log(util.inspect(wrongRec, {
+            console.log(inspect(wrongRec, {
                 showHidden: false,
                 depth: null
             }))
