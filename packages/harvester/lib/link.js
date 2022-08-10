@@ -6,7 +6,8 @@ const userDataDefaults = {
     parent: 'corvee:url-list',
     reports: [],
     trials: 1,
-    level: 0
+    level: 0,
+    urlData: null
 }
 
 /*
@@ -59,10 +60,19 @@ export class Link {
             data = uri;
 
             v(data, 'data').has('url')
+
             this.url = data.url;
-            this.userData = extend(true, {}, userDataDefaults, {
-                url: uri
-            }, data.userData, data);
+            this.userData = extend(
+                true,
+                {},
+                userDataDefaults,
+                {
+                    url: uri
+                },
+                data.userData,
+                data);
+
+            delete this.userData.userData
 
             return;
         }

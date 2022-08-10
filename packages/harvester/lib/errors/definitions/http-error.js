@@ -19,17 +19,17 @@ export const HTTP_ERROR_DEF = {
 
 export function HttpError(pupResponse) {
     const status = pupResponse.status()
-    const e = createHttpError(status, pupResponse.statusText(), {
+    const httpError = createHttpError(status, pupResponse.statusText(), {
         url: pupResponse.request().url(),
         //body
     })
 
-    addStatusRelatedData(e, pupResponse)
+    addStatusRelatedData(httpError, pupResponse)
 
-    return e;
+    return httpError;
 };
 
-const addStatusRelatedData = (error, res) => {
+const addStatusRelatedData = (httpError, res) => {
 
     const status = res.status();
 
@@ -37,7 +37,7 @@ const addStatusRelatedData = (error, res) => {
         case 429:
             const headers = res.headers()
             if ('retry-after' in headers) {
-                error.data = _.pick(headers, 'retry-after')
+                httpError._data = _.pick(headers, 'retry-after')
             }
             break;
     }

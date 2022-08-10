@@ -24,6 +24,7 @@ export class CorveeProcessor extends EventEmitter {
     } = {}) {
         super();
         this.records = [];
+        this.unfilteredRecords = [];
         this._filters = [];
         this.filterPriorities = new FilterPriorities();
         this._errors = [];
@@ -75,6 +76,7 @@ export class CorveeProcessor extends EventEmitter {
 
         // Normalizing records structure
         records = records.map(record => {
+            record._filtered = false;
             record.reports = (record.reports || []).map(report => {
                 return {
                     ...reportType,
@@ -101,6 +103,7 @@ export class CorveeProcessor extends EventEmitter {
                     if (testResult) {
                         filter.matches++;
                         filteredrecords.add(record.id);
+                        record._filtered = true;
 
                         if (isPlainObject(testResult)) {
                             record = testResult;
@@ -109,9 +112,11 @@ export class CorveeProcessor extends EventEmitter {
                                 code: filter.code,
                                 level: 'level' in filter ? filter.level : 'error'
                             }
+
                             if (typeof testResult === 'string') {
                                 report.content = testResult
                             }
+
                             record.reports.push(report)
                         }
 
@@ -181,10 +186,8 @@ export class CorveeProcessor extends EventEmitter {
                 .filter(level => LEVELS[level] >= self.config.errorLevel)
                 .map(level => level.toLowerCase());
 
-            // console.log(`effective levels: ${JSON.stringify(errorLevels)}`)
-
             return records.map(record => {
-                // console.log(record.id)
+
                 let reports = [];
 
                 // Filtering reports priorities by level
@@ -247,13 +250,22 @@ export class CorveeProcessor extends EventEmitter {
             this.records = doErrors(this.records, error)
         });
 
-        console.log(`Filtering ${this._filters.length} reports...`);
+        console.log(`Filtering ${this._filters.length} filters...`);
 
         this._filters.forEach(filter => {
             this.records = doFilter(this.records, filter)
         });
 
+        this.unfilteredRecords = this.records.filter(record => {
+            if (!record._filtered) {
+                this.emit('unfiltered', record)
+                return true
+            }
+            return false
+        })
+
         console.log('Filtering report by level...')
+
         this.records = doFilterLevels(this.records);
 
         console.log('Filtering reports by priority...');
@@ -286,6 +298,7 @@ export class CorveeProcessor extends EventEmitter {
             filtersWithoutMessages: Array.from(self.filtersWithoutMessages.values()),
             nbOut: records.length,
             records: this.records,
+            unfilteredRecords: this.unfilteredRecords,
             perFilter
         };
     }

@@ -23,3 +23,17 @@ export class FailedToLaunchError extends PuppeteerError {
     this.code = 'pup-failed-to-launch'
   }
 }
+
+export class PupResponseIsUndefinedError extends PuppeteerError {
+  constructor(message) {
+    super(message)
+    this.code = 'pup-response-is-undefined'
+  }
+}
+
+export class PupResponseIsNullError extends PuppeteerError {
+  constructor(message) {
+    super(message)
+    this.code = 'pup-response-is-null'
+  }
+}

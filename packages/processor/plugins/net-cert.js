@@ -12,20 +12,22 @@ export default {
 
           const ret = {
             code: 'net-cert-*',
-            level: 'warning'
+            level: 'error'
           }
 
           if ('data' in report) {
-            ret.data = report.data;
+            ret._data = report.data;
           }
 
           return ret;
         }
+
         return report;
+
       })
 
       return record;
     }
   },
-  level: 'warning'
+  level: 'error'
 }

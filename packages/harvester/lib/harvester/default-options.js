@@ -1,75 +1,109 @@
-import path from 'path'
+import { join } from 'path'
+const pkg = require('../../package.json')
 
-const tmpDir = path.join(process.env.TEMP, 'corvee');
+const tmpDir = join(process.env.TEMP, 'corvee');
+
+//
+// Corvée options
+//
 
 export const defaultHarvesterOptions = {
-    notify: 5000,
-    apifyLocalStorageDir: path.join(tmpDir, '.storage'),
-    puppeteerCacheDir: path.join(tmpDir, '.cache'),
-    schemes: ['corvee', 'http', 'https'],
-    useSchemesDefaults: true,
-    // URLs matching the given regular expression will be ignored and not checked.
-    ignore: ['www.google-analytics.com', '/gtag/js', 'ga.js', 'analytics.js', 'https://www.googleadservices.com/', 'doubleclick.net'],
-    fetchLinksOnce: true,
+
+    //
+    // Intern options. Do not use
+    //
+
+    // Wether to use defaultHarvesterOptions.ignoreDefaults or not
     useIgnoreDefaults: true,
-    // Check but do not recurse into URLs matching the given regular expression. 
-    noFollow: [],
+    // Wether to use defaultHarvesterOptions.schemesDefaults or not
+    useSchemesDefaults: true,
+    // Wether to use defaultHarvesterOptions.noFollowDefaults or not
     useNoFollowDefaults: true,
-    // internLinks: [
-    //     // /.*/
-    // ],
-    internLinks: null,
+
+    //
+    // Public options
+    //
+
+    blockRequestsFromUrlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com'],
+    // Wether to check extern links or not
     checkExtern: true,
-    cookies: true,
+    fetchLinksOnce: true,
+    // URLs matching the given strings / regular expression will be ignored and not checked.
+    ignore: [],
+    ignoreDefaults: ['www.google-analytics.com', '/gtag/js', 'ga.js', 'analytics.js', 'https://www.googleadservices.com/', 'doubleclick.net'],
+    // Array of URLs matching the given strings / regular expressions. These URLs define the scope of the crawling
+    internLinks: [],
+    linkParserDelay: 0,
+    logLevel: 'info',
+    maxDepth: Infinity,
+    maxRequestRetries: 3,
+    maxRequests: Infinity,
+    navigationOnly: true,
+    // Check but do not recurse into URLs matching the given strings / regular expressions.
+    noFollow: [],
+    noFollowDefaults: [],
+    notify: true,
+    notifyDelay: 10000,
+    notifyLogLevel: 'info',
     pageTimeout: 60000,
     pageWaitUntil: ['load'],
     requestTimeout: 45000,
-    navigationOnly: true,
-    useCache: true,
-    maxConcurrency: 30,
-    maxDepth: Infinity,
-    maxRequests: Infinity,
-    maxRequestRetries: 3,
+    schemes: [],
+    schemesDefaults: ['corvee', 'http', 'https'],
+    storageDir: join(tmpDir, '.storage'),
     waitInterval: 50,
-    linkParserDelay: 0,
+}
 
-    defaultLogLevel: 'verbose',
-
+export const defaultLaunchPuppeteerOptions = {
     //
-    // Apify.launchPuppeteer options
-    userAgent: 'Mozilla/5.0 (Corvee/1.0.0)',
+    // Apify.launchPuppeteer() options
+    //
+
+    // Apify specific options
+    // see https://sdk.apify.com/docs/typedefs/launch-puppeteer-options
+    // proxyUrl: '',
+    stealth: true,
+    // stealthOptions: {},
+    userAgent: `Mozilla/5.0 (Corvee/${pkg.version})`,
     useChrome: false,
+
+    // Puppeteer launch options
+    // see https://pptr.dev/api/puppeteer.puppeteerlaunchoptions
+
+    // Browser launch argument options
+    // see https://pptr.dev/api/puppeteer.browserlaunchargumentoptions/
+    // args: [],
     headless: true,
+    userDataDir: join(tmpDir, '.userData'),
+
+    // Browser connect options
+    // see https://pptr.dev/api/puppeteer.browserconnectoptions/
     defaultViewport: {
         width: 1920,
         height: 1080
-    },
-    // proxyUrl -> proxy,
-    stealth: true,
-    blockRequestsFromUrlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com']
+    }
+}
+
+export const defaultPuppeteerPoolOptions = {
+    //
+    // Puppeteer pool options
+    // see https://sdk.apify.com/docs/typedefs/puppeteer-pool-options
+    useCache: true,
+    puppeteerOperationTimeoutSecs: 60
 }
 
 export const defaultAutoscaledPoolOptions = {
-    //maxConcurrency: 1,
-    loggingIntervalSecs: 10,
-    scaleUpStepRatio: .08,
+    // Autoscaled pool options
+    // se https://sdk.apify.com/docs/typedefs/autoscaled-pool-options
+    minConcurrency: 1,
+    maxConcurrency: 10,
+    scaleUpStepRatio: .05,
     scaleDownStepRatio: .08,
-    autoscaleIntervalSecs: 6,
-    // maybeRunIntervalSecs: .5,
+    maybeRunIntervalSecs: .05,
+    loggingIntervalSecs: 30,
+    autoscaleIntervalSecs: 10,
     systemStatusOptions: {
-        maxCpuOverloadedRatio: .4,
+        maxCpuOverloadedRatio: .3,
         currentHistorySecs: 3
-    },
-    // useLiveView: true,
-}
-
-export function defaultLinkParser() {
-    return Array
-        .from(document.querySelectorAll('a[href]'))
-        .map(link => ({
-            url: link.href,
-            text: link.innerText,
-            urlData: link.getAttribute('href'),
-            isNavigationRequest: true
-        }))
+    }
 }

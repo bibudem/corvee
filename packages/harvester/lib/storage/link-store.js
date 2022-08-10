@@ -3,7 +3,7 @@ import LRU from 'lru'
 import v from 'io-validate'
 import extend from 'extend';
 import { omit, pick } from 'underscore'
-import { idFromUrl, console } from '../../../core'
+import { idFromUrl, console, inspect } from '../../../core'
 
 /*
 Link props:
@@ -29,8 +29,8 @@ Link props:
    extern
 */
 
-const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType contentLength extern size redirectChain'.split(' ');
-const linkExtrinsicProps = null;
+const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType contentLength extern size redirectChain errorMessages'.split(' ');
+const linkIntrinsicUserDataProps = 'reports extern'.split(' ');
 
 const linkTemplate = {
     finalUrl: null,
@@ -46,16 +46,18 @@ export class LinkStore {
 
     constructor() {
         this._linkIdx = new Set();
-        this._cache = new LRU(200)
+        this._cache = new LRU(10000)
     }
 
     async init() {
-        this._store = await Apify.openKeyValueStore('links');
+        this._store = await Apify.openKeyValueStore('link-store');
     }
 
     has(url) {
         v(url, 'url').isString();
+
         const key = idFromUrl(url);
+
         return this._linkIdx.has(key);
     }
 
@@ -64,13 +66,16 @@ export class LinkStore {
         options = {}) {
 
         v(linkData.url, 'url').isString();
+
         const linkId = idFromUrl(linkData.url);
+        const userData = linkData || {}
 
         if (this._linkIdx.has(linkId)) {
             return Promise.resolve();
         }
 
         linkData = pick(linkData, linkIntrinsicProps);
+        // linkData.userData = pick(userData, linkIntrinsicUserDataProps)
 
         await this._store.setValue(linkId, linkData, options);
         this._linkIdx.add(linkId);
@@ -80,7 +85,7 @@ export class LinkStore {
         try {
             v(url, 'url').isString();
         } catch (e) {
-            console.error(e);
+            console.error(inspect(e));
             process.exit();
         }
         const linkId = idFromUrl(url);
@@ -120,8 +125,6 @@ export class LinkStore {
         }
 
         delete linkData.uniqueKey;
-        delete linkData.extern;
-
 
         if (!storedLink) {
             return storedLink;

@@ -79,6 +79,10 @@ function getFinalUrl({
 }) {
     let finalUrl = null;
 
+    if (httpStatusCode === null) {
+        return finalUrl
+    }
+
     const redirectChain = 'redirectChain' in record && Array.isArray(record.redirectChain) && record.redirectChain.length > 0 ? record.redirectChain : null;
 
     if (httpStatusCode >= 200 && httpStatusCode <= 299) {
@@ -110,7 +114,7 @@ function getFinalUrl({
     };
 }
 
-export function handleResponse(request, response, meta) {
+export function handleResponse(request, response = null, meta = {}) {
     let reports;
 
     if (dotProp.get(request, 'userData.reports')) {
@@ -128,8 +132,11 @@ export function handleResponse(request, response, meta) {
     }
 
     if ('_isNavigationRequest' in request) {
-        // puppeteer Request class && puppeteer Response class
-        // This is an asset response
+
+        /*
+         * puppeteer Request class && puppeteer Response class
+         * This is an asset response
+         */
 
         const redirectChain = getRedirectionChain(
             request.redirectChain(),
@@ -142,7 +149,7 @@ export function handleResponse(request, response, meta) {
             baseReport,
             {
                 url: request.url(),
-                httpStatusCode: response.status(),
+                httpStatusCode: response ? response.status() : null,
                 isNavigationRequest: request.isNavigationRequest(),
                 redirectChain,
                 resourceType: request.resourceType(),
@@ -152,7 +159,7 @@ export function handleResponse(request, response, meta) {
             meta
         );
 
-        if ('content-type' in response.headers()) {
+        if (response && 'content-type' in response.headers()) {
             record.contentType = response.headers()['content-type'].split(';')[0].trim();
         }
 
@@ -162,8 +169,8 @@ export function handleResponse(request, response, meta) {
             finalUrl
         } = getFinalUrl({
             record,
-            httpStatusCode: response.status(),
-            headers: response.headers()
+            httpStatusCode: response ? response.status() : null,
+            headers: response ? response.headers() : []
         });
 
         record.finalUrl = finalUrl;
@@ -174,8 +181,12 @@ export function handleResponse(request, response, meta) {
     }
 
     if (response && '_client' in response) {
-        // apify request class && puppeteer Response class
-        // This is a navigation response
+
+        /*
+         * apify request class && puppeteer Response class
+         * This is a navigation response
+         */
+
         const record = extend(
             true,
             {},
@@ -220,8 +231,11 @@ export function handleResponse(request, response, meta) {
     }
 
     if (response && response.constructor.name === 'IncomingMessage') {
-        // apify request class && (request-promise-native) IncomingMessage class response
-        // This is a basicCrawler response
+
+        /*
+         * apify request class && (request-promise-native) IncomingMessage class response
+         * This is a basicCrawler response
+         */
 
         const redirectChain = getRedirectionChain(
             response.request._redirect.redirects,
@@ -273,9 +287,30 @@ export function handleResponse(request, response, meta) {
         return record;
     }
 
-    // This is a mailto: link
-    // args: link, request, meta
-    // The request argument only has a .userData property.
+    if (request.url.startsWith('mailto:')) {
+
+        /*
+         * This is a mailto: link
+         * args: link, request, meta
+         * The request argument only has a .userData property.
+         */
+
+        const record = extend(
+            true,
+            {},
+            baseReport,
+            request.userData,
+            meta
+        );
+
+        return record;
+    }
+
+    /*
+     * Unknown data
+     */
+
+    console.todo(`Unknown response at ${request.url}, meta: ${inspect(meta)}, request: ${inspect(request)}, response: ${inspect(response)}`)
 
     const record = extend(
         true,
@@ -284,7 +319,6 @@ export function handleResponse(request, response, meta) {
         {
             /** @member {string} [urlData] - Url as found when crawling */
             url: request.url,
-            finalUrl: normalizeUrl(request.url),
             isNavigationRequest: 'TODO',
             redirectChain: [],
             resourceType: 'TODO',
@@ -302,11 +336,17 @@ export function handleResponse(request, response, meta) {
 export function handleFailedRequest(request, error, meta) {
     // apify request class
     console.debug(inspect(request))
+
     let reports = captureErrors(request.userData.reports);
     delete request.userData.reports;
 
     if (typeof request.errorMessages !== 'undefined') {
         const errorMessages = captureErrors(request.errorMessages)
+        reports = reports.concat(errorMessages)
+    }
+
+    if (typeof request.requestErrorMessages !== 'undefined') {
+        const errorMessages = captureErrors(request.requestErrorMessages)
         reports = reports.concat(errorMessages)
     }
 
@@ -359,6 +399,7 @@ export function handleFailedRequest(request, error, meta) {
         );
 
         delete record.userData;
+        delete record.request;
 
         return record;
     }

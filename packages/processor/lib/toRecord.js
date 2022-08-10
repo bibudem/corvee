@@ -10,22 +10,22 @@ const exists = function isExist(o) {
  * 
  * Translates link data from the `report` format to `record` format
  * 
- * @param {string} jobId
+ * @param {string} job
  * @param {array} data
  */
 
 export async function toRecord({
-  jobId,
+  job,
   projectId,
   data
 } = {}) {
 
   // Arguments validation
   v(arguments[0]).not.isUndefined();
-  exists(arguments[0].jobId)
+  exists(arguments[0].job)
   exists(arguments[0].data)
   v(arguments[0].data).isArray();
-  v(arguments[0].jobId).isString();
+  v(arguments[0].job).isString();
 
   const result = [];
 
@@ -79,7 +79,7 @@ export async function toRecord({
         extern,
         action: "to-be-fixed",
         errorCode: errCodesFor(reports),
-        jobId
+        jobId: job
       };
 
       result.push(recordData);

@@ -14,10 +14,10 @@ export const CORVEE_ERROR_DEF = {
 }
 
 export const errorCodes = {
-    'error': '',
-    'skip-ignore': 'Ignoring this url based on `config.ignore` settings.',
-    'skip-extern': 'Skipping this url based on `config.extern` settings.',
-    'unsupported-scheme': 'Unsupported scheme.'
+    'cv-error': '',
+    'cv-skip-ignore': 'Ignoring this url based on `config.ignore` settings.',
+    'cv-skip-extern': 'Skipping this url based on `config.extern` settings.',
+    'cv-unsupported-scheme': 'Unsupported scheme.',
 }
 
 export class CorveeError extends Error {
@@ -27,9 +27,10 @@ export class CorveeError extends Error {
             msg = msg || errorCodes[code];
             super(msg)
             this.name = this.constructor.name;
+            this.level = 'info'
+            this.code = code
+            this.message = msg
 
-            this.code = code;
-            //this.code = `${CORVEE_ERROR_DEF.prefix}-${code}`;
             Object.assign(this, properties)
             Error.captureStackTrace(this, this.constructor);
             return;
@@ -39,15 +40,3 @@ export class CorveeError extends Error {
     }
 
 }
-
-// export function createCorveeError(msg, code, properties) {
-//     if (code in errorCodes) {
-//         msg = msg || errorCodes[code];
-//         const e = new CorveeError(msg)
-//         e.code = `${CORVEE_ERROR_DEF.prefix}-${code}`;
-//         Object.assign(e, properties)
-//         return e;
-//     }
-
-//     throw new RangeError(`The code provided does not exist: ${code}`)
-// }

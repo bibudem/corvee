@@ -2,12 +2,22 @@ import { normalizeUrl } from '../../../core'
 
 export class BrowsingContextStore {
 
-    get size() {
-        return this._cache.size;
+    constructor(data) {
+        this._cache = new Map();
+
+        if (data) {
+            Object
+                .keys(data)
+                .forEach(parentUrl => {
+                    data[parentUrl].forEach(url => {
+                        this.addContext(url, parentUrl)
+                    })
+                })
+        }
     }
 
-    constructor() {
-        this._cache = new Map();
+    get size() {
+        return this._cache.size;
     }
 
     getContext(url) {
@@ -62,6 +72,7 @@ export class BrowsingContextStore {
         const context = this._cache.get(contextUrl) || new Set();
 
         context.add(url);
+
         this._cache.set(contextUrl, context)
     }
 

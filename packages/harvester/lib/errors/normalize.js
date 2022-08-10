@@ -2,7 +2,7 @@ import _ from 'underscore'
 import paramCase from 'param-case'
 import { inspect, console } from '../../../core'
 
-import { PREFIX_SEPARATOR, ERROR_PROPS, CORVEE_ERROR_DEF, PUP_ERROR_DEF, NET_ERROR_DEF, SSL_ERROR_DEF, HTTP_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF } from '.'
+import { PREFIX_SEPARATOR, ERROR_PROPS, CORVEE_ERROR_DEF, PUP_ERROR_DEF, MAIL_ERROR_DEF, NET_ERROR_DEF, SSL_ERROR_DEF, HTTP_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF } from '.'
 
 
 const TIMEOUT_ERROR_DEF = {
@@ -18,7 +18,7 @@ const TIMEOUT_ERROR_DEF = {
 
 export function normalizeError(err, defName) {
     const ret = {};
-    const errorDefs = [CORVEE_ERROR_DEF, PUP_ERROR_DEF, NET_ERROR_DEF, HTTP_ERROR_DEF, TIMEOUT_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, SSL_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF];
+    const errorDefs = [CORVEE_ERROR_DEF, PUP_ERROR_DEF, MAIL_ERROR_DEF, NET_ERROR_DEF, HTTP_ERROR_DEF, TIMEOUT_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, SSL_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF];
     let translator;
     let prefix = ''
     let found = false;
@@ -33,15 +33,14 @@ export function normalizeError(err, defName) {
     }
 
     if (!found) {
-        console.todo('Didn\' find a definition for this error:')
-        console.todo(inspect(err))
-        console.todo(`err.name: ${err.name}`)
-        console.todo(`err.constructor.name: ${err.constructor.name}`)
-        console.todo(`err instanceof Error: ${err instanceof Error}`)
-        console.todo(`err.message: ${err.message}`)
-        console.todo(`err.code: ${err.code}`)
-        console.todo(`Properties: ${Object.keys(err)}`)
-        console.todo(err.stack)
+        console.todo(`Didn' find a definition for this error. defName: ${inspect(defName)}, error: ${inspect(err)}
+    err.name: ${inspect(err.name)}
+    err.constructor.name: ${inspect(err.constructor.name)}
+    err instanceof Error: ${err instanceof Error}
+    err.message: ${err.message}
+    err.code: ${err.code}
+    Properties: ${Object.keys(err)}
+    stack: ${inspect(err.stack)}`)
 
         translator = {}
         Object.keys(err).forEach(prop => translator[prop] = prop)

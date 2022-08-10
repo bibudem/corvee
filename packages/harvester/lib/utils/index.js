@@ -1,8 +1,6 @@
-export { makeArray } from './make-array'
-
-export { toXML, mapReportsToLinkChecker } from './link-checker'
-
-export { logErrorCodes } from './log-error-codes'
-
+export * from './display-url'
 export * from './human-duration'
+export * from './link-checker'
+export * from './log-error-codes'
+export * from './make-array'
 export * from './wait'

@@ -20,7 +20,7 @@ export default {
                     level: 'warning'
                 }
                 if ('data' in report) {
-                    ret.data = report.data;
+                    ret._data = report.data;
                 }
                 return ret;
             }

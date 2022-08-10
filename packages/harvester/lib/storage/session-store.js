@@ -20,17 +20,15 @@ export async function sessionStore({
         ...storedData
     };
 
-    const ret = new Proxy(data, {});
+    const proxyData = new Proxy(data, {});
 
     const save = async () => {
-        // console.log(`saving ${JSON.stringify(data)}`)
         await store.setValue('data', data);
-        // setTimeout(save, interval);
     }
 
     await save();
 
     setInterval(save, interval);
 
-    return ret;
+    return proxyData;
 }

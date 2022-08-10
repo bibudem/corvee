@@ -1,6 +1,6 @@
-import { console } from '../../../core'
+import { console, inspect } from '../../../core'
 
-function getDataFromRequest(request) {
+function doGetRequestData(request) {
     let url, method, headers, isNavigationRequest, resourceType;
     if ('uniqueKey' in request) {
         ({
@@ -27,27 +27,30 @@ function getDataFromRequest(request) {
     }
 }
 
-async function getDataFromResponse(response) {
+async function doGetResponseData(response) {
     let headers, status, statusText, url, size, resourceType, ok;
 
-    // Puppeteer response
-    if ('_client' in response) {
-        ({
-            _url: url,
-            _headers: headers,
-            _status: status,
-            _statusText: statusText,
-        } = response)
+    try {
+        // Puppeteer response
+        if ('_client' in response) {
+            ({
+                _url: url,
+                _headers: headers,
+                _status: status,
+                _statusText: statusText,
+            } = response)
 
-        resourceType = response.request()._resourceType;
-        ok = response.ok();
+            resourceType = response.request()._resourceType;
+            ok = response.ok();
 
-        try {
-            size = (await response.buffer()).length;
-        } catch (e) {
-            console.error(e)
+            try {
+                size = (await response.buffer()).length;
+            } catch (e) {
+                // Could not get response.buffer().length from response.
+                size = null
+            }
         }
-    }
+    } catch (e) { }
 
     return {
         url,
@@ -60,16 +63,16 @@ async function getDataFromResponse(response) {
     }
 }
 
-export async function responseData(id, response) {
+export async function getResponseData(id, response) {
     return {
         id,
-        ...await getDataFromResponse(response)
+        ...await doGetResponseData(response)
     }
 }
 
-export async function requestData(id, request) {
+export async function getRequestData(id, request) {
     return {
         id,
-        ...getDataFromRequest(request)
+        ...doGetRequestData(request)
     }
 }

@@ -130,7 +130,7 @@ if (urls && urls.length) {
             }
         }
 
-        // process.env.APIFY_LOCAL_STORAGE_DIR = harvester.config.apifyLocalStorageDir;
+        // process.env.APIFY_LOCAL_STORAGE_DIR = harvester.config.storageDir;
         //     const assetsLinkStore = await Apify.openDataset('assets-urls');
         //     const data = await assetsLinkStore.getData({
         //         format: 'csv',

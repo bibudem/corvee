@@ -1,6 +1,6 @@
 import { console, Report } from '../../core'
 
-export default function (options = {}) {
+export function webScrapingProtection(options = {}) {
     return {
         name: 'web-scraping-protected',
         type: 'atomic',

@@ -1,5 +1,5 @@
 export * from './browsing-context-store'
-export * from './cache'
+export * from './default-link-parser'
 export * from './default-options'
 export * from './harvester'
 export * from './redirection-pool'
