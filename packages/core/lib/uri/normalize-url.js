@@ -1,8 +1,8 @@
-import fs from "fs";
 import * as URI from 'uri-js'
-import URL from "url";
-import apifyUtils from "apify-shared/utilities";
-import { isObject } from "underscore";
+import URL from "url"
+import apifyUtils from "apify-shared/utilities"
+import { isObject } from "underscore"
+import { console } from '..'
 
 /**
  * Returns a normalized url
@@ -57,109 +57,62 @@ export const normalizeUrl = (url, options) => {
         return URI.normalize(url);
     }
 
-    const urlObj = apifyUtils.parseUrl(url.trim());
-    if (!urlObj.protocol || !urlObj.host) {
-        return null;
+    // if (/^https?$/i.test(uriObj.scheme) && uriObj.path && uriObj.path.indexOf('@') > 0) {
+    if (options.sortParams && uriObj.query) {
+        const params = uriObj.query ?
+            uriObj.query
+                .split("&")
+                .filter(param => {
+                    return !/^utm_/.test(param);
+                }) : [];
+        params.sort()
+        uriObj.query = params.join('&')
     }
 
-    const path = urlObj.path.replace(/\/$/, "");
-    const params = urlObj.query ?
-        urlObj.query
-            .split("&")
-            .filter(param => {
-                return !/^utm_/.test(param);
-            }) : [];
-    if (options.sortParams) {
-        params.sort();
-
-    }
-    let port = "";
-    if (urlObj.port) {
-        if (
-            !(urlObj.port === "80" && urlObj.protocol === "http") &&
-            !(urlObj.port === "443" && urlObj.protocol === "https")
-        ) {
-            port = `:${urlObj.port}`;
-        }
+    if (!options.keepFragment) {
+        delete uriObj.fragment
     }
 
-    return `${urlObj.protocol
-        .trim()
-        .toLowerCase()}://${urlObj.host.trim().toLowerCase()}${port}${path.trim()}${params.length ? `?${params.join("&").trim()}` : ""
-        }${options.keepFragment && urlObj.fragment ? `#${urlObj.fragment.trim()}` : ""
-        }`;
-};
+    return URI.serialize(uriObj)
+    // }
 
-export function toXML(data) {
+    // const urlObj = apifyUtils.parseUrl(url.trim());
+    // if (!urlObj.protocol || !urlObj.host) {
+    //     return null;
+    // }
 
-    fs.writeFileSync('out.xml', '<?xml version="1.0"?>\n<linkchecker>', 'utf8');
+    // const path = urlObj.path.replace(/\/$/, "");
+    // const params = urlObj.query ?
+    //     urlObj.query
+    //         .split("&")
+    //         .filter(param => {
+    //             return !/^utm_/.test(param);
+    //         }) : [];
+    // if (options.sortParams) {
+    //     params.sort();
 
-    data.forEach(({
-        urlData,
-        realUrl: finalUrl,
-        id,
-        text,
-        parent,
-        extern,
-        reports,
-        ok,
-        timing,
-        status,
-        statusText
-    } = {
-            ...item
-        }) => {
-        const {
-            infos,
-            warnings,
-            errors
-        } = mapReportsToLinkChecker(reports);
+    // }
+    // let port = "";
+    // if (urlObj.port) {
+    //     if (
+    //         !(urlObj.port === "80" && urlObj.protocol === "http") &&
+    //         !(urlObj.port === "443" && urlObj.protocol === "https")
+    //     ) {
+    //         port = `:${urlObj.port}`;
+    //     }
+    // }
 
-        const urldata = {
-            '@id': id,
-            url: urlData,
-            realUrl: finalUrl,
-            parent,
-            extern: extern ? 1 : 0,
-            checktime: timing,
-            infos,
-            warnings,
-            errors
-        };
-
-        if (ok === 'http::200') {
-            urldata.valid = {
-                '@result': '200 OK',
-                '#text': 1
-            }
-        }
-
-        const xml = xmlbuilder.create({
-            urldata
-        }, {
-            headless: true
-        }).end({
-            pretty: true
-        })
-
-        fs.appendFileSync('out.xml', `\n${xml}`);
-    });
-
-    fs.appendFileSync('out.xml', "\n</linkchecker>");
+    // return `${urlObj.protocol
+    //     .trim()
+    //     .toLowerCase()}://${urlObj.host.trim().toLowerCase()}${port}${path.trim()}${params.length ? `?${params.join("&").trim()}` : ""
+    //     }${options.keepFragment && urlObj.fragment ? `#${urlObj.fragment.trim()}` : ""
+    //     }`;
 }
 
-export function mapReportsToLinkChecker(reports = []) {
-    const infos = [];
-    const warnings = [];
-    const errors = [];
-
-    reports.forEach(report => {
-
-    })
-
-    return {
-        infos,
-        warnings,
-        errors
-    }
+//
+//
+//
+if (require.main === module) {
+    const a = normalizeUrl('HTTP://www.flickr.com:80/photos/37996646802@N01/8139757998?a=b&c=d#allo')
+    console.log(a)
 }
