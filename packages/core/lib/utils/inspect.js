@@ -1,5 +1,5 @@
-import { inspect } from 'util'
+import { inspect as i } from 'util'
 
-inspect.defaultOptions.depth = Infinity;
+i.defaultOptions.depth = 4;
 
-export const inspect = inspect
+export const inspect = i
