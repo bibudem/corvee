@@ -115,7 +115,7 @@ consoleLogger.setLevel = tracer.setLevel;
 
 const logger = {
     setLevel(level) {
-        fileLogger.setLevel(level);
+        fileLogger.setLevel(level)
         consoleLogger.setLevel(level)
     },
     group() {
