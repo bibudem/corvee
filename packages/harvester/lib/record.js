@@ -127,10 +127,6 @@ export function handleResponse(request, response = null, meta = {}) {
         created: new Date().toISOString()
     });
 
-    if ('_browsingContextStack' in request) {
-        baseReport._browsingContextStack = request._browsingContextStack;
-    }
-
     if ('_isNavigationRequest' in request) {
 
         /*
@@ -209,6 +205,10 @@ export function handleResponse(request, response = null, meta = {}) {
 
         if ('content-type' in response.headers()) {
             record.contentType = response.headers()['content-type'].split(';')[0].trim();
+        }
+
+        if ('content-length' in response.headers()) {
+            record.contentLength = +response.headers()['content-length']
         }
 
         record.httpStatusCode = getFinalStatus(record);
@@ -320,7 +320,6 @@ export function handleResponse(request, response = null, meta = {}) {
             /** @member {string} [urlData] - Url as found when crawling */
             url: request.url,
             isNavigationRequest: 'TODO',
-            redirectChain: [],
             resourceType: 'TODO',
             trials: 0
         },
@@ -335,20 +334,14 @@ export function handleResponse(request, response = null, meta = {}) {
 
 export function handleFailedRequest(request, error, meta) {
     // apify request class
-    console.debug(inspect(request))
+
+    if (arguments.length === 2) {
+        meta = error
+    }
 
     let reports = captureErrors(request.userData.reports);
+    console.todo(inspect(reports))
     delete request.userData.reports;
-
-    if (typeof request.errorMessages !== 'undefined') {
-        const errorMessages = captureErrors(request.errorMessages)
-        reports = reports.concat(errorMessages)
-    }
-
-    if (typeof request.requestErrorMessages !== 'undefined') {
-        const errorMessages = captureErrors(request.requestErrorMessages)
-        reports = reports.concat(errorMessages)
-    }
 
     const baseReport = extend(
         true,
@@ -361,6 +354,23 @@ export function handleFailedRequest(request, error, meta) {
             status: null
         });
 
+    if (meta._from === 'gotoFunction') {
+        const record = extend(
+            true,
+            {},
+            baseReport,
+            {
+                url: request.url,
+            },
+            request.userData,
+            meta
+        );
+
+        delete record.userData;
+
+        return record;
+    }
+
     if (meta._from === 'onNavigationRequestFailed') {
         const record = extend(
             true,
@@ -369,7 +379,6 @@ export function handleFailedRequest(request, error, meta) {
             {
                 url: request.url,
                 isNavigationRequest: true,
-                redirectChain: [],
             },
             request.userData,
             meta

@@ -55,10 +55,14 @@ export class CorveeProcessor extends EventEmitter {
     addPlugin(...filters) {
 
         this._filters = this._filters.concat(...filters.flat(Infinity).map(filter => {
+
+            console.verbose(`Adding filter ${filter.code}`)
+
             filter.matches = 0;
             filter.test = filter.test.bind(this);
             filter.priority = filter.priority || 0;
             this.filterPriorities.set(filter.code, filter.priority);
+
             return filter;
         }));
 
@@ -108,16 +112,21 @@ export class CorveeProcessor extends EventEmitter {
                         if (isPlainObject(testResult)) {
                             record = testResult;
                         } else {
-                            const report = {
-                                code: filter.code,
-                                level: 'level' in filter ? filter.level : 'error'
+                            let report;
+                            if (record.reports.some(report => report.code === filter.code)) {
+                                report = record.reports.find(report => report.code === filter.code)
+                            } else {
+                                report = {
+                                    code: filter.code,
+                                    level: 'level' in filter ? filter.level : 'error'
+                                }
+
+                                record.reports.push(report)
                             }
 
                             if (typeof testResult === 'string') {
-                                report.content = testResult
+                                report._content = testResult
                             }
-
-                            record.reports.push(report)
                         }
 
                         self.emit('filtered', record, filter)
@@ -140,16 +149,16 @@ export class CorveeProcessor extends EventEmitter {
                     process.exit()
                 }
 
-                // Adding messages
+                // // Adding messages
 
-                record.reports.forEach(report => {
-                    var message = self.getMessage(report.code, report.content);
-                    if (message) {
-                        report.message = message;
-                    } else {
-                        self.filtersWithoutMessages.add(report.code);
-                    }
-                })
+                // record.reports.forEach(report => {
+                //     var message = self.getMessage(report.code, report.content);
+                //     if (message) {
+                //         report.message = message;
+                //     } else {
+                //         self.filtersWithoutMessages.add(report.code);
+                //     }
+                // })
 
                 result.push(record)
 
@@ -229,7 +238,8 @@ export class CorveeProcessor extends EventEmitter {
                 // Adding messages
 
                 record.reports.forEach(report => {
-                    var message = self.getMessage(report.code, report.content);
+                    var message = self.getMessage(report.code, report._content);
+                    delete report._content
                     if (message) {
                         report.message = message;
                     } else {
@@ -275,8 +285,6 @@ export class CorveeProcessor extends EventEmitter {
         console.log('Adding messages...')
 
         this.records = doAddMessages(this.records);
-
-
 
         const perFilter = this._filters.map(({
             code,

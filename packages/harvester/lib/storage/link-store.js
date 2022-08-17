@@ -30,7 +30,6 @@ Link props:
 */
 
 const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType contentLength extern size redirectChain errorMessages'.split(' ');
-const linkIntrinsicUserDataProps = 'reports extern'.split(' ');
 
 const linkTemplate = {
     finalUrl: null,
@@ -47,10 +46,15 @@ export class LinkStore {
     constructor() {
         this._linkIdx = new Set();
         this._cache = new LRU(10000)
+        this._store = null
     }
 
     async init() {
-        this._store = await Apify.openKeyValueStore('link-store');
+        this._store = await Apify.openKeyValueStore('link-store')
+        // In case of a --resume option
+        await this._store.forEachKey(async (key) => {
+            this._linkIdx.add(key)
+        })
     }
 
     has(url) {
@@ -65,17 +69,16 @@ export class LinkStore {
         linkData = {},
         options = {}) {
 
+        v(linkData).isObject()
         v(linkData.url, 'url').isString();
 
         const linkId = idFromUrl(linkData.url);
-        const userData = linkData || {}
 
         if (this._linkIdx.has(linkId)) {
             return Promise.resolve();
         }
 
         linkData = pick(linkData, linkIntrinsicProps);
-        // linkData.userData = pick(userData, linkIntrinsicUserDataProps)
 
         await this._store.setValue(linkId, linkData, options);
         this._linkIdx.add(linkId);
@@ -88,7 +91,9 @@ export class LinkStore {
             console.error(inspect(e));
             process.exit();
         }
+
         const linkId = idFromUrl(url);
+
         return this._store.getValue(linkId);
     }
 
@@ -98,13 +103,14 @@ export class LinkStore {
             url,
             ...linkData
         } = data;
+
         v(url, 'url').isString();
 
         const linkId = idFromUrl(url);
 
         if (!this._linkIdx.has(linkId)) {
             console.error('here')
-            console.error(data)
+            console.error(inspect(data))
             throw new Error(data)
         }
 

@@ -25,7 +25,7 @@ export const normalizeUrl = (url, options) => {
     const defaultOpts = {
         base: null,
         keepFragment: false,
-        sortParams: false
+        sortParams: true
     };
 
     if (arguments.length === 2) {
@@ -57,16 +57,23 @@ export const normalizeUrl = (url, options) => {
         return URI.normalize(url);
     }
 
-    // if (/^https?$/i.test(uriObj.scheme) && uriObj.path && uriObj.path.indexOf('@') > 0) {
-    if (options.sortParams && uriObj.query) {
+    if (uriObj.query) {
         const params = uriObj.query ?
             uriObj.query
                 .split("&")
                 .filter(param => {
                     return !/^utm_/.test(param);
                 }) : [];
-        params.sort()
-        uriObj.query = params.join('&')
+
+        if (options.sortParams) {
+            params.sort()
+        }
+
+        if (params.length === 0) {
+            delete uriObj.query
+        } else {
+            uriObj.query = params.join('&')
+        }
     }
 
     if (!options.keepFragment) {
@@ -74,39 +81,6 @@ export const normalizeUrl = (url, options) => {
     }
 
     return URI.serialize(uriObj)
-    // }
-
-    // const urlObj = apifyUtils.parseUrl(url.trim());
-    // if (!urlObj.protocol || !urlObj.host) {
-    //     return null;
-    // }
-
-    // const path = urlObj.path.replace(/\/$/, "");
-    // const params = urlObj.query ?
-    //     urlObj.query
-    //         .split("&")
-    //         .filter(param => {
-    //             return !/^utm_/.test(param);
-    //         }) : [];
-    // if (options.sortParams) {
-    //     params.sort();
-
-    // }
-    // let port = "";
-    // if (urlObj.port) {
-    //     if (
-    //         !(urlObj.port === "80" && urlObj.protocol === "http") &&
-    //         !(urlObj.port === "443" && urlObj.protocol === "https")
-    //     ) {
-    //         port = `:${urlObj.port}`;
-    //     }
-    // }
-
-    // return `${urlObj.protocol
-    //     .trim()
-    //     .toLowerCase()}://${urlObj.host.trim().toLowerCase()}${port}${path.trim()}${params.length ? `?${params.join("&").trim()}` : ""
-    //     }${options.keepFragment && urlObj.fragment ? `#${urlObj.fragment.trim()}` : ""
-    //     }`;
 }
 
 //

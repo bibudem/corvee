@@ -1,6 +1,3 @@
-import harvesterTimedOut from './harvester-timed-out'
-import harvesterUnsupportedScheme from './harvester-unsupported-scheme'
-
 import http200 from './http-200'
 import http30xAllTempRedirects from './http-30x-all-temporary-redirects'
 import http30xPermanentRedirect from './http-30x-permanent-redirect'
@@ -31,8 +28,6 @@ import urlInvalidUrl from './url-invalid-url'
 import urlShorten from './url-shorten'
 
 export const plugins = {
-    harvesterTimedOut,
-    harvesterUnsupportedScheme,
     http200,
     http307,
     http30xAllTempRedirects,

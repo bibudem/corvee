@@ -162,76 +162,31 @@ export default {
         msg: "La connection au site Web n'est pas sécurisée. Des individus malveillants tentent peut-être de subtiliser vos informations personnelles sur le site"
     },
 
-    // "net-errno-10053": {
-    //     code: "net-errno-10053",
-    //     msg: "Le serveur a abandonné la connexion. Vérifiez le lien."
-    // },
-
-    // "net-errno-10054": {
-    //     code: "net-errno-10054",
-    //     msg: "Le serveur a fermé la connexion. Vérifiez le lien."
-    // },
-
-    // "net-errno-10060": {
-    //     code: "net-errno-10060",
-    //     msg: "La tentative de connexion a échoué car le serveur n’a pas répondu au-delà du délais fixé. Vérifiez le lien."
-    // },
-
-    // "net-errno-10061": {
-    //     code: "net-errno-10061",
-    //     msg: "Le serveur a refusé d'établir la connexion. Vérifiez le lien."
-    // },
-
-    // "net-errno-11001": {
-    //     code: "net-errno-11001",
-    //     msg: "La page n'a pas été trouvée. Vérifiez le lien."
-    // },
-
-    // "net-errno-11004": {
-    //     code: "net-errno-11004",
-    //     msg: "Le site n'a pas été trouvé. Vérifiez le lien."
-    // },
-
-    // "[Errno ": {
-    //     code: "[Errno ",
-    //     msg: "Erreur réseau rencontrée lors de la vérification du lien. Vérifiez le lien."
-    // },
-
     "net-timeout": {
         code: "net-timeout",
         msg: "Le serveur n'a pas répondu au-delà du délais fixé. Vérifiez le lien."
     },
 
-    "net-badstatusline": {
-        code: "net-badstatusline",
-        msg: "Erreur LinkChecker. Veuillez vérifier le lien."
-    },
-
     "url-invalid-url": {
         code: "url-invalid-url",
-        msg: "L'URL n'est pas reconnue ou n'a pas une syntaxe valide."
+        msg: "L'URL n'a pas une syntaxe valide.",
+        pattern: "(.+)",
+        substitution: "L'URL n'a pas une syntaxe valide: $1"
     },
 
-    "url-content-duplicate": {
-        code: "url-content-duplicate",
-        pattern: "is the same as in URLs(.+)",
-        substitution: "Cette cible a un contenu identique à $1",
-        msg: "Contenu dupliqué"
-    },
+    // "url-content-duplicate": {
+    //     code: "url-content-duplicate",
+    //     pattern: "is the same as in URLs(.+)",
+    //     substitution: "Cette cible a un contenu identique à $1",
+    //     msg: "Contenu dupliqué"
+    // },
 
-    "urlerror-unknown": {
-        code: "urlerror-unknown",
-        substitution: "Schème d'URL inconnu: “ $1 “.",
-        pattern: "type:\\s*(.+)&",
-        msg: "Schème d 'URL inconnu."
-    },
-
-    "urlerror-3": {
-        code: "urlerror-3",
-        substitution: "Le chemin d'accès spécifié est introuvable: $1.",
-        pattern: "u'(.+)'",
-        msg: "Le chemin d 'accès spécifié est introuvable."
-    },
+    // "urlerror-unknown": {
+    //     code: "urlerror-unknown",
+    //     substitution: "Schème d'URL inconnu: “ $1 “.",
+    //     pattern: "type:\\s*(.+)&",
+    //     msg: "Schème d 'URL inconnu."
+    // },
 
     "test-debug": {
         code: "test-debug",

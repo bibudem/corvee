@@ -24,6 +24,7 @@ export const defaultHarvesterOptions = {
     // Public options
     //
 
+    // URL patterns that will be blocked from external requests
     blockRequestsFromUrlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com'],
     // Wether to check extern links or not
     checkExtern: true,
@@ -31,7 +32,7 @@ export const defaultHarvesterOptions = {
     // URLs matching the given strings / regular expression will be ignored and not checked.
     ignore: [],
     ignoreDefaults: ['www.google-analytics.com', '/gtag/js', 'ga.js', 'analytics.js', 'https://www.googleadservices.com/', 'doubleclick.net'],
-    // Array of URLs matching the given strings / regular expressions. These URLs define the scope of the crawling
+    // Array of URLs matching the given strings / regular expressions. These URLs define the scope of the crawling ("intern" links)
     internLinks: [],
     linkParserDelay: 0,
     logLevel: 'info',
@@ -51,6 +52,7 @@ export const defaultHarvesterOptions = {
     schemes: [],
     schemesDefaults: ['corvee', 'http', 'https'],
     storageDir: join(tmpDir, '.storage'),
+    useRandomUserAgent: false,
     waitInterval: 50,
 }
 

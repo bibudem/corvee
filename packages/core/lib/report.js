@@ -1,16 +1,24 @@
 export class Report {
     constructor(code = null, {
         message = null,
+        level = null,
+        stack,
         _fixme,
         _from,
         ...data
     } = {}) {
         this.code = code;
-        this.finalUrl = null;
-        this.url = null;
+
+        if (level) {
+            this.level = level
+        }
 
         if (message) {
             this.message = message;
+        }
+
+        if (stack) {
+            this.stack = stack;
         }
 
         if (_fixme) {

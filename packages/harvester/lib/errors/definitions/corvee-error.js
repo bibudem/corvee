@@ -1,4 +1,4 @@
-import { ERROR_PROPS } from './error'
+import { ERROR_PROPS, BaseError } from './error'
 
 export const CORVEE_ERROR_DEF = {
     name: 'CORVEE_ERROR',
@@ -20,19 +20,15 @@ export const errorCodes = {
     'cv-unsupported-scheme': 'Unsupported scheme.',
 }
 
-export class CorveeError extends Error {
+export class CorveeError extends BaseError {
     constructor(msg, code, properties) {
         code = code || `${CORVEE_ERROR_DEF.prefix}-error`
         if (code in errorCodes) {
             msg = msg || errorCodes[code];
             super(msg)
-            this.name = this.constructor.name;
-            this.level = 'info'
             this.code = code
-            this.message = msg
 
             Object.assign(this, properties)
-            Error.captureStackTrace(this, this.constructor);
             return;
         }
 

@@ -10,7 +10,7 @@ export class BrowsingContextStore {
                 .keys(data)
                 .forEach(parentUrl => {
                     data[parentUrl].forEach(url => {
-                        this.addContext(url, parentUrl)
+                        this.addContext(normalizeUrl(url), normalizeUrl(parentUrl))
                     })
                 })
         }
@@ -43,7 +43,7 @@ export class BrowsingContextStore {
 
         const findParentsFor = (url) => {
             return [...this._cache.keys()].filter(key => {
-                return [...this._cache.get(key)].includes(normalizeUrl(url))
+                return [...this._cache.get(key)].includes(url)
             })
         }
 
@@ -59,8 +59,10 @@ export class BrowsingContextStore {
                     return ret;
                 })
             }
+            return []
         }
 
+        url = normalizeUrl(url)
         const result = doFind(url);
         return result;
     }

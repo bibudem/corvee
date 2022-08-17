@@ -1,3 +1,5 @@
+import { console, inspect } from '../../core'
+
 export function messageFactory(messages) {
 
     Object.keys(messages).forEach(m => {

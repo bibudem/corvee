@@ -1,14 +1,13 @@
-import _ from 'underscore'
+import { extend } from 'underscore'
 import paramCase from 'param-case'
 import { inspect, console } from '../../../core'
 
 import { PREFIX_SEPARATOR, ERROR_PROPS, CORVEE_ERROR_DEF, PUP_ERROR_DEF, MAIL_ERROR_DEF, NET_ERROR_DEF, SSL_ERROR_DEF, HTTP_ERROR_DEF, URL_ERROR_DEF, SYSTEM_ERROR_DEF, NODE_ERROR_DEF, ERROR_DEF } from '.'
 
-
 const TIMEOUT_ERROR_DEF = {
     name: 'TIMEOUT_ERROR',
     prefix: 'cv',
-    props: _.extend({}, ERROR_PROPS, {
+    props: extend({}, ERROR_PROPS, {
         name: 'code'
     }),
     test: function (err) {
@@ -24,7 +23,6 @@ export function normalizeError(err, defName) {
     let found = false;
     for (const errorDef of errorDefs) {
         if ((typeof defName === 'string' && defName === errorDef.name) || errorDef.test(err)) {
-            // console.debug(`is ${errorDef.name}`);
             translator = errorDef.props;
             prefix = errorDef.prefix;
             found = true;
@@ -62,7 +60,9 @@ export function normalizeError(err, defName) {
     })
 
     if ('code' in ret) {
-        ret.code = paramCase(`${prefix}${PREFIX_SEPARATOR}${ret.code.replace(/^ERR_/i, '')}`)
+        if (/^ERR_/.test(ret.code)) {
+            ret.code = paramCase(`${prefix}${PREFIX_SEPARATOR}${ret.code.replace(/^ERR_/i, '')}`)
+        }
     }
 
     return ret;

@@ -29,7 +29,7 @@ export function HttpError(pupResponse) {
     return httpError;
 };
 
-const addStatusRelatedData = (httpError, res) => {
+function addStatusRelatedData(httpError, res) {
 
     const status = res.status();
 

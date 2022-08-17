@@ -50,7 +50,9 @@ async function doGetResponseData(response) {
                 size = null
             }
         }
-    } catch (e) { }
+    } catch (error) {
+        console.todo(inspect(error))
+    }
 
     return {
         url,

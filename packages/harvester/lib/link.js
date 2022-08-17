@@ -1,13 +1,18 @@
 import v from 'io-validate'
 import { isObject } from 'underscore'
+import { normalizeUrl, console } from '../../core/lib'
 const extend = require('extend')
 
 const userDataDefaults = {
+    url: null,
+    finalUrl: null,
+    level: 0,
     parent: 'corvee:url-list',
+    redirectChain: [],
     reports: [],
     trials: 1,
-    level: 0,
-    urlData: null
+    urlData: null,
+    browsingContextStack: []
 }
 
 /*
@@ -40,10 +45,10 @@ const userDataDefaults = {
  */
 
 export class Link {
-    constructor(uri, data) {
+    constructor(uri, data = {}) {
 
         v(uri).is('object', 'string');
-        v(data).is('object', 'string', 'undefined')
+        v(data).is('object', 'string')
 
         if (typeof data === 'string') {
             data = {
@@ -51,17 +56,19 @@ export class Link {
             }
         }
 
+        data.urlData = data.urlData || uri
+
         if (isObject(uri)) {
 
             if (uri.constructor.name === 'Link') {
-                return new Link(uri.url, extend(true, {}, (uri.userData || {}), (data || {})));
+                return new Link(normalizeUrl(uri.url), extend(true, data, (uri.userData || {})));
             }
 
             data = uri;
 
             v(data, 'data').has('url')
 
-            this.url = data.url;
+            this.url = normalizeUrl(data.url);
             this.userData = extend(
                 true,
                 {},
@@ -77,9 +84,7 @@ export class Link {
             return;
         }
 
-        this.url = uri;
-        this.userData = extend(true, {}, userDataDefaults, {
-            url: uri
-        }, data);
+        this.url = normalizeUrl(uri);
+        this.userData = extend(true, {}, userDataDefaults, { url: this.url }, data);
     }
 }

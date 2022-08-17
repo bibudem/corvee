@@ -3,7 +3,7 @@ export default {
   description: 'Matches any report with an invalid URL.',
   test: (record) => {
     if (record.reports.some(report => report.code && report.code === 'url-invalid-url')) {
-      return record;
+      return record.urlData;
     }
   },
   level: 'error'

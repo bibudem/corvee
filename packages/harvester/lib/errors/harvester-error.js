@@ -1,8 +1,9 @@
-export class HarvesterError extends Error {
+import { BaseError } from "./definitions"
+
+export class HarvesterError extends BaseError {
     constructor(message) {
         super(message);
-        this.name = this.constructor.name
-        this.message = message
+        this.code = 'harvester-error'
     }
 }
 
@@ -11,13 +12,5 @@ export class UnsupportedSchemeError extends HarvesterError {
         super(`Unsupported scheme: ${message}${uri ? ` at uri <${uri}>` : ''}`);
         this.code = 'harvester-unsupported-scheme'
         this.uri = uri
-    }
-}
-
-export class TimedOutError extends HarvesterError {
-    constructor(message, url) {
-        super(message)
-        this.code = 'harvester-timed-out'
-        this.url = url
     }
 }
