@@ -1,7 +1,7 @@
 import v from 'io-validate'
+const extend = require('extend')
 import { isObject } from 'underscore'
 import { normalizeUrl, console } from '../../core/lib'
-const extend = require('extend')
 
 const userDataDefaults = {
     url: null,
@@ -52,7 +52,7 @@ export class Link {
 
         if (typeof data === 'string') {
             data = {
-                parent: data
+                parent: normalizeUrl(data)
             }
         }
 
@@ -61,7 +61,7 @@ export class Link {
         if (isObject(uri)) {
 
             if (uri.constructor.name === 'Link') {
-                return new Link(normalizeUrl(uri.url), extend(true, data, (uri.userData || {})));
+                return new Link(uri.url, extend(true, data, (uri.userData || {})));
             }
 
             data = uri;
@@ -81,10 +81,18 @@ export class Link {
 
             delete this.userData.userData
 
+            if (this.userData.parent) {
+                this.userData.parent = normalizeUrl(this.userData.parent)
+            }
+
             return;
         }
 
         this.url = normalizeUrl(uri);
         this.userData = extend(true, {}, userDataDefaults, { url: this.url }, data);
+
+        if (this.userData.parent) {
+            this.userData.parent = normalizeUrl(this.userData.parent)
+        }
     }
 }

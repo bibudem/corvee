@@ -52,6 +52,7 @@ export const defaultHarvesterOptions = {
     schemes: [],
     schemesDefaults: ['corvee', 'http', 'https'],
     storageDir: join(tmpDir, '.storage'),
+    urlNormalizeFunction: null,
     useRandomUserAgent: false,
     waitInterval: 50,
 }
@@ -74,7 +75,7 @@ export const defaultLaunchPuppeteerOptions = {
 
     // Browser launch argument options
     // see https://pptr.dev/api/puppeteer.browserlaunchargumentoptions/
-    // args: [],
+    args: ['--use-gl=egl'],
     headless: true,
     userDataDir: join(tmpDir, '.userData'),
 

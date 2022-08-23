@@ -20,8 +20,9 @@ import http503 from './http-503'
 import http550 from './http-550'
 import http5xx from './http-5xx'
 
-import net from './net'
-import netCert from './net-cert'
+import netSystem from './net-system'
+import netConnection from './net-connection'
+import netCertificate from './net-certificate'
 
 import urlIgnoreThese from './url-ignore-these'
 import urlInvalidUrl from './url-invalid-url'
@@ -50,8 +51,9 @@ export const plugins = {
     http550,
     // http5xx,
 
-    net,
-    netCert,
+    netSystem,
+    netConnection,
+    netCertificate,
 
     urlIgnoreThese,
     urlInvalidUrl,

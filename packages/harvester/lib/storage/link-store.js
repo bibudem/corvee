@@ -29,7 +29,7 @@ Link props:
    extern
 */
 
-const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType contentLength extern size redirectChain errorMessages'.split(' ');
+const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType contentLength extern size redirectChain reports'.split(' ');
 
 const linkTemplate = {
     finalUrl: null,

@@ -3,11 +3,7 @@ import { ERROR_PROPS, BaseError } from './error'
 export const CORVEE_ERROR_DEF = {
     name: 'CORVEE_ERROR',
     prefix: 'cv',
-    props: Object.assign({}, ERROR_PROPS, {
-        // name: 'name',
-        message: 'message',
-        code: 'code'
-    }),
+    props: Object.assign({}, ERROR_PROPS),
     test: function (err) {
         return err instanceof CorveeError;
     }

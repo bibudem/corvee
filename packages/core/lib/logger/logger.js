@@ -64,7 +64,8 @@ const tracerLevelColors = {
 const DEFAULT_LEVEL = 'debug'
 
 // const logFilePath = join(process.mainModule.path, `console.log`)
-const logFilePath = join(process.mainModule.path, 'logs', `console-${argv.$0.split('.')[0]}-${job}.log`)
+const basePath = process.mainModule ? process.mainModule.path : __dirname;
+const logFilePath = join(basePath, 'logs', `console-${argv.$0.split('.')[0]}-${job}.log`)
 
 try {
     fs.unlinkSync(logFilePath)

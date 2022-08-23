@@ -36,9 +36,9 @@ export class CorveeProcessor extends EventEmitter {
         this.filtersWithoutMessages = new Set();
     }
 
-    isMuted(report) {
+    isMuted(record) {
 
-        return report.reports.every(report => LEVELS[report.level] < this.config.errorLevel)
+        return record.reports.every(report => LEVELS[report.level] < this.config.errorLevel)
     }
 
     addErrors(...errors) {
@@ -90,7 +90,8 @@ export class CorveeProcessor extends EventEmitter {
             return record;
         });
 
-        this.records = records;
+        this.records = [...this.records, ...records]
+
         const filteredrecords = new Set();
         var nbIn = this.records.length,
             excluded = {},
@@ -112,21 +113,25 @@ export class CorveeProcessor extends EventEmitter {
                         if (isPlainObject(testResult)) {
                             record = testResult;
                         } else {
-                            let report;
+                            let report, index;
+
                             if (record.reports.some(report => report.code === filter.code)) {
                                 report = record.reports.find(report => report.code === filter.code)
+                                index = record.reports.findIndex(report => report.code === filter.code)
+                                record.reports.splice(index, 1)
                             } else {
                                 report = {
                                     code: filter.code,
                                     level: 'level' in filter ? filter.level : 'error'
                                 }
-
-                                record.reports.push(report)
+                                index = record.reports.length
                             }
 
                             if (typeof testResult === 'string') {
                                 report._content = testResult
                             }
+
+                            record.reports.splice(index, 0, report)
                         }
 
                         self.emit('filtered', record, filter)

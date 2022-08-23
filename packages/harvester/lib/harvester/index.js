@@ -1,5 +1,7 @@
 export * from './browsing-context-store'
 export * from './default-link-parser'
 export * from './default-options'
+export * from './get-performance-data'
+export * from './get-timing-for'
 export * from './harvester'
 export * from './redirection-pool'

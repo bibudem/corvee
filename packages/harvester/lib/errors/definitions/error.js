@@ -1,8 +1,9 @@
 export const ERROR_PROPS = {
-    message: 'message',
     code: 'code',
+    level: 'level',
+    message: 'message',
+    name: 'name',
     stack: 'stack',
-    level: 'level'
 }
 
 export const ERROR_DEF = {
@@ -19,7 +20,18 @@ export class BaseError extends Error {
         super(msg)
         this.name = this.constructor.name;
         this.level = 'info'
-        this.message = msg
+        this.code = 'error'
+
+        Object.defineProperty(this, 'message', {
+            enumerable: true,
+            value: msg
+        })
+
         Error.captureStackTrace(this, this.constructor);
+
+        Object.defineProperty(this, 'stack', {
+            enumerable: true,
+            value: this.stack
+        })
     }
 }

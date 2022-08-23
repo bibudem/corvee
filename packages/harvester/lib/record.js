@@ -1,7 +1,7 @@
 import dotProp from 'dot-prop';
 const extend = require('extend');
 
-import { absUrl, normalizeUrl, console, inspect } from './../../core'
+import { absUrl, console, inspect } from './../../core'
 import { ResourceType } from './resource-type';
 import { captureErrors } from './errors';
 
@@ -333,14 +333,14 @@ export function handleResponse(request, response = null, meta = {}) {
 }
 
 export function handleFailedRequest(request, error, meta) {
-    // apify request class
+    // apify Request class
 
     if (arguments.length === 2) {
         meta = error
     }
 
     let reports = captureErrors(request.userData.reports);
-    console.todo(inspect(reports))
+
     delete request.userData.reports;
 
     const baseReport = extend(
@@ -350,11 +350,10 @@ export function handleFailedRequest(request, error, meta) {
         {
             reports,
             trials: request.retryCount,
-            created: new Date().toISOString(),
-            status: null
+            created: new Date().toISOString()
         });
 
-    if (meta._from === 'gotoFunction') {
+    if (meta._from === 'gotoFunction' || meta._from === 'page.goto().catch()') {
         const record = extend(
             true,
             {},

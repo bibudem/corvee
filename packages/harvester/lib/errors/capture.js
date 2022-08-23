@@ -1,10 +1,6 @@
-import * as chromiumNetErrors from 'chromium-net-errors'
-import createHttpError, { HttpError } from 'http-errors'
-import statuses from 'statuses'
 import { extend, pick } from 'underscore'
-import isNumber from 'is-number'
 import { normalizeError } from './normalize'
-import { FailedToLaunchError, TimedOutError, BrowserHasDisconnectedError, MailError, CorveeError, PageCrashedError, TargetClosedError, UrlError } from './definitions'
+import { FailedToLaunchError, HttpError, BrowserHasDisconnectedError, MailError, NetError, CorveeError, PageCrashedError, TimeoutError, TargetClosedError, UrlError } from './definitions'
 import { Report, console, inspect } from '../../../core'
 
 function makeReport(rawData) {
@@ -30,14 +26,14 @@ export function captureErrors(data) {
 export function captureError(errorOrString) {
 
     //
-    // HttpError class
+    // Chromium Net error
     //
-    if (isNumber(errorOrString) && typeof statuses[errorOrString] !== 'undefined') {
-        errorOrString = makeReport(createHttpError(errorOrString));
-    }
-
     if (typeof errorOrString === 'object' && 'message' in errorOrString && /net::ERR_([^ ]+)/i.test(errorOrString.message)) {
-        errorOrString = errorOrString.message
+
+        const netError = new NetError(errorOrString.message);
+        netError._from = "/net::ERR_([^ ]+)/i.test(errorOrString)"
+
+        return netError
     }
 
     //
@@ -45,55 +41,57 @@ export function captureError(errorOrString) {
     //
     if (typeof errorOrString === 'object' && errorOrString.constructor.name === 'Error') {
         if (errorOrString.message === 'Page crashed!') {
+
             const pageCrashedError = new PageCrashedError(errorOrString.message)
 
-            return makeReport(extend(normalizeError(pageCrashedError), {
-                _from: 'Puppeteer / crawler errors'
-            }))
+            // return makeReport(extend(normalizeError(pageCrashedError), {
+            //     _from: 'Puppeteer / crawler errors'
+            // }))
+
+            pageCrashedError._from = 'Puppeteer / crawler errors (OBJECT)'
+
+            return pageCrashedError
         }
 
-        if (errorOrString.message.startsWith('PuppeteerCrawler: handlePageFunction timed out after')) {
-            const timedOutError = new TimedOutError(errorOrString.message)
+        if (errorOrString.message.startsWith('PuppeteerCrawler: handlePageFunction timed out after')
+            || errorOrString.message.startsWith('Navigation Timeout Exceeded:')) {
+            const timeoutError = new TimeoutError(errorOrString.message)
 
-            return makeReport(extend(normalizeError(timedOutError), {
-                _from: 'Puppeteer / crawler errors'
-            }))
+            // return makeReport(extend(normalizeError(timedOutError), {
+            //     _from: 'Puppeteer / crawler errors'
+            // }))
+
+            timeoutError._from = 'Puppeteer / crawler errors (OBJECT)'
+
+            return timeoutError
         }
 
         if (errorOrString.message === 'Navigation failed because browser has disconnected!') {
             const browserHasDisconnectedError = new BrowserHasDisconnectedError(errorOrString.message)
 
-            return makeReport(extend(normalizeError(browserHasDisconnectedError), {
-                _from: 'Puppeteer / crawler errors'
-            }))
+            // return makeReport(extend(normalizeError(browserHasDisconnectedError), {
+            //     _from: 'Puppeteer / crawler errors'
+            // }))
+
+            browserHasDisconnectedError._from = 'Puppeteer / crawler errors (OBJECT)'
+
+            return browserHasDisconnectedError
         }
 
         if (errorOrString.message === 'Protocol error (Runtime.addBinding): Target closed.') {
             const targetClosedError = new TargetClosedError(errorOrString.message)
 
-            return makeReport(extend(normalizeError(targetClosedError), {
-                _from: 'Puppeteer / crawler errors'
-            }))
+            // return makeReport(extend(normalizeError(targetClosedError), {
+            //     _from: 'Puppeteer / crawler errors'
+            // }))
+
+            targetClosedError._from = 'Puppeteer / crawler errors (OBJECT)'
+
+            return targetClosedError
         }
     }
 
     if (typeof errorOrString === 'string') {
-
-        //
-        // Chromium error
-        //
-        if (/net::ERR_([^ ]+)/i.test(errorOrString)) {
-            const desc = /(?:net::ERR_)([^ ]+)/i.exec(errorOrString)[1];
-
-            const ChromiumNetError = chromiumNetErrors.getErrorByDescription(desc);
-
-            const chromiumNetError = new ChromiumNetError();
-
-            return makeReport(extend(normalizeError(chromiumNetError), {
-                _from: "typeof errorOrString === 'string'",
-                _original: Object.assign({}, chromiumNetError)
-            }))
-        }
 
         //
         // Puppeteer / crawler errors
@@ -101,9 +99,13 @@ export function captureError(errorOrString) {
         if (errorOrString.indexOf('Error: Failed to launch chrome!') > 0) {
             const failedToLaunchError = new FailedToLaunchError('Failed to launch chrome.')
 
-            return makeReport(extend(normalizeError(failedToLaunchError), {
-                _from: 'Puppeteer / crawler errors'
-            }))
+            // return makeReport(extend(normalizeError(failedToLaunchError), {
+            //     _from: 'Puppeteer / crawler errors'
+            // }))
+
+            failedToLaunchError._from = 'Puppeteer / crawler errors'
+
+            return failedToLaunchError
         }
 
         if (
@@ -111,11 +113,15 @@ export function captureError(errorOrString) {
             || errorOrString.indexOf('PuppeteerCrawler: handlePageFunction timed out after') > 0
             || errorOrString.indexOf('TimedOutError: Harvester timed out.') > 0
         ) {
-            const timedOutError = new TimedOutError('Harvester timed out.')
+            const timedOutError = new TimeoutError('Harvester timed out.')
 
-            return makeReport(extend(normalizeError(timedOutError), {
-                _from: 'Puppeteer / crawler errors'
-            }))
+            // return makeReport(extend(normalizeError(timedOutError), {
+            //     _from: 'Puppeteer / crawler errors'
+            // }))
+
+            timedOutError._from = 'Puppeteer / crawler errors (STRING)'
+
+            return timedOutError
         }
     }
 
@@ -131,9 +137,9 @@ export function captureError(errorOrString) {
         // HttpError class
         if (errorOrString instanceof HttpError) {
 
-            return makeReport(extend(normalizeError(errorOrString), {
-                _from: 'errorOrString instanceof HttpError'
-            }))
+            errorOrString._from = 'errorOrString instanceof HttpError'
+
+            return errorOrString
         }
 
         //
@@ -141,9 +147,13 @@ export function captureError(errorOrString) {
         //
         if (errorOrString instanceof MailError) {
 
-            return makeReport(extend(normalizeError(errorOrString), {
-                _from: 'errorOrString instanceof MailError'
-            }))
+            // return makeReport(extend(normalizeError(errorOrString), {
+            //     _from: 'errorOrString instanceof MailError'
+            // }))
+
+            errorOrString._from = 'errorOrString instanceof MailError'
+
+            return errorOrString
         }
 
         //
@@ -151,9 +161,15 @@ export function captureError(errorOrString) {
         //
         if (errorOrString.constructor.name === 'TimeoutError') {
 
-            return makeReport(extend(normalizeError(errorOrString), {
-                _from: 'errorOrString.constructor.name === \'TimeoutError\''
-            }))
+            // return makeReport(extend(normalizeError(errorOrString), {
+            //     _from: 'errorOrString.constructor.name === \'TimeoutError\''
+            // }))
+
+            errorOrString = new TimeoutError(errorOrString.message)
+
+            errorOrString._from = 'errorOrString.constructor.name === \'TimeoutError\''
+
+            return errorOrString
         }
 
         //
@@ -168,9 +184,13 @@ export function captureError(errorOrString) {
         //
         if (errorOrString instanceof UrlError) {
 
-            return makeReport(extend(normalizeError(errorOrString), {
-                _from: 'errorOrString instanceof UrlError'
-            }))
+            // return makeReport(extend(normalizeError(errorOrString), {
+            //     _from: 'errorOrString instanceof UrlError'
+            // }))
+
+            errorOrString._from = 'errorOrString instanceof UrlError'
+
+            return errorOrString
         }
 
         //
@@ -180,10 +200,10 @@ export function captureError(errorOrString) {
         const normalizedErrorDefaults = {
             level: 'info',
             _from: 'unhandledError',
-            _original: pick(errorOrString, ['code', 'message', 'name', 'stack', 'input', 'type', 'description', 'error'])
+            _original: errorOrString,
         }
 
-        if (typeof normalizedErrorDefaults.code === 'undefined') {
+        if (typeof normalizedError.code === 'undefined') {
             normalizedErrorDefaults.code = 'unhandled-error';
             normalizedErrorDefaults._fixme = true;
         }

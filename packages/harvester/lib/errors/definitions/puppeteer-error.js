@@ -13,7 +13,6 @@ export class PuppeteerError extends BaseError {
   constructor(message) {
     super(message);
     this.code = 'pup-error'
-    this.stack = null
   }
 }
 
@@ -24,10 +23,10 @@ export class FailedToLaunchError extends PuppeteerError {
   }
 }
 
-export class TimedOutError extends PuppeteerError {
+export class TimeoutError extends PuppeteerError {
   constructor(message, url) {
     super(message)
-    this.code = 'pup-timed-out'
+    this.code = 'pup-timeout'
     this.url = url
   }
 }

@@ -1,6 +1,4 @@
 import * as URI from 'uri-js'
-import URL from "url"
-import apifyUtils from "apify-shared/utilities"
 import { isObject } from "underscore"
 import { console } from '..'
 
@@ -12,6 +10,21 @@ import { console } from '..'
  * @param {string} opts.base               URL to serve as base to resolve the url.
  * @param {boolean=true} opts.keepFragment Wether to keep the URL fragment.
  * @param {boolean=false} opts.sortParams  Sort parameters
+ * @example
+ * // returns 'http://www.flickr.com/photos/37996646802@N01/8139757998?a=bar&b=foo'
+ * normalizeUrl('HTTP://www.flickr.com:80/photos/37996646802@N01/8139757998?b=foo&a=bar#allo')
+ * @example
+ * // returns 'http://www.flickr.com/photos/37996646802@N01/8139757998?a=b&c=d#allo'
+ * normalizeUrl('HTTP://www.flickr.com:80/photos/37996646802@N01/8139757998?a=b&c=d#allo', true)
+ * @example
+ * // returns 'http://www.flickr.com/photos/37996646802@N01/8139757998?a=bar&b=foo'
+ * normalizeUrl('photos/37996646802@N01/8139757998?b=foo&a=bar', 'HTTP://www.flickr.com:80/')
+ * @example
+ * // returns 'http://www.flickr.com/photos/37996646802@N01/8139757998?b=foo&a=bar'
+ * normalizeUrl('./37996646802@N01/8139757998?b=foo&a=bar#allo', {
+ *  base: 'HTTP://www.flickr.com:80/photos',
+ *  sortParams: false
+ * })
  *
  * @return {string} A normalized url.
  */
@@ -87,6 +100,6 @@ export const normalizeUrl = (url, options) => {
 //
 //
 if (require.main === module) {
-    const a = normalizeUrl('HTTP://www.flickr.com:80/photos/37996646802@N01/8139757998?a=b&c=d#allo')
+    const a = normalizeUrl('https://libguides.bib.umontreal.ca/az.php?func=find-db-1-category&mode=category&restricted=all&sequence=000000434', true)
     console.log(a)
 }

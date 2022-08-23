@@ -1,5 +1,8 @@
+import { STATUS_CODES } from 'http'
+import v from 'io-validate'
 import _ from 'underscore'
-import createHttpError, { HttpError as HttpErrorClass } from 'http-errors'
+import toIdentifier from 'toidentifier'
+import { BaseError } from './error'
 
 export const HTTP_ERROR_DEF = {
     name: 'HTTP_ERROR',
@@ -13,32 +16,19 @@ export const HTTP_ERROR_DEF = {
         status: ['code', 'errno']
     },
     test: function (err) {
-        return err instanceof HttpErrorClass
+        return err instanceof HttpError
     }
 }
 
-export function HttpError(pupResponse) {
-    const status = pupResponse.status()
-    const httpError = createHttpError(status, pupResponse.statusText(), {
-        url: pupResponse.request().url(),
-        //body
-    })
+export class HttpError extends BaseError {
+    constructor(status, statusText) {
 
-    addStatusRelatedData(httpError, pupResponse)
+        v(status).is('number').equalOrGreaterThan(400).lessThan(600)
 
-    return httpError;
-};
+        this.code = `http-${status}`
+        this.message = statusText ? statusText : STATUS_CODES[status]
+        this.level = status < 400 ? 'warning' : 'error'
+        this.name = toIdentifier(STATUS_CODES[status])
 
-function addStatusRelatedData(httpError, res) {
-
-    const status = res.status();
-
-    switch (status) {
-        case 429:
-            const headers = res.headers()
-            if ('retry-after' in headers) {
-                httpError._data = _.pick(headers, 'retry-after')
-            }
-            break;
     }
 }
