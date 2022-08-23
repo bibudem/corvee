@@ -856,7 +856,7 @@ export class Harvester extends EventEmitter {
                         console.debug('waiting done')
                     }
 
-                    links = await page.evaluate(self.linkParser, { version: 'toto' })
+                    links = await page.evaluate(self.linkParser)
 
                 } catch (error) {
                     console.todo(`Could not parse links in page ${page.url()}. Error: ${inspect(error)}`)
@@ -874,11 +874,14 @@ export class Harvester extends EventEmitter {
                         v(link).has('url').isString().not.isEmpty()
                         return link;
                     })
-                    .map(link => (Object.assign(link, {
-                        url: normalizeUrl(link.url),
-                        parent,
-                        isNavigationRequest: true
-                    })))
+                    // .map(link => (Object.assign(link, {
+                    //     url: normalizeUrl(link.url),
+                    //     parent,
+                    //     isNavigationRequest: true
+                    // })))
+                    .map(({ url, ...urlData }) => {
+                        return new Link(url, { ...urlData, parent, isNavigationRequest: true })
+                    })
                     .filter(link => {
 
                         if (self.shouldIgnoreUrl(link.url)) {
@@ -896,19 +899,30 @@ export class Harvester extends EventEmitter {
                     .filter(link => link.url !== parent) // exclude internal links (href="#some-anchor")
                     .forEach(link => {
 
-                        const req = {
+                        // const req = {
+                        //     url: link.url,
+                        //     uniqueKey: link.url,
+                        //     userData: Object.assign(link, {
+                        //         _from: 'parseLinksInPage',
+                        //         parent,
+                        //         extern: self.isExternLink(link.url),
+                        //         reports: [],
+                        //         level: nextLevel
+                        //     })
+                        // };
+
+                        // ret.push(req);
+
+                        ret.push({
                             url: link.url,
                             uniqueKey: link.url,
-                            userData: Object.assign(link, {
+                            userData: {
+                                ...link.userData,
                                 _from: 'parseLinksInPage',
-                                parent,
                                 extern: self.isExternLink(link.url),
-                                reports: [],
                                 level: nextLevel
-                            })
-                        };
-
-                        ret.push(req);
+                            }
+                        })
                     });
 
                 return ret;
@@ -1036,6 +1050,10 @@ export class Harvester extends EventEmitter {
                     return new Promise(async (resolve, reject) => {
 
                         self.queue.add(async () => {
+
+                            if (request.userData._ignore) {
+                                return reject()
+                            }
 
                             request.userData.trials = request.retryCount;
 
@@ -1202,6 +1220,10 @@ export class Harvester extends EventEmitter {
 
                             page.on('requestfailed', async function onDocumentDownload(pupRequest) {
 
+                                if (request.userData._ignore) {
+                                    return Promise.resolve()
+                                }
+
                                 //
                                 // Here we process navigation downloads
                                 // pdf, zip, docx, etc. documents
@@ -1233,7 +1255,7 @@ export class Harvester extends EventEmitter {
 
                                         self.session.counts.success++
 
-                                        request._ignore = true;
+                                        request.userData._ignore = true
 
                                         return Promise.resolve()
                                     }
@@ -1493,8 +1515,9 @@ export class Harvester extends EventEmitter {
                                     resolve(response);
                                 })
                                 .catch(async function onDocumentRequestFailed(error) {
+                                    console.todo(request)
 
-                                    if (request._ignore) {
+                                    if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
                                         // This is handled at onDocumentDownload (pdf downloads)
                                         return resolve()
                                     }
@@ -1570,6 +1593,10 @@ Request: ${inspect(request)}`)
 request: ${inspect(request)}
 response: ${inspect(pupResponse)}`)
 
+                    if (request.userData._ignore) {
+                        return Promise.resolve()
+                    }
+
                     //
                     // Main navigation responses handler
                     // Here we process navigation responses. Some handling is also done on a `onNavigationResponse` handler registered on page.on()
@@ -1598,7 +1625,7 @@ response: ${inspect(pupResponse)}`)
 
                         // throw `Response is ${pupResponse}`
 
-                        request._ignore = true
+                        request.userData._ignore = true
 
                         //
                         // These cases should be all handled at page.goto().catch()
@@ -1754,7 +1781,7 @@ Exiting now...`)
                     //
                     //
 
-                    if (request._ignore) {
+                    if (request.userData._ignore) {
                         return;
                     }
 

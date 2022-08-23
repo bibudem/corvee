@@ -20,15 +20,20 @@ import http503 from './http-503'
 import http550 from './http-550'
 import http5xx from './http-5xx'
 
+import mailInvalidSyntax from './mail-invalid-syntax'
+
 import netSystem from './net-system'
 import netConnection from './net-connection'
 import netCertificate from './net-certificate'
+import netHttp from './net-http'
 
 import urlIgnoreThese from './url-ignore-these'
 import urlInvalidUrl from './url-invalid-url'
 import urlShorten from './url-shorten'
 
-export const plugins = {
+export * as messagesFrCA from './messages/fr-CA'
+
+export const filters = {
     http200,
     http307,
     http30xAllTempRedirects,
@@ -51,16 +56,14 @@ export const plugins = {
     http550,
     // http5xx,
 
+    mailInvalidSyntax,
+
     netSystem,
     netConnection,
     netCertificate,
+    netHttp,
 
     urlIgnoreThese,
     urlInvalidUrl,
     urlShorten,
 }
-
-export {
-    default as messages
-}
-    from './messages'

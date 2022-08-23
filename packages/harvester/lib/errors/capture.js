@@ -31,7 +31,7 @@ export function captureError(errorOrString) {
     if (typeof errorOrString === 'object' && 'message' in errorOrString && /net::ERR_([^ ]+)/i.test(errorOrString.message)) {
 
         const netError = new NetError(errorOrString.message);
-        netError._from = "/net::ERR_([^ ]+)/i.test(errorOrString)"
+        netError._from = "/net::ERR_([^ ]+)/i.test(errorOrString) (OBJECT)"
 
         return netError
     }

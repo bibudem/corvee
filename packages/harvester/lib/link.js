@@ -8,10 +8,12 @@ const userDataDefaults = {
     finalUrl: null,
     level: 0,
     parent: 'corvee:url-list',
-    redirectChain: [],
-    reports: [],
+    text: null,
     trials: 1,
     urlData: null,
+    size: null,
+    redirectChain: [],
+    reports: [],
     browsingContextStack: []
 }
 
@@ -61,7 +63,7 @@ export class Link {
         if (isObject(uri)) {
 
             if (uri.constructor.name === 'Link') {
-                return new Link(uri.url, extend(true, data, (uri.userData || {})));
+                return new Link(uri.url, extend(true, { url: uri.url }, data, (uri.userData || {})));
             }
 
             data = uri;

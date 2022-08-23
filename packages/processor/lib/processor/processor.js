@@ -30,10 +30,10 @@ export class CorveeProcessor extends EventEmitter {
         this._errors = [];
         this.config = config;
         this.config.errorLevel = this.config.errorLevel || LEVELS.WARNING;
-        this.addPlugin(filters);
-        this.addErrors(errors);
         this.getMessage = messageFactory(this.config.messages);
         this.filtersWithoutMessages = new Set();
+        this.addFilters(filters);
+        this.addErrors(errors);
     }
 
     isMuted(record) {
@@ -52,7 +52,7 @@ export class CorveeProcessor extends EventEmitter {
         return this;
     }
 
-    addPlugin(...filters) {
+    addFilters(...filters) {
 
         this._filters = this._filters.concat(...filters.flat(Infinity).map(filter => {
 
@@ -128,7 +128,7 @@ export class CorveeProcessor extends EventEmitter {
                             }
 
                             if (typeof testResult === 'string') {
-                                report._content = testResult
+                                report._message = testResult
                             }
 
                             record.reports.splice(index, 0, report)
@@ -153,17 +153,6 @@ export class CorveeProcessor extends EventEmitter {
                     console.info('At record %o', record)
                     process.exit()
                 }
-
-                // // Adding messages
-
-                // record.reports.forEach(report => {
-                //     var message = self.getMessage(report.code, report.content);
-                //     if (message) {
-                //         report.message = message;
-                //     } else {
-                //         self.filtersWithoutMessages.add(report.code);
-                //     }
-                // })
 
                 result.push(record)
 
@@ -243,8 +232,8 @@ export class CorveeProcessor extends EventEmitter {
                 // Adding messages
 
                 record.reports.forEach(report => {
-                    var message = self.getMessage(report.code, report._content);
-                    delete report._content
+                    var message = self.getMessage(report.code, report._message);
+                    delete report._message
                     if (message) {
                         report.message = message;
                     } else {

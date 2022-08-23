@@ -12,7 +12,7 @@ import {
 import {
     default as data2
 }
-from './data-2'
+    from './data-2'
 
 describe('plugin http-30x-missing-slash', () => {
     const processor = new CorveeProcessor(plugin);
@@ -27,7 +27,7 @@ describe('plugin http-30x-missing-slash', () => {
     })
 
     it('should create one report', async () => {
-        processor.addPlugin(noop);
+        processor.addFilters(noop);
         const report = await processor.process(data2);
         expect(report.data[0].reports).toEqual([{
             code: 'http-30x-missing-slash',
