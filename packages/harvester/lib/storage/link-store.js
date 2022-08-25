@@ -3,7 +3,7 @@ import LRU from 'lru'
 import v from 'io-validate'
 import extend from 'extend';
 import { omit, pick } from 'underscore'
-import { idFromUrl, console, inspect } from '../../../core'
+import { idFromUrl, normalizeUrl, console, inspect } from '../../../core'
 
 /*
 Link props:
@@ -60,6 +60,8 @@ export class LinkStore {
     has(url) {
         v(url, 'url').isString();
 
+        url = normalizeUrl(url)
+
         const key = idFromUrl(url);
 
         return this._linkIdx.has(key);
@@ -72,7 +74,7 @@ export class LinkStore {
         v(linkData).isObject()
         v(linkData.url, 'url').isString();
 
-        const linkId = idFromUrl(linkData.url);
+        const linkId = idFromUrl(normalizeUrl(linkData.url));
 
         if (this._linkIdx.has(linkId)) {
             return Promise.resolve();
@@ -92,7 +94,7 @@ export class LinkStore {
             process.exit();
         }
 
-        const linkId = idFromUrl(url);
+        const linkId = idFromUrl(normalizeUrl(url));
 
         return this._store.getValue(linkId);
     }
@@ -106,11 +108,12 @@ export class LinkStore {
 
         v(url, 'url').isString();
 
+        url = normalizeUrl(url)
+
         const linkId = idFromUrl(url);
 
         if (!this._linkIdx.has(linkId)) {
-            console.error('here')
-            console.error(inspect(data))
+            console.error(`This link is not in the link-store: ${inspect(data)}`)
             throw new Error(data)
         }
 

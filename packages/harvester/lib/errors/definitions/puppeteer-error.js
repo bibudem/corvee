@@ -24,42 +24,37 @@ export class FailedToLaunchError extends PuppeteerError {
 }
 
 export class TimeoutError extends PuppeteerError {
-  constructor(message, url) {
+  constructor(message) {
     super(message)
     this.code = 'pup-timeout'
-    this.url = url
   }
 }
 
 export class BrowserHasDisconnectedError extends PuppeteerError {
-  constructor(message, url) {
+  constructor(message) {
     super(message)
     this.code = 'pup-browser-has-disconnected'
-    this.url = url
   }
 }
 
 export class TargetClosedError extends PuppeteerError {
-  constructor(message, url) {
+  constructor(message) {
     super(message)
     this.code = 'pup-target-closed'
-    this.url = url
   }
 }
 
 export class PageCrashedError extends PuppeteerError {
-  constructor(message, url) {
+  constructor(message) {
     super(message)
     this.code = 'pup-page-crashed'
-    this.url = url
   }
 }
 
 export class ProtocolError extends PuppeteerError {
-  constructor(message, url) {
+  constructor(message) {
     super(message)
     this.code = 'pup-protocol-error'
-    this.url = url
   }
 }
 

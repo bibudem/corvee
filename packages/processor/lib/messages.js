@@ -10,7 +10,7 @@ export function messageFactory(messages) {
 
     return function message(key, rawMsg) {
 
-        if (!messages.hasOwnProperty(key)) {
+        if (typeof messages[key] === 'undefined') {
             return;
         }
 

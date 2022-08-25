@@ -116,7 +116,7 @@ export class NetError extends BaseError {
                 this.level = 'error'
             }
 
-            if (this.type === 'connection') {
+            if (this.type === 'certificate') {
 
                 // net-cert-authority-invalid
                 // net-cert-common-name-invalid
@@ -205,7 +205,6 @@ export class NetError extends BaseError {
                 // net-unsafe-port
                 // net-unsafe-redirect
                 // net-unsupported-auth-scheme
-
 
                 this.level = 'error'
             }

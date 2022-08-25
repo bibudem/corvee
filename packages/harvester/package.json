@@ -63,6 +63,7 @@
         "request-promise-native": "^1.0.8",
         "sqlstring": "^2.3.1",
         "toidentifier": "^1.0.1",
+        "underscore": "^1.13.4",
         "xml-js": "^1.6.11",
         "xml2js": "^0.4.22",
         "xmlbuilder": "^13.0.2",

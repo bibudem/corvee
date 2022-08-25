@@ -62,8 +62,13 @@ export class Link {
 
         if (isObject(uri)) {
 
-            if (uri.constructor.name === 'Link') {
-                return new Link(uri.url, extend(true, { url: uri.url }, data, (uri.userData || {})));
+            if (uri instanceof Link) {
+
+                if (Object.keys(data).length === 0) {
+                    return this
+                }
+
+                return new Link(uri.url, extend(true, { url: uri.url }, (uri.userData || {}), data));
             }
 
             data = uri;

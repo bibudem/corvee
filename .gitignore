@@ -30,4 +30,4 @@ jspm_packages/
 tmp
 .cache
 .storage
-/packages/processor/plugins/messages.xml
+/packages/processor/filters/messages.xml

@@ -1,3 +1,5 @@
+import { console, inspect } from '../../../core'
+
 export async function getPerformanceData(page, name) {
   if (typeof page === 'undefined') {
     return null;

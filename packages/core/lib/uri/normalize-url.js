@@ -70,6 +70,10 @@ export const normalizeUrl = (url, options) => {
         return URI.normalize(url);
     }
 
+    if (uriObj.path) {
+        uriObj.path = uriObj.path.replace(/(index|default)\.html?($|\?)/, '$2')
+    }
+
     if (uriObj.query) {
         const params = uriObj.query ?
             uriObj.query
@@ -93,13 +97,13 @@ export const normalizeUrl = (url, options) => {
         delete uriObj.fragment
     }
 
-    return URI.serialize(uriObj)
+    return URI.serialize(uriObj).toLowerCase()
 }
 
 //
 //
 //
 if (require.main === module) {
-    const a = normalizeUrl('https://libguides.bib.umontreal.ca/az.php?func=find-db-1-category&mode=category&restricted=all&sequence=000000434', true)
+    const a = normalizeUrl('https://www.bib.umontreal.ca/CS/livre-savant/imprime/index.html', true)
     console.log(a)
 }

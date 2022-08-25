@@ -29,6 +29,7 @@ export const defaultHarvesterOptions = {
     // Wether to check extern links or not
     checkExtern: true,
     fetchLinksOnce: true,
+    getPerfData: false,
     // URLs matching the given strings / regular expression will be ignored and not checked.
     ignore: [],
     ignoreDefaults: ['www.google-analytics.com', '/gtag/js', 'ga.js', 'analytics.js', 'https://www.googleadservices.com/', 'doubleclick.net'],

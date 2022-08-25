@@ -32,6 +32,7 @@ export class CorveeProcessor extends EventEmitter {
         this.config.errorLevel = this.config.errorLevel || LEVELS.WARNING;
         this.getMessage = messageFactory(this.config.messages);
         this.filtersWithoutMessages = new Set();
+
         this.addFilters(filters);
         this.addErrors(errors);
     }
@@ -61,6 +62,7 @@ export class CorveeProcessor extends EventEmitter {
             filter.matches = 0;
             filter.test = filter.test.bind(this);
             filter.priority = filter.priority || 0;
+
             this.filterPriorities.set(filter.code, filter.priority);
 
             return filter;
@@ -78,6 +80,8 @@ export class CorveeProcessor extends EventEmitter {
             level: 'error'
         }
 
+        const filteredRecords = new Set();
+
         // Normalizing records structure
         records = records.map(record => {
             record._filtered = false;
@@ -92,7 +96,6 @@ export class CorveeProcessor extends EventEmitter {
 
         this.records = [...this.records, ...records]
 
-        const filteredrecords = new Set();
         var nbIn = this.records.length,
             excluded = {},
             excludedCount = 0,
@@ -107,7 +110,7 @@ export class CorveeProcessor extends EventEmitter {
                     const testResult = filter.test(record, filter);
                     if (testResult) {
                         filter.matches++;
-                        filteredrecords.add(record.id);
+                        filteredRecords.add(record.id);
                         record._filtered = true;
 
                         if (isPlainObject(testResult)) {
@@ -296,7 +299,7 @@ export class CorveeProcessor extends EventEmitter {
             nbIn,
             excludedCount,
             excluded,
-            filtered: filteredrecords.size,
+            filtered: filteredRecords.size,
             filtersWithoutMessages: Array.from(self.filtersWithoutMessages.values()),
             nbOut: records.length,
             records: this.records,

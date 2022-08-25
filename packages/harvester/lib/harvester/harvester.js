@@ -535,6 +535,8 @@ export class Harvester extends EventEmitter {
                                     retryCount: requestData.userData.trials
                                 })
 
+                                request.id = requestData.userData.id
+
                                 await queue.reclaimRequest(request)
 
                                 return resolve()
@@ -649,7 +651,7 @@ export class Harvester extends EventEmitter {
                     uniqueLinksPerPage.get(pageUrl).add(link.url);
 
                     if (!self.config.schemes.some(scheme => minimatch(uriObj.scheme, scheme))) {
-                        console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${link.url}` : ''}`)
+                        console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri <${link.url}>` : ''}`)
 
                         return;
                     }
@@ -868,19 +870,21 @@ export class Harvester extends EventEmitter {
                     links = [links];
                 }
 
-                links
+                return links
                     .map(link => {
                         // type validation
                         v(link).has('url').isString().not.isEmpty()
                         return link;
                     })
-                    // .map(link => (Object.assign(link, {
-                    //     url: normalizeUrl(link.url),
-                    //     parent,
-                    //     isNavigationRequest: true
-                    // })))
                     .map(({ url, ...urlData }) => {
-                        return new Link(url, { ...urlData, parent, isNavigationRequest: true })
+                        return new Link(url, {
+                            ...urlData,
+                            parent,
+                            isNavigationRequest: true,
+                            extern: self.isExternLink(url),
+                            level: nextLevel,
+                            _from: 'parseLinksInPage'
+                        })
                     })
                     .filter(link => {
 
@@ -897,35 +901,18 @@ export class Harvester extends EventEmitter {
                         return !self.isExternLink(link.url);
                     })
                     .filter(link => link.url !== parent) // exclude internal links (href="#some-anchor")
-                    .forEach(link => {
+                //     .forEach(link => {
 
-                        // const req = {
-                        //     url: link.url,
-                        //     uniqueKey: link.url,
-                        //     userData: Object.assign(link, {
-                        //         _from: 'parseLinksInPage',
-                        //         parent,
-                        //         extern: self.isExternLink(link.url),
-                        //         reports: [],
-                        //         level: nextLevel
-                        //     })
-                        // };
+                //         ret.push({
+                //             url: link.url,
+                //             uniqueKey: link.url,
+                //             userData: {
+                //                 ...link.userData
+                //             }
+                //         })
+                //     });
 
-                        // ret.push(req);
-
-                        ret.push({
-                            url: link.url,
-                            uniqueKey: link.url,
-                            userData: {
-                                ...link.userData,
-                                _from: 'parseLinksInPage',
-                                extern: self.isExternLink(link.url),
-                                level: nextLevel
-                            }
-                        })
-                    });
-
-                return ret;
+                // return ret;
             }
 
             const basicCrawler = new BasicCrawler({
@@ -1049,24 +1036,16 @@ export class Harvester extends EventEmitter {
 
                     return new Promise(async (resolve, reject) => {
 
-                        self.queue.add(async () => {
+                        if (request.userData._ignore) {
+                            return resolve()
+                        }
 
-                            if (request.userData._ignore) {
-                                return reject()
-                            }
+                        self.queue.add(async () => {
 
                             request.userData.trials = request.retryCount;
 
                             self.emit('request', request)
-                            console.todo(inspect(request))
-
-                            // // Stop processing if filtering settings meet
-                            // const ignoreRule = self.shouldIgnoreUrl(request.url)
-                            // if (ignoreRule) {
-                            //     console.debug(`Ignoring this url based on config.ignore rule \`${ignoreRule}\`: [${request.url}] -> ${url}`);
-
-                            //     return reject()
-                            // }
+                            console.debug(inspect(request))
 
                             if (self.config.useRandomUserAgent) {
                                 page.setUserAgent(getRandomUserAgent());
@@ -1097,8 +1076,6 @@ export class Harvester extends EventEmitter {
                                     console.todo(`Page error at [try: ${request.retryCount}] ${request.url}. Error: ${inspect(error)} Request: ${inspect(request)}`)
 
                                     request.userData.reports.push(error);
-
-                                    console.error(`[page.on('error')] Page crashed., Error: ${inspect(error)}`)
                                 }
 
                                 return reject(error)
@@ -1155,6 +1132,7 @@ export class Harvester extends EventEmitter {
                                         url,
                                         parent,
                                         reports: [],
+                                        id: request.id
                                     })
 
                                 pupRequest.continue()
@@ -1186,7 +1164,12 @@ export class Harvester extends EventEmitter {
 
                                 if (!pupRequest.isNavigationRequest() && !self.config.navigationOnly) {
 
-                                    console.todo(`Request URL: ${inspect(pupRequest.url())}`)
+                                    if (self.isExternLink(pupRequest.url())) {
+                                        // This is an asset of an external page
+                                        return pupRequest.continue()
+                                    }
+
+                                    console.debug(`Request URL: ${inspect(pupRequest.url())}`)
 
                                     const url = pupRequest.url();
                                     const parentUrl = page.url();
@@ -1220,10 +1203,6 @@ export class Harvester extends EventEmitter {
 
                             page.on('requestfailed', async function onDocumentDownload(pupRequest) {
 
-                                if (request.userData._ignore) {
-                                    return Promise.resolve()
-                                }
-
                                 //
                                 // Here we process navigation downloads
                                 // pdf, zip, docx, etc. documents
@@ -1232,33 +1211,36 @@ export class Harvester extends EventEmitter {
                                 // Catch download navigation (pdf, zip, docx, etc.) occuring on first try before puppeteer throws an net::ERR_ABORTED error
                                 if (pupRequest.isNavigationRequest() && pupRequest.failure().errorText === 'net::ERR_ABORTED') {
 
-                                    const pupResponse = pupRequest.response();
-                                    if (pupResponse) {
+                                    if (request.retryCount === 1) {
+                                        const pupResponse = pupRequest.response();
+                                        if (pupResponse) {
 
-                                        let record;
-                                        const meta = {
-                                            _from: 'onDocumentDownload',
-                                            resourceType: 'document',
-                                            trials: request.retryCount,
-                                            parent: request.userData.parent
+                                            let record;
+                                            const meta = {
+                                                _from: 'onDocumentDownload',
+                                                resourceType: 'document',
+                                                trials: request.retryCount,
+                                                parent: request.userData.parent
+                                            }
+
+                                            try {
+                                                record = handleResponse(pupRequest, pupResponse, meta)
+                                                setRedirectChain(record, pupRequest.redirectChain())
+
+                                            } catch (error) {
+                                                console.error(inspect(error))
+                                            }
+
+                                            await addRecord(record);
+
+                                            self.session.counts.success++
                                         }
-
-                                        try {
-                                            record = handleResponse(pupRequest, pupResponse, meta)
-                                            setRedirectChain(record, pupRequest.redirectChain())
-
-                                        } catch (error) {
-                                            console.error(inspect(error))
-                                        }
-
-                                        await addRecord(record);
-
-                                        self.session.counts.success++
-
-                                        request.userData._ignore = true
-
-                                        return Promise.resolve()
                                     }
+
+                                    request.userData._ignore = true
+                                    pupRequest.userData._ignore = true
+
+                                    return Promise.resolve()
 
                                 }
                             })
@@ -1373,7 +1355,7 @@ export class Harvester extends EventEmitter {
                                 //
 
                                 // Is this an asset request? and Do config allow to record assets?
-                                if (!pupResponse.request().isNavigationRequest() && !self.config.navigationOnly) {
+                                if (!pupResponse.request().isNavigationRequest() && !self.config.navigationOnly && !self.isExternLink(pupResponse.request().url())) {
 
                                     const parentUrl = page.url();
 
@@ -1396,7 +1378,10 @@ export class Harvester extends EventEmitter {
                                         }
 
                                         meta.timing = await getTimingFor(pupResponse.url(), page);
-                                        meta.perfResponse = await getPerformanceData(page, pupResponse.url())
+
+                                        if (self.config.getPerfData) {
+                                            meta.perfData = await getPerformanceData(page, pupResponse.url())
+                                        }
 
                                         // Is the asset loaded?
                                         if (pupResponse.ok()) {
@@ -1515,43 +1500,38 @@ export class Harvester extends EventEmitter {
                                     resolve(response);
                                 })
                                 .catch(async function onDocumentRequestFailed(error) {
-                                    console.todo(request)
+                                    console.todo(inspect(request))
+                                    console.todo(inspect(error))
 
                                     if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
+
                                         // This is handled at onDocumentDownload (pdf downloads)
+                                        console.todo('Stopping page.goto().catch()')
                                         return resolve()
                                     }
 
-                                    //
-                                    // Main document failed request handler
-                                    //
+                                    if (request.userData.trials >= self.config.maxRequestRetries) {
 
-                                    if (request.retryCount < self.config.maxRequestRetries) {
-                                        console.todo(`THIS SHOULD NOT APPEND: request.retryCount < self.config.maxRequestRetries at ${request.url}`)
-                                        // Try again
-                                        await addToRequestQueue('pup', new Link(request))
+                                        //
+                                        // Main document failed request handler
+                                        // Here we deal with network / browser errors
+                                        //
 
-                                        return resolve()
-                                    }
-
-                                    //
-                                    // Here we deal with network / browser errors
-                                    //
-
-                                    console.todo(`Request failed at page.goto().catch() after try [${request.retryCount}] ${request.url}. Error: ${inspect(error)}
+                                        console.todo(`Request failed at page.goto().catch() after try [${request.retryCount}] ${request.url}. Error: ${inspect(error)}
 Request: ${inspect(request)}`)
 
-                                    request.userData.reports.push(error)
+                                        request.userData.reports.push(error)
 
-                                    const meta = {
-                                        _from: 'page.goto().catch()'
+                                        const meta = {
+                                            _from: 'page.goto().catch()'
+                                        }
+
+                                        const record = handleFailedRequest(request, meta)
+
+                                        await addRecord(record);
+
+                                        self.session.counts.fail++
                                     }
-
-                                    const record = handleFailedRequest(request, meta)
-
-                                    await addRecord(record);
-
-                                    self.session.counts.fail++
 
                                     resolve()
                                 });
@@ -1589,50 +1569,45 @@ Request: ${inspect(request)}`)
                     response: pupResponse,
                     page
                 }) {
+
                     console.debug(`[${request.retryCount}] Request URL: ${inspect(request.url)}
 request: ${inspect(request)}
 response: ${inspect(pupResponse)}`)
 
-                    if (request.userData._ignore) {
-                        return Promise.resolve()
-                    }
-
                     //
                     // Main navigation responses handler
-                    // Here we process navigation responses. Some handling is also done on a `onNavigationResponse` handler registered on page.on()
+                    // Here we process navigation responses. 
+                    // Some handling is also done on a `onNavigationResponse` handler registered on page.on()
                     //
 
                     if (!pupResponse) {
 
+                        console.todo(`Response is ${pupResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
+
+                        // TODO: This is a temporary fix
+                        // request.userData should have a .reports[] property
+                        if (typeof request.userData.reports === 'undefined') {
+                            console.todo('request.userData should have a .reports[] property')
+                            request.userData.reports = []
+                        }
+
                         if (request.retryCount >= self.config.maxRequestRetries) {
 
-                            console.todo(`Response is ${pupResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
-
-                            // TODO: This is a temporary fix
-                            // request.userData should have a .reports[] property
-                            if (typeof request.userData.reports === 'undefined') {
-                                console.todo('request.userData should have a .reports[] property')
-                                request.userData.reports = []
+                            if (request.loadedUrl) {
+                                request.userData.finalUrl = request.loadedUrl
                             }
 
                             if (pupResponse === null) {
                                 request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
                             }
-                            // else {
-                            //     request.userData.reports.push(new PupResponseIsUndefinedError('Response is undefined', request.url))
-                            // }
+
                         }
-
-                        // throw `Response is ${pupResponse}`
-
-                        request.userData._ignore = true
 
                         //
                         // These cases should be all handled at page.goto().catch()
                         //
-                        return Promise.reject()
 
-                        // return
+                        return Promise.reject()
                     }
 
                     try {
@@ -1653,6 +1628,10 @@ response: ${inspect(pupResponse)}`)
                         data.timing = await getTimingFor(pupResponse.url(), page)
                     } catch (error) {
                         data.timing = null
+                    }
+
+                    if (self.config.getPerfData) {
+                        data.perfData = await getPerformanceData(page, pupResponse.url())
                     }
 
                     self.emit('response', {
@@ -1701,6 +1680,10 @@ response: ${inspect(pupResponse)}`)
                         } catch (error) {
                             // pupResponse.buffer() is undefined
                             meta.size = null
+                        }
+
+                        if (self.config.getPerfData) {
+                            meta.perfData = await getPerformanceData(page, pupResponse.url())
                         }
 
                         if (self.plugins.onNavigationResponse.length && pupResponse) {
@@ -1777,52 +1760,42 @@ Exiting now...`)
                     error
                 }) {
 
-                    //
-                    //
-                    //
+                    //                     console.todo(`[${request.retryCount}] url: ${request.url}`)
+                    //                     console.todo(inspect(request))
+                    //                     console.todo(inspect(error))
 
-                    if (request.userData._ignore) {
-                        return;
-                    }
+                    //                     const url = normalizeUrl(request.url);
 
-                    console.todo(`[${request.retryCount}] url: ${request.url},
-typeof error: ${typeof error}
-error.name: ${error.name}
-error: ${inspect(error)},
-Request: ${inspect(request)}`)
+                    //                     console.info(`[try: ${request.retryCount}] url: ${displayUrl(url)}`)
 
-                    const url = normalizeUrl(request.url);
+                    //                     //
+                    //                     // This is a navigation error
+                    //                     //
 
-                    console.info(`[try: ${request.retryCount}] url: ${displayUrl(url)}`)
+                    //                     console.verbose(`Navigation failed. Error: ${inspect(error)}, Request: ${inspect(request)}`)
 
-                    //
-                    // This is a navigation error
-                    //
+                    //                     if (typeof request.userData.reports === 'undefined') {
+                    //                         console.todo(`THIS SHOULD NOT APPEND: Request userData dont have a 'reports' property. [${request.retryCount}] url: ${request.url},
+                    // error: ${inspect(error)},
+                    // Request: ${inspect(request)}`)
 
-                    console.verbose(`Navigation failed. Error: ${inspect(error)}, Request: ${inspect(request)}`)
+                    //                         request.userData.reports = []
 
-                    if (typeof request.userData.reports === 'undefined') {
-                        console.todo(`THIS SHOULD NOT APPEND: Request userData dont have a 'reports' property. [${request.retryCount}] url: ${request.url},
-error: ${inspect(error)},
-Request: ${inspect(request)}`)
+                    //                     }
 
-                        request.userData.reports = []
+                    //                     request.userData.reports.push(error)
 
-                    }
+                    //                     const record = handleFailedRequest(request, {
+                    //                         _from: 'onNavigationRequestFailed',
+                    //                         resourceType: 'document',
+                    //                         trials: request.retryCount,
+                    //                     })
 
-                    request.userData.reports.push(error)
+                    //                     await addRecord(record);
 
-                    const record = handleFailedRequest(request, {
-                        _from: 'onNavigationRequestFailed',
-                        resourceType: 'document',
-                        trials: request.retryCount,
-                    })
+                    //                     self.session.counts.fail++
 
-                    await addRecord(record);
-
-                    self.session.counts.fail++
-
-                    return;
+                    //                     return;
                 },
                 maxRequestsPerCrawl: self.config.maxRequests,
                 maxConcurrency: self.config.maxConcurrency,
@@ -1875,8 +1848,7 @@ Request: ${inspect(request)}`)
                         return Promise.resolve();
                     })
                     .catch(error => {
-                        console.error('Puppeteer crawler ended with error.')
-                        throw error;
+                        console.error(`Puppeteer crawler ended with error: ${inspect(error)}`)
                     }),
                 launchBasicCrawler()
             ])

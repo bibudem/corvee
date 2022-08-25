@@ -1,4 +1,5 @@
 import dotProp from 'dot-prop';
+import { omit } from 'underscore'
 const extend = require('extend');
 
 import { absUrl, console, inspect } from './../../core'
@@ -115,12 +116,9 @@ function getFinalUrl({
 }
 
 export function handleResponse(request, response = null, meta = {}) {
-    let reports;
 
-    if (dotProp.get(request, 'userData.reports')) {
-        reports = captureErrors(request.userData.reports);
-        delete request.userData.reports;
-    }
+    const reports = captureErrors(request.userData.reports);
+    const userData = omit(request.userData, 'reports');
 
     const baseReport = extend(true, {}, defaultOptions, {
         reports,
@@ -151,7 +149,7 @@ export function handleResponse(request, response = null, meta = {}) {
                 resourceType: request.resourceType(),
                 trials: 'TODO',
             },
-            request.userData,
+            userData,
             meta
         );
 
@@ -170,8 +168,6 @@ export function handleResponse(request, response = null, meta = {}) {
         });
 
         record.finalUrl = finalUrl;
-
-        delete record.userData;
 
         return record;
     }
@@ -199,7 +195,7 @@ export function handleResponse(request, response = null, meta = {}) {
                 resourceType: response.request().resourceType(),
                 trials: request.retryCount
             },
-            request.userData,
+            userData,
             meta
         );
 
@@ -224,7 +220,6 @@ export function handleResponse(request, response = null, meta = {}) {
 
         record.finalUrl = finalUrl;
 
-        delete record.userData;
         delete record.uniqueKey;
 
         return record;
@@ -257,7 +252,7 @@ export function handleResponse(request, response = null, meta = {}) {
                 ).name(),
                 trials: request.retryCount
             },
-            request.userData,
+            userData,
             meta
         );
 
@@ -282,8 +277,6 @@ export function handleResponse(request, response = null, meta = {}) {
 
         record.finalUrl = finalUrl;
 
-        delete record.userData;
-
         return record;
     }
 
@@ -299,7 +292,7 @@ export function handleResponse(request, response = null, meta = {}) {
             true,
             {},
             baseReport,
-            request.userData,
+            userData,
             meta
         );
 
@@ -323,11 +316,9 @@ export function handleResponse(request, response = null, meta = {}) {
             resourceType: 'TODO',
             trials: 0
         },
-        request.userData,
+        userData,
         meta
     );
-
-    delete record.userData;
 
     return record;
 }
@@ -339,9 +330,8 @@ export function handleFailedRequest(request, error, meta) {
         meta = error
     }
 
-    let reports = captureErrors(request.userData.reports);
-
-    delete request.userData.reports;
+    const reports = captureErrors(request.userData.reports);
+    const userData = omit(request.userData, 'reports')
 
     const baseReport = extend(
         true,
@@ -354,6 +344,7 @@ export function handleFailedRequest(request, error, meta) {
         });
 
     if (meta._from === 'gotoFunction' || meta._from === 'page.goto().catch()') {
+
         const record = extend(
             true,
             {},
@@ -361,12 +352,11 @@ export function handleFailedRequest(request, error, meta) {
             {
                 url: request.url,
             },
-            request.userData,
+            userData,
             meta
         );
-
-        delete record.userData;
-
+        console.todo('========================================')
+        console.todo(inspect(record))
         return record;
     }
 
@@ -379,11 +369,10 @@ export function handleFailedRequest(request, error, meta) {
                 url: request.url,
                 isNavigationRequest: true,
             },
-            request.userData,
+            userData,
             meta
         );
 
-        delete record.userData;
         return record;
     }
 
@@ -402,12 +391,9 @@ export function handleFailedRequest(request, error, meta) {
                 status: pupRequest.failure().errorText,
                 reports_: captureErrors(pupRequest.failure().errorText)
             },
-            request.userData,
+            userData,
             meta
         );
-
-        delete record.userData;
-        delete record.request;
 
         return record;
     }

@@ -1,3 +1,5 @@
+import { getPerformanceData } from "./get-performance-data";
+
 export async function getTimingFor(resource, page) {
   const perfData = await getPerformanceData(page, resource);
 

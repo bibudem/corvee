@@ -1,15 +1,15 @@
-export default {
+export const messagesFrCA = {
 
-    "bot-url-outside-domain-filter": {
-        msg: "La cible du lien est exclue de la vérification."
-    },
+    // "bot-url-outside-domain-filter": {
+    //     msg: "La cible du lien est exclue de la vérification."
+    // },
 
-    "http-empty-content": {
-        msg: "Le lien fonctionne mais il n'y a pas de contenu. Vérifiez ce lien."
-    },
+    // "http-empty-content": {
+    //     msg: "Le lien fonctionne mais il n'y a pas de contenu. Vérifiez ce lien."
+    // },
 
     "http-204": {
-        msg: "Veuillez vérifier ce lien."
+        msg: "Le serveur a retourné une page vide."
     },
 
     "http-301": {
@@ -32,7 +32,11 @@ export default {
         msg: "Redirige vers une version sécurisée (<code>https</code>) du site. L'URL a aussi possiblement changé. Vérifiez ce lien."
     },
 
-    "http-30x-permanent-redirect": {
+    "http-30x-permanent-redirect-failure": {
+        msg: "Redirection permanente vers un lien brisé. Vous devez mettre à jour ce lien."
+    },
+
+    "http-30x-permanent-redirect-successfull": {
         msg: "Redirection permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien."
     },
 
@@ -56,8 +60,16 @@ export default {
         msg: "Lien brisé. Vérifiez le lien."
     },
 
+    "http-408": {
+        msg: "Le délai de réponse a expiré."
+    },
+
     "http-410": {
         msg: "Cette page a été retirée."
+    },
+
+    "http-429": {
+        msg: "Trop de requêtes ont été émises."
     },
 
     "http-500": {
@@ -76,14 +88,18 @@ export default {
         msg: "Impossible de vérifier le lien. Service temporairement indisponible ou en maintenance. Vérifiez le lien."
     },
 
-    "http-550": {
-        msg: "Le fichier n'a pas été trouvé."
+    "http-512-599": {
+        msg: "Le fichier n'a pas été trouvé. Une erreur serveur est survenue."
     },
 
     "mail-invalid-syntax": {
         msg: "L'adresse de courriel n'a pas une syntaxe valide.",
         pattern: "(.+)",
         substitution: "L'adresse de courriel n'a pas une syntaxe valide: $1"
+    },
+
+    "net-certificate": {
+        msg: "La connexion avec le site Web n'est pas privée puisque le certificat de sécurité du site est invalide"
     },
 
     "net-connection": {
@@ -95,7 +111,7 @@ export default {
     },
 
     "net-system": {
-        msg: "Une errer est survenur lors du moisonnage de ce lien. Veuillez le vérifier"
+        msg: "Une errer est survenue lors du moisonnage de ce lien. Veuillez le vérifier"
     },
 
     "url-invalid-url": {

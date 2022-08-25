@@ -25,6 +25,8 @@ export class HttpError extends BaseError {
 
         v(status).is('number').equalOrGreaterThan(400).lessThan(600)
 
+        super()
+
         this.code = `http-${status}`
         this.message = statusText ? statusText : STATUS_CODES[status]
         this.level = status < 400 ? 'warning' : 'error'
