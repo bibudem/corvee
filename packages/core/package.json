@@ -11,7 +11,6 @@
     "license": "ISC",
     "dependencies": {
         "apify": "^0.17.0",
-        "apify-shared": "^0.1.67",
         "colors": "^1.4.0",
         "filenamify-url": "^2.1.0",
         "io-validate": "^2.1.13",

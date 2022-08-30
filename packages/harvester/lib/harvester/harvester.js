@@ -1,7 +1,6 @@
 import EventEmitter from 'events'
 
 import minimatch from 'minimatch'
-import * as URI from 'uri-js'
 import { pick, isRegExp, isFunction, isObject } from 'underscore'
 import rp from 'request-promise-native'
 import Apify, { BasicCrawler, PuppeteerCrawler, utils as apifyUtils } from 'apify'
@@ -620,13 +619,6 @@ export class Harvester extends EventEmitter {
                         } catch (error) {
                             console.error(`self.normalizeUrl error at link.userData.parent: ${link.userData.parent}. Error: ${inspect(error)}`)
                         }
-                    }
-
-                    try {
-                        uriObj = URI.parse(link.url);
-                    } catch (error) {
-                        console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
-                        process.exit();
                     }
 
                     //
