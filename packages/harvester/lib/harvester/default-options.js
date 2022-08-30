@@ -53,7 +53,7 @@ export const defaultHarvesterOptions = {
     schemes: [],
     schemesDefaults: ['corvee', 'http', 'https'],
     storageDir: join(tmpDir, '.storage'),
-    urlNormalizeFunction: null,
+    normalizeUrlFunction: null,
     useRandomUserAgent: false,
     waitInterval: 50,
 }

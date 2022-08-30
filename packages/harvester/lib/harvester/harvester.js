@@ -1,4 +1,3 @@
-import { URL } from 'url'
 import EventEmitter from 'events'
 
 import minimatch from 'minimatch'
@@ -14,7 +13,7 @@ import assert from 'assert-plus'
 import { getResponseData } from '../net/utils'
 import { normalizeUrl, isValidUrl, getRandomUserAgent } from '../../../core'
 import { cleanupFolderPromise } from './cleanup-folder-promise'
-import { CorveeError, HttpError, PupResponseIsUndefinedError, PupResponseIsNullError, MailUnverifiedAddressError, UnsupportedSchemeError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors'
+import { CorveeError, HttpError, PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors'
 import { humanDuration, displayUrl } from '../utils'
 import { LinkStore, sessionStore } from '../storage'
 import { Link } from '../link'
@@ -101,6 +100,10 @@ export class Harvester extends EventEmitter {
 
         this.linkParser = defaultLinkParser;
 
+        this.normalizeUrl = this.config.normalizeUrlFunction ? this.config.normalizeUrlFunction : normalizeUrl
+
+        this.browsingContextStore = new BrowsingContextStore(this.normalizeUrl);
+
         if (this.config.notify) {
             this.notify = new Notifier([], {
                 logger: console,
@@ -178,20 +181,20 @@ export class Harvester extends EventEmitter {
             }
             if (this._isRunning) {
                 if (this._addToRequestQueue) {
-                    await this._addToRequestQueue(...urls.map(url => new Link(url)))
+                    await this._addToRequestQueue(...urls.map(url => new Link(url, this.normalizeUrl)))
                     resolve()
                 } else {
                     let addToRequestQueueHandle;
                     setInterval(async () => {
                         if (this._addToRequestQueue) {
-                            await this._addToRequestQueue(...urls.map(url => new Link(url)))
+                            await this._addToRequestQueue(...urls.map(url => new Link(url, tis.normalizeUrl)))
                             clearInterval(addToRequestQueueHandle)
                             resolve()
                         }
                     }, 100)
                 }
             } else {
-                this.urlList.push(...urls.map(url => new Link(url)))
+                this.urlList.push(...urls.map(url => new Link(url, this.normalizeUrl)))
                 resolve()
             }
 
@@ -343,8 +346,6 @@ export class Harvester extends EventEmitter {
         runOptions = Object.assign({}, defaultRunOptions, runOptions);
 
         this.runOptions = runOptions;
-
-        this.browsingContextStore = new BrowsingContextStore();
 
         this.queue = new RequestQueue({
             concurrency: this.config.maxConcurrency,
@@ -607,25 +608,17 @@ export class Harvester extends EventEmitter {
 
                     assert.object(data)
 
-                    const link = data.constructor.name === 'Link' ? data : new Link(data)
+                    const link = data.constructor.name === 'Link' ? data : new Link(data, self.normalizeUrl)
                     let uriObj;
 
                     assert.string(link.url)
                     assert.object(link.userData)
 
-                    if (self.config.urlNormalizeFunction) {
+                    if (link.userData.parent) {
                         try {
-                            link.url = self.config.urlNormalizeFunction(link.url)
+                            link.userData.parent = self.normalizeUrl(link.userData.parent)
                         } catch (error) {
-                            console.error(`config.urlNormalizeFunction error at link.url: ${link.url}. Error: ${inspect(error)}`)
-                        }
-
-                        if (link.userData.parent) {
-                            try {
-                                link.userData.parent = self.config.urlNormalizeFunction(link.userData.parent)
-                            } catch (error) {
-                                console.error(`config.urlNormalizeFunction error at link.userData.parent: ${link.userData.parent}. Error: ${inspect(error)}`)
-                            }
+                            console.error(`self.normalizeUrl error at link.userData.parent: ${link.userData.parent}. Error: ${inspect(error)}`)
                         }
                     }
 
@@ -674,7 +667,7 @@ export class Harvester extends EventEmitter {
                     // Stop processing if filtering settings meet
                     const ignoreRule = self.shouldIgnoreUrl(requestData.url)
                     if (ignoreRule) {
-                        console.debug(`Ignoring this url based on config.ignore rule \`${ignoreRule}\`: ${requestData.userData.parent} -> ${requestData.url}`);
+                        console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${requestData.userData.parent} -> ${requestData.url}`);
                         return;
                     }
 
@@ -697,10 +690,10 @@ export class Harvester extends EventEmitter {
 
                             const urlError = new UrlInvalidUrlError(link.userData.urlData)
 
-                            link.userData.reports.push(urlError);
+                            link.userData.reports = [urlError];
 
                             const record = handleFailedRequest(link, {
-                                _from: 'gotoFunction'
+                                _from: 'addToRequestQueue'
                             })
 
                             await addRecord(record);
@@ -716,10 +709,10 @@ export class Harvester extends EventEmitter {
                     if (uriObj.scheme === 'mailto') {
 
                         if (uriObj.error) {
-                            link.userData.reports.push(new MailInvalidSyntaxError())
+                            link.userData.reports = [new MailInvalidSyntaxError()]
                             self.session.counts.fail++
                         } else {
-                            link.userData.reports.push(new MailUnverifiedAddressError())
+                            link.userData.reports = [new MailUnverifiedAddressError()]
                             self.session.counts.success++
                         }
 
@@ -760,14 +753,14 @@ export class Harvester extends EventEmitter {
                 await addToRequestQueue('pup', new Link(self.config.startUrl, {
                     parent: 'corvee:startpage',
                     isNavigationRequest: true
-                }))
+                }, self.normalizeUrl))
             }
 
             await addToRequestQueue('pup', self.urlList)
 
             await addToRequestQueue('basic', new Link('corvee:dummy-url', {
                 parent: 'corvee:startpage'
-            }))
+            }, self.normalizeUrl))
 
             async function addRecord(record) {
 
@@ -785,10 +778,7 @@ export class Harvester extends EventEmitter {
                     record.id = self.session.recordCount;
                     record.extern = self.isExternLink(record.url); // ??? parfois la propriété est absente
 
-                    const browsingContextStack = self.browsingContextStore.getContext(record.parent)
-                    if (browsingContextStack) {
-                        record.browsingContextStack = browsingContextStack
-                    }
+                    record.browsingContextStack = self.browsingContextStore.getContext(record.parent)
 
                     try {
                         await self.recordStore.pushData(record);
@@ -836,7 +826,7 @@ export class Harvester extends EventEmitter {
                     return ret
                 }
 
-                const parent = normalizeUrl(page.url());
+                const parent = self.normalizeUrl(page.url());
 
                 const noFollowUrl = self.shouldNotFollowUrl(parent)
                 if (noFollowUrl) {
@@ -884,7 +874,7 @@ export class Harvester extends EventEmitter {
                             extern: self.isExternLink(url),
                             level: nextLevel,
                             _from: 'parseLinksInPage'
-                        })
+                        }, self.normalizeUrl)
                     })
                     .filter(link => {
 
@@ -901,18 +891,6 @@ export class Harvester extends EventEmitter {
                         return !self.isExternLink(link.url);
                     })
                     .filter(link => link.url !== parent) // exclude internal links (href="#some-anchor")
-                //     .forEach(link => {
-
-                //         ret.push({
-                //             url: link.url,
-                //             uniqueKey: link.url,
-                //             userData: {
-                //                 ...link.userData
-                //             }
-                //         })
-                //     });
-
-                // return ret;
             }
 
             const basicCrawler = new BasicCrawler({
@@ -1075,6 +1053,9 @@ export class Harvester extends EventEmitter {
 
                                     console.todo(`Page error at [try: ${request.retryCount}] ${request.url}. Error: ${inspect(error)} Request: ${inspect(request)}`)
 
+                                    if (!request.userData.reports) {
+                                        request.userData.reports = []
+                                    }
                                     request.userData.reports.push(error);
                                 }
 
@@ -1084,22 +1065,6 @@ export class Harvester extends EventEmitter {
                             page.on('dialog', async function onDialog(dialog) {
                                 await dialog.dismiss();
                             });
-
-
-                            // function getRequestData(req) {
-                            //     if (req.isNavigationRequest()) {
-                            //         req.userData.request = req.userData.request || [];
-                            //         req.userData.request.push(((props) => {
-                            //             return props.reduce((obj, prop) => {
-                            //                 obj[prop] = req[prop]();
-                            //                 return obj;
-                            //             }, {})
-                            //         })(['url', 'headers', 'isNavigationRequest', 'resourceType', 'redirectChain']));
-                            //     }
-                            // }
-
-                            // page.on('requestfinished', getRequestData);
-                            // page.on('requestfailed', getRequestData);
 
                             await apifyUtils.puppeteer.addInterceptRequestHandler(page, function onRequest(pupRequest) {
 
@@ -1131,7 +1096,6 @@ export class Harvester extends EventEmitter {
                                         _from: 'onRequest',
                                         url,
                                         parent,
-                                        reports: [],
                                         id: request.id
                                     })
 
@@ -1189,10 +1153,7 @@ export class Harvester extends EventEmitter {
                                     const ignoreRule = self.shouldIgnoreUrl(request.url)
                                     if (ignoreRule) {
 
-                                        console.debug(`Ignoring this url based on config.ignore rule \`${ignoreRule}\`: ${request.url} -> ${url}`);
-
-                                        const error = new CorveeError(msg, 'cv-skip-ignore')
-                                        pupRequest.userData.reports.push(error)
+                                        console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${request.url} -> ${url}`);
 
                                         return pupRequest.abort('blockedbyclient')
                                     }
@@ -1332,6 +1293,10 @@ export class Harvester extends EventEmitter {
 
                                     if (request.retryCount <= self.config.maxRequestRetries) {
                                         return Promise.reject();
+                                    }
+
+                                    if (!pupRequest.userData.reports) {
+                                        pupRequest.userData.reports = []
                                     }
 
                                     pupRequest.userData.reports.push(pupRequest.failure().errorText)
@@ -1478,11 +1443,15 @@ export class Harvester extends EventEmitter {
                                     if (!pupResponse.ok()) {
                                         const statusCode = pupResponse.status()
 
-                                        console.verbose(`[${request.retryCount}] got a status = ${statusCode} for ${pupResponse.request().url()}`)
+                                        console.debug(`[${request.retryCount}] got a status = ${statusCode} for ${pupResponse.request().url()}`)
 
                                         if (statusCode >= 400) {
 
                                             const httpError = new HttpError(statusCode, pupResponse.statusText())
+
+                                            if (!pupResponse.request().userData.reports) {
+                                                pupResponse.request().userData.reports = []
+                                            }
 
                                             pupResponse.request().userData.reports.push(httpError);
                                         }
@@ -1500,13 +1469,12 @@ export class Harvester extends EventEmitter {
                                     resolve(response);
                                 })
                                 .catch(async function onDocumentRequestFailed(error) {
-                                    console.todo(inspect(request))
-                                    console.todo(inspect(error))
+                                    console.debug(`${inspect(request)}, ${inspect(error)}`)
 
                                     if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
 
                                         // This is handled at onDocumentDownload (pdf downloads)
-                                        console.todo('Stopping page.goto().catch()')
+                                        console.debug('Stopping page.goto().catch()')
                                         return resolve()
                                     }
 
@@ -1520,6 +1488,9 @@ export class Harvester extends EventEmitter {
                                         console.todo(`Request failed at page.goto().catch() after try [${request.retryCount}] ${request.url}. Error: ${inspect(error)}
 Request: ${inspect(request)}`)
 
+                                        if (!request.userData.reports) {
+                                            request.userData.reports = []
+                                        }
                                         request.userData.reports.push(error)
 
                                         const meta = {
@@ -1547,6 +1518,9 @@ Request: ${inspect(request)}`)
                                 console.todo(`Unhandled error at gotoFunction after max request retries at ${request.url}. Error: ${inspect(error)}, request: ${inspect(request)}`)
                             }
 
+                            if (!request.userData.reports) {
+                                request.userData.reports = []
+                            }
                             request.userData.reports.push(error)
                         }
                     })
@@ -1582,22 +1556,20 @@ response: ${inspect(pupResponse)}`)
 
                     if (!pupResponse) {
 
-                        console.todo(`Response is ${pupResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
+                        console.debug(`Response is ${pupResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
 
-                        // TODO: This is a temporary fix
-                        // request.userData should have a .reports[] property
-                        if (typeof request.userData.reports === 'undefined') {
-                            console.todo('request.userData should have a .reports[] property')
-                            request.userData.reports = []
+                        if (request.loadedUrl) {
+                            if (!(request.loadedUrl.startsWith('about:') || request.loadedUrl.startsWith('chrome:') || request.loadedUrl.startsWith('chrome-error:'))) {
+                                request.userData.finalUrl = request.loadedUrl
+                            }
                         }
 
                         if (request.retryCount >= self.config.maxRequestRetries) {
 
-                            if (request.loadedUrl) {
-                                request.userData.finalUrl = request.loadedUrl
-                            }
-
                             if (pupResponse === null) {
+                                if (!request.userData.reports) {
+                                    request.userData.reports = []
+                                }
                                 request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
                             }
 
@@ -1659,7 +1631,7 @@ response: ${inspect(pupResponse)}`)
                     // }
 
                     try {
-                        normalizeUrl(request.url, true);
+                        self.normalizeUrl(request.url, true);
 
                         try {
                             await page.exposeFunction('harvester', () => {
@@ -1707,11 +1679,11 @@ response: ${inspect(pupResponse)}`)
                         // Should we parse further links in the resulting page?
                         //
 
-                        const pageFinalUrl = normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
+                        const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
 
-                        const finalNavUrl = normalizeUrl(page.url(), true);
+                        const finalNavUrl = self.normalizeUrl(page.url(), true);
 
-                        if (!self.isExternLink(finalNavUrl)) {
+                        if (!self.isExternLink(finalNavUrl) && pupResponse && pupResponse.ok()) {
 
                             const links = await parseLinksInPage(page, {
                                 currentLevel: request.userData.level,
@@ -1736,7 +1708,7 @@ response: ${inspect(pupResponse)}`)
                                             parent: pageFinalUrl,
                                             level: request.userData.level,
                                             resourceIsEmbeded: true
-                                        })
+                                        }, self.normalizeUrl)
 
                                         await addToRequestQueue('pup', link)
                                     }
@@ -1759,43 +1731,7 @@ Exiting now...`)
                     request,
                     error
                 }) {
-
-                    //                     console.todo(`[${request.retryCount}] url: ${request.url}`)
-                    //                     console.todo(inspect(request))
-                    //                     console.todo(inspect(error))
-
-                    //                     const url = normalizeUrl(request.url);
-
-                    //                     console.info(`[try: ${request.retryCount}] url: ${displayUrl(url)}`)
-
-                    //                     //
-                    //                     // This is a navigation error
-                    //                     //
-
-                    //                     console.verbose(`Navigation failed. Error: ${inspect(error)}, Request: ${inspect(request)}`)
-
-                    //                     if (typeof request.userData.reports === 'undefined') {
-                    //                         console.todo(`THIS SHOULD NOT APPEND: Request userData dont have a 'reports' property. [${request.retryCount}] url: ${request.url},
-                    // error: ${inspect(error)},
-                    // Request: ${inspect(request)}`)
-
-                    //                         request.userData.reports = []
-
-                    //                     }
-
-                    //                     request.userData.reports.push(error)
-
-                    //                     const record = handleFailedRequest(request, {
-                    //                         _from: 'onNavigationRequestFailed',
-                    //                         resourceType: 'document',
-                    //                         trials: request.retryCount,
-                    //                     })
-
-                    //                     await addRecord(record);
-
-                    //                     self.session.counts.fail++
-
-                    //                     return;
+                    // Nothing here
                 },
                 maxRequestsPerCrawl: self.config.maxRequests,
                 maxConcurrency: self.config.maxConcurrency,

@@ -1,4 +1,5 @@
 import http200 from './http-200'
+import http201 from './http-201'
 import http204 from './http-204'
 import http30xAllTempRedirects from './http-30x-all-temporary-redirects'
 import http30xPermanentRedirectFailure from './http-30x-permanent-redirect-failure'
@@ -14,7 +15,7 @@ import http400 from './http-400'
 import http401 from './http-401'
 import http403 from './http-403'
 import http404 from './http-404'
-import http404ByUrls from './http-404-by-url'
+import http404ByUrl from './http-404-by-url'
 import http408 from './http-408'
 import http410 from './http-410'
 import http429 from './http-429'
@@ -41,6 +42,7 @@ export * from './messages/fr-CA'
 
 export const filters = {
     http200,
+    http201,
     http204,
     http307,
     http30xAllTempRedirects,
@@ -56,7 +58,7 @@ export const filters = {
     http401,
     http403,
     http404,
-    http404ByUrls,
+    http404ByUrl,
     http408,
     http410,
     http429,

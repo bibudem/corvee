@@ -17,7 +17,7 @@ export function saveErrorCodes(harvester, jobId) {
     })
 
     harvester.on('record', function onRecord(record) {
-        if ('reports' in record && Array.isArray(record.reports)) {
+        if (record.reports) {
             record.reports.forEach(report => {
                 let errorCode = null;
                 let errorType;

@@ -1,22 +1,7 @@
 import * as chromiumNetErrors from 'chromium-net-errors'
 import paramCase from 'param-case'
 
-import { ERROR_PROPS, BaseError } from '.'
-
-export const NET_ERROR_DEF = {
-    name: 'NET_ERROR',
-    prefix: 'net',
-    props: Object.assign({}, ERROR_PROPS, {
-        // name: 'name',
-        // message: 'message',
-        // code: 'errno',
-        name: 'code',
-        type: 'type'
-    }),
-    test: function (err) {
-        return err instanceof NetError;
-    }
-};
+import { BaseError } from '.'
 
 export class NetError extends BaseError {
     constructor(description, message) {

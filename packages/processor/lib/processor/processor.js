@@ -1,5 +1,6 @@
 import EventEmitter from 'eventemitter3';
 import isPlainObject from 'is-plain-object'
+import ProgressBar from 'progress'
 import { LEVELS } from './levels'
 
 import { messageFactory } from '../messages'
@@ -25,7 +26,7 @@ export class CorveeProcessor extends EventEmitter {
         super();
         this.records = [];
         this.unfilteredRecords = [];
-        this._filters = [];
+        this.filters = [];
         this.filterPriorities = new FilterPriorities();
         this._errors = [];
         this.config = config;
@@ -55,7 +56,7 @@ export class CorveeProcessor extends EventEmitter {
 
     addFilters(...filters) {
 
-        this._filters = this._filters.concat(...filters.flat(Infinity).map(filter => {
+        this.filters = this.filters.concat(...filters.flat(Infinity).map(filter => {
 
             console.verbose(`Adding filter ${filter.code}`)
 
@@ -251,25 +252,29 @@ export class CorveeProcessor extends EventEmitter {
             return result;
         }
 
-        console.log(`Adding ${this._errors.length} custom errors...`);
+        console.debug(`Adding ${this._errors.length} custom errors...`);
 
         this._errors.forEach(error => {
             this.records = doErrors(this.records, error)
         });
 
-        console.log(`Filtering ${this._filters.length} filters...`);
+        console.debug(`Filtering ${this.filters.length} filters...`);
 
-        this._filters.forEach(filter => {
+
+        const progressBar = new ProgressBar(':bar :percent -- current filter: :filter', { total: this.filters.length })
+
+        this.filters.forEach(filter => {
+            progressBar.tick({ filter: filter.code })
             this.records = doFilter(this.records, filter)
         });
 
-        this.unfilteredRecords = this.records.filter(record => {
-            if (!record._filtered) {
-                this.emit('unfiltered', record)
-                return true
-            }
-            return false
-        })
+        this.unfilteredRecords = this.records
+            .filter(record => !record._filtered)
+            .map(record => {
+                const newRecord = structuredClone(record)
+                this.emit('unfiltered', newRecord)
+                return newRecord
+            })
 
         console.log('Filtering report by level...')
 
@@ -283,7 +288,7 @@ export class CorveeProcessor extends EventEmitter {
 
         this.records = doAddMessages(this.records);
 
-        const perFilter = this._filters.map(({
+        const perFilter = this.filters.map(({
             code,
             matches,
             exclude = false,

@@ -1,13 +1,4 @@
-import { ERROR_PROPS, BaseError } from './error'
-
-export const MAIL_ERROR_DEF = {
-    name: 'MAIL_ERROR',
-    prefix: 'mail',
-    props: Object.assign({}, ERROR_PROPS),
-    test: function (error) {
-        return error instanceof MailError
-    }
-}
+import { BaseError } from './error'
 
 export class MailError extends BaseError {
     constructor(msg) {

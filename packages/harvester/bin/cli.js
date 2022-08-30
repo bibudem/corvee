@@ -45,7 +45,7 @@ const argv = yargs
     .argv;
 
 const urls = argv._
-const reports = [];
+const records = [];
 
 if (urls && urls.length) {
 
@@ -109,7 +109,7 @@ if (urls && urls.length) {
 
     harvester.setPlugins([webScrapingPlugin()])
 
-    harvester.on('record', report => reports.push(report))
+    harvester.on('record', record => records.push(record))
 
     // harvester.on('asset-links', data => {
     //     console.log(process.cwd())
@@ -118,13 +118,13 @@ if (urls && urls.length) {
 
     harvester.on('end', () => {
 
-        if (reports.length) {
-            if (reports.length === 1) {
-                console.log(inspect(reports[0], {
+        if (records.length) {
+            if (records.length === 1) {
+                console.log(inspect(records[0], {
                     depth: 3
                 }));
             } else {
-                console.log(inspect(reports, {
+                console.log(inspect(records, {
                     depth: 4
                 }))
             }

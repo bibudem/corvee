@@ -1,10 +1,10 @@
 export default {
-    code: 'http-200',
-    description: 'Matches simple `200 OK` responses, without any redirects.',
+    code: 'http-201',
+    description: 'Matches simple `201 Created` responses, without any redirects.',
     test: function (report) {
 
         return 'httpStatusCode' in report &&
-            report.httpStatusCode === 200 &&
+            report.httpStatusCode === 201 &&
             (
                 !'redirectChain' in report ||
                 report.redirectChain.length === 0

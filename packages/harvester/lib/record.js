@@ -1,4 +1,3 @@
-import dotProp from 'dot-prop';
 import { omit } from 'underscore'
 const extend = require('extend');
 
@@ -12,10 +11,10 @@ export const defaultOptions = {
     httpStatusCode: null,
     contentType: null,
     isNavigationRequest: null,
-    redirectChain: [],
+    redirectChain: null,
     resourceType: null,
     trials: null,
-    reports: [],
+    reports: null,
     created: null,
     contentLength: null
 };
@@ -26,7 +25,7 @@ export function getFinalStatus(report) {
     if ('httpStatusCode' in report) {
         statuses.push(report.httpStatusCode)
     }
-    if ('redirectChain' in report && Array.isArray(report.redirectChain) && report.redirectChain.length > 0) {
+    if (report.redirectChain) {
         statuses.push(...report.redirectChain.map(r => r.status))
     }
 
@@ -84,7 +83,7 @@ function getFinalUrl({
         return finalUrl
     }
 
-    const redirectChain = 'redirectChain' in record && Array.isArray(record.redirectChain) && record.redirectChain.length > 0 ? record.redirectChain : null;
+    const redirectChain = record.redirectChain;
 
     if (httpStatusCode >= 200 && httpStatusCode <= 299) {
         finalUrl = record.url;
@@ -132,7 +131,7 @@ export function handleResponse(request, response = null, meta = {}) {
          * This is an asset response
          */
 
-        const redirectChain = getRedirectionChain(
+        const redirectChain = getRedirectChain(
             request.redirectChain(),
             request.url()
         );
@@ -188,7 +187,7 @@ export function handleResponse(request, response = null, meta = {}) {
                 url: request.url,
                 httpStatusCode: response.status(),
                 isNavigationRequest: response.request().isNavigationRequest(),
-                redirectChain: getRedirectionChain(
+                redirectChain: getRedirectChain(
                     response.request().redirectChain(),
                     request.url
                 ),
@@ -232,7 +231,7 @@ export function handleResponse(request, response = null, meta = {}) {
          * This is a basicCrawler response
          */
 
-        const redirectChain = getRedirectionChain(
+        const redirectChain = getRedirectChain(
             response.request._redirect.redirects,
             request.url
         );
@@ -343,7 +342,7 @@ export function handleFailedRequest(request, error, meta) {
             created: new Date().toISOString()
         });
 
-    if (meta._from === 'gotoFunction' || meta._from === 'page.goto().catch()') {
+    if (meta._from === 'addToRequestQueue' || meta._from === 'page.goto().catch()') {
 
         const record = extend(
             true,
@@ -355,8 +354,7 @@ export function handleFailedRequest(request, error, meta) {
             userData,
             meta
         );
-        console.todo('========================================')
-        console.todo(inspect(record))
+
         return record;
     }
 
@@ -399,7 +397,11 @@ export function handleFailedRequest(request, error, meta) {
     }
 }
 
-export function getRedirectionChain(chain, sourceUrl) {
+export function getRedirectChain(chain, sourceUrl) {
+    if (chain.length === 0) {
+        return null
+    }
+
     return chain
         .map(item => {
             if ('_client' in item) {

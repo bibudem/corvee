@@ -1,13 +1,4 @@
-import { ERROR_PROPS, BaseError } from "./error";
-
-export const PUP_ERROR_DEF = {
-  name: 'PUP_ERROR',
-  prefix: 'pup',
-  props: Object.assign({}, ERROR_PROPS),
-  test: function (err) {
-    return err instanceof PuppeteerError
-  }
-};
+import { BaseError } from "./error"
 
 export class PuppeteerError extends BaseError {
   constructor(message) {
@@ -55,13 +46,6 @@ export class ProtocolError extends PuppeteerError {
   constructor(message) {
     super(message)
     this.code = 'pup-protocol-error'
-  }
-}
-
-export class PupResponseIsUndefinedError extends PuppeteerError {
-  constructor(message) {
-    super(message)
-    this.code = 'pup-response-is-undefined'
   }
 }
 

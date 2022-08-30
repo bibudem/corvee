@@ -1,8 +1,17 @@
+import { isFunction } from 'underscore';
 import { normalizeUrl } from '../../../core'
 
 export class BrowsingContextStore {
 
-    constructor(data) {
+    constructor(data, normalizeUrl = normalizeUrl) {
+
+        if (arguments.length === 1) {
+            if (isFunction(data)) {
+                normalizeUrl = data
+                data = null
+            }
+        }
+
         this._cache = new Map();
 
         if (data) {
@@ -41,7 +50,7 @@ export class BrowsingContextStore {
 
         */
 
-        const findParentsFor = (url) => {
+        function findParentsFor(url) {
             return [...this._cache.keys()].filter(key => {
                 return [...this._cache.get(key)].includes(url)
             })
@@ -64,7 +73,8 @@ export class BrowsingContextStore {
 
         url = normalizeUrl(url)
         const result = doFind(url);
-        return result;
+
+        return result.length > 0 ? result : null;
     }
 
     addContext(url, contextUrl) {

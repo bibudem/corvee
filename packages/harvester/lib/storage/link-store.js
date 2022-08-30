@@ -33,9 +33,9 @@ const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType
 
 const linkTemplate = {
     finalUrl: null,
-    redirectChain: [],
+    redirectChain: null,
     trials: 1,
-    reports: [],
+    reports: null,
     contentLength: null,
     parent: 'corvee:url-list',
     level: 0

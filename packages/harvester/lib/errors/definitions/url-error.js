@@ -1,15 +1,4 @@
-import { PREFIX_SEPARATOR, ERROR_PROPS, BaseError } from '..'
-
-export const URL_ERROR_DEF = {
-    name: 'URL_ERROR',
-    prefix: 'url',
-    props: Object.assign({}, ERROR_PROPS, {
-        input: 'data',
-    }),
-    test: function (err) {
-        return 'input' in err || ('code' in err && err.code.startsWith(`url${PREFIX_SEPARATOR}`))
-    }
-}
+import { BaseError } from '..'
 
 export class UrlError extends BaseError {
     constructor(msg = 'Invalid URL') {

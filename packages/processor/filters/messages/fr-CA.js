@@ -60,6 +60,10 @@ export const messagesFrCA = {
         msg: "Lien brisé. Vérifiez le lien."
     },
 
+    "http-404-by-url": {
+        msg: "Lien brisé. Vérifiez le lien."
+    },
+
     "http-408": {
         msg: "Le délai de réponse a expiré."
     },

@@ -1,6 +1,6 @@
 import v from 'io-validate'
 const extend = require('extend')
-import { isObject } from 'underscore'
+import { isObject, isFunction } from 'underscore'
 import { normalizeUrl, console } from '../../core/lib'
 
 const userDataDefaults = {
@@ -12,8 +12,8 @@ const userDataDefaults = {
     trials: 1,
     urlData: null,
     size: null,
-    redirectChain: [],
-    reports: [],
+    redirectChain: null,
+    reports: null,
     browsingContextStack: []
 }
 
@@ -47,10 +47,18 @@ const userDataDefaults = {
  */
 
 export class Link {
-    constructor(uri, data = {}) {
+    constructor(uri, data = {}, normalizeUrl = normalizeUrl) {
 
-        v(uri).is('object', 'string');
+        if (arguments.length === 2) {
+            if (isFunction(data)) {
+                normalizeUrl = data
+                data = {}
+            }
+        }
+
+        v(uri).is('object', 'string')
         v(data).is('object', 'string')
+        v(normalizeUrl).isFunction()
 
         if (typeof data === 'string') {
             data = {
@@ -68,20 +76,25 @@ export class Link {
                     return this
                 }
 
-                return new Link(uri.url, extend(true, { url: uri.url }, (uri.userData || {}), data));
+                return new Link(uri.url, extend(true, { url: uri.url }, (uri.userData || {}), data), normalizeUrl);
             }
 
             data = uri;
 
             v(data, 'data').has('url')
 
-            this.url = normalizeUrl(data.url);
+            try {
+                this.url = normalizeUrl(data.url)
+            } catch (error) {
+                console.error(`normalizeUrl error at this.url: ${data.url}. Error: ${inspect(error)}`)
+            }
+
             this.userData = extend(
                 true,
                 {},
                 userDataDefaults,
                 {
-                    url: uri
+                    url: this.url
                 },
                 data.userData,
                 data);
@@ -89,7 +102,11 @@ export class Link {
             delete this.userData.userData
 
             if (this.userData.parent) {
-                this.userData.parent = normalizeUrl(this.userData.parent)
+                try {
+                    this.userData.parent = normalizeUrl(this.userData.parent)
+                } catch (error) {
+                    console.error(`normalizeUrl error at this.userData.parent: ${this.userData.parent}. Error: ${inspect(error)}`)
+                }
             }
 
             return;
@@ -99,7 +116,11 @@ export class Link {
         this.userData = extend(true, {}, userDataDefaults, { url: this.url }, data);
 
         if (this.userData.parent) {
-            this.userData.parent = normalizeUrl(this.userData.parent)
+            try {
+                this.userData.parent = normalizeUrl(this.userData.parent)
+            } catch (error) {
+                console.error(`normalizeUrl error at this.userData.parent: ${this.userData.parent}. Error: ${inspect(error)}`)
+            }
         }
     }
 }

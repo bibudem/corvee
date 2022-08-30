@@ -1,10 +1,10 @@
 import v from 'io-validate'
-import { isRelativeUrl } from '../../../core'
-import { console } from '../../../core';
+import { isRelativeUrl } from '../../../core/lib'
+import { console } from '../../../core/lib';
 
 export function setRedirectChain(record, redirectChain) {
     if (redirectChain.length === 0) {
-        return;
+        return null;
     }
 
     let previousUrl = record.url;
@@ -13,10 +13,10 @@ export function setRedirectChain(record, redirectChain) {
 
         v(item, 'request').got('response');
 
-        const res = item.response(),
-            headers = res.headers(),
-            status = res.status(),
-            statusText = res.statusText();
+        const response = item.response(),
+            headers = response.headers(),
+            status = response.status(),
+            statusText = response.statusText();
         let url;
 
         v(headers, 'response.headers()').has('location').isString();
