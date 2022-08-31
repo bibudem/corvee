@@ -110,7 +110,7 @@ const proxy = http.createServer();
 proxy.on('request', async (req, res) => {
     const isProxied = req.headers['proxy-connection'],
         url = isProxied ? `${req.url.replace(/\/$/, '')}/` : `${config.origin}${req.url}`;
-    // console.me(`[proxy] request for ${url} / ${req.headers['user-agent']}`)
+    // console.todo(`[proxy] request for ${url} / ${req.headers['user-agent']}`)
     if (url in routes) {
         return res.end(html(routes[url]));
     }
@@ -131,8 +131,8 @@ const starter = (port = config.proxyPort) => {
 }
 
 process.on('exit', () => {
-    // console.z(JSON.stringify(Array.from(requestLog), null, 2))
-    //console.z(JSON.stringify(r, null, 2))
+    // console.todo(JSON.stringify(Array.from(requestLog), null, 2))
+    //console.todo(JSON.stringify(r, null, 2))
 })
 
 if (!module.parent) {

@@ -57,7 +57,7 @@ logErrorCodes(harvester, path.join(__dirname, './error-codes.json'))
 //harvester.addUrl(urlList.filter(link => link['should-be'] !== 'good'));
 harvester.addUrl(urlList);
 
-//harvester.on('record', (record) => console.me(record.id))
+//harvester.on('record', (record) => console.todo(record.id))
 
 try {
     console.log('Starting tests.')

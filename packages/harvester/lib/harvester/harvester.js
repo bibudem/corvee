@@ -2,6 +2,7 @@ import EventEmitter from 'events'
 
 import minimatch from 'minimatch'
 import { pick, isRegExp, isFunction, isObject } from 'underscore'
+import * as URI from 'uri-js'
 import rp from 'request-promise-native'
 import Apify, { BasicCrawler, PuppeteerCrawler, utils as apifyUtils } from 'apify'
 import { launchPuppeteer } from 'apify/build/puppeteer'
@@ -621,6 +622,13 @@ export class Harvester extends EventEmitter {
                         }
                     }
 
+                    try {
+                        uriObj = URI.parse(link.url);
+                    } catch (error) {
+                        console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
+                        process.exit();
+                    }
+
                     //
                     // Don't collect the same link twice per page
                     const pageUrl = link.userData.parent;
@@ -769,7 +777,6 @@ export class Harvester extends EventEmitter {
 
                     record.id = self.session.recordCount;
                     record.extern = self.isExternLink(record.url); // ??? parfois la propriété est absente
-
                     record.browsingContextStack = self.browsingContextStore.getContext(record.parent)
 
                     try {

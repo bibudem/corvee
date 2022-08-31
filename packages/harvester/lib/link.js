@@ -1,7 +1,7 @@
 import v from 'io-validate'
 const extend = require('extend')
 import { isObject, isFunction } from 'underscore'
-import { normalizeUrl, console } from '../../core/lib'
+import { normalizeUrl as n, console } from '../../core/lib'
 
 const userDataDefaults = {
     url: null,
@@ -47,7 +47,7 @@ const userDataDefaults = {
  */
 
 export class Link {
-    constructor(uri, data = {}, normalizeUrl = normalizeUrl) {
+    constructor(uri, data = {}, normalizeUrl = n) {
 
         if (arguments.length === 2) {
             if (isFunction(data)) {

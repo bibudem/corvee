@@ -1,7 +1,12 @@
+import { isObject, isString } from 'underscore';
 import { FailedToLaunchError, HttpError, BrowserHasDisconnectedError, MailError, NetError, CorveeError, PageCrashedError, TimeoutError, TargetClosedError, UrlError } from './definitions'
 import { console, inspect } from '../../../core'
 
 export function captureErrors(data) {
+    if (data === null) {
+        return data
+    }
+
     if (!Array.isArray(data)) {
         data = [data];
     }
@@ -10,7 +15,7 @@ export function captureErrors(data) {
 
 export function captureError(error) {
 
-    if (typeof error === 'string') {
+    if (isString(error)) {
         console.todo('THIS SHOULD NOT HAPPEND: typeof error === \'string\'', error)
 
         //
@@ -37,7 +42,7 @@ export function captureError(error) {
         }
     }
 
-    if (typeof error === 'object') {
+    if (isObject(error)) {
 
         //
         // Chromium Net error

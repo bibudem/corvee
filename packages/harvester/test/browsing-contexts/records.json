@@ -1,0 +1,602 @@
+[
+  {
+    "url": "http://localhost:3128/",
+    "finalUrl": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:21.396Z",
+    "contentLength": 287,
+    "level": 0,
+    "parent": "corvee:startpage",
+    "text": null,
+    "urlData": "http://localhost:3128/",
+    "size": 287,
+    "browsingContextStack": null,
+    "timing": 49.635,
+    "_from": "onNavigationResponse",
+    "id": 1,
+    "extern": false
+  },
+  {
+    "url": "http://localhost:3128/iframe-host-1.html",
+    "finalUrl": "http://localhost:3128/iframe-host-1.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:22.559Z",
+    "contentLength": 282,
+    "level": 1,
+    "parent": "http://localhost:3128/",
+    "text": "iframe-host-1.html",
+    "urlData": "iframe-host-1.html",
+    "size": 282,
+    "browsingContextStack": null,
+    "extern": false,
+    "_from": "onNavigationResponse",
+    "timing": 113.055,
+    "id": 2
+  },
+  {
+    "finalUrl": "http://localhost:3128/",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 287,
+    "parent": "http://localhost:3128/iframe-host-1.html",
+    "level": 2,
+    "url": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 287,
+    "text": "home",
+    "urlData": "/",
+    "browsingContextStack": null,
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:22.573Z",
+    "id": 3
+  },
+  {
+    "url": "http://localhost:3128/iframe-host-2.html",
+    "finalUrl": "http://localhost:3128/iframe-host-2.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:23.715Z",
+    "contentLength": 349,
+    "level": 1,
+    "parent": "http://localhost:3128/",
+    "text": "iframe-host-2.html",
+    "urlData": "iframe-host-2.html",
+    "size": 349,
+    "browsingContextStack": null,
+    "extern": false,
+    "_from": "onNavigationResponse",
+    "timing": 118.745,
+    "id": 4
+  },
+  {
+    "finalUrl": "http://localhost:3128/",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 287,
+    "parent": "http://localhost:3128/iframe-host-2.html",
+    "level": 2,
+    "url": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 287,
+    "text": "home",
+    "urlData": "/",
+    "browsingContextStack": null,
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:23.727Z",
+    "id": 5
+  },
+  {
+    "url": "http://localhost:3128/other-page.html",
+    "finalUrl": "http://localhost:3128/other-page.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:24.866Z",
+    "contentLength": 228,
+    "level": 1,
+    "parent": "http://localhost:3128/",
+    "text": "other page",
+    "urlData": "other-page.html",
+    "size": 228,
+    "browsingContextStack": null,
+    "extern": false,
+    "_from": "onNavigationResponse",
+    "timing": 67.945,
+    "id": 6
+  },
+  {
+    "finalUrl": "http://localhost:3128/",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 287,
+    "parent": "http://localhost:3128/other-page.html",
+    "level": 2,
+    "url": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 287,
+    "text": "home",
+    "urlData": "/",
+    "browsingContextStack": null,
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:24.877Z",
+    "id": 7
+  },
+  {
+    "finalUrl": "http://localhost:3128/other-page.html",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 228,
+    "parent": "http://localhost:3128/iframe-host-1.html",
+    "level": 2,
+    "url": "http://localhost:3128/other-page.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 228,
+    "text": "other-page.html",
+    "urlData": "other-page.html",
+    "browsingContextStack": null,
+    "isNavigationRequest": true,
+    "_from": "linkStore#trial-3",
+    "created": "2022-08-31T21:14:25.599Z",
+    "id": 8
+  },
+  {
+    "finalUrl": "http://localhost:3128/other-page.html",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 228,
+    "parent": "http://localhost:3128/iframe-host-2.html",
+    "level": 2,
+    "url": "http://localhost:3128/other-page.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 228,
+    "text": "other-page.html",
+    "urlData": "other-page.html",
+    "browsingContextStack": null,
+    "isNavigationRequest": true,
+    "_from": "linkStore#trial-2",
+    "created": "2022-08-31T21:14:25.740Z",
+    "id": 9
+  },
+  {
+    "url": "http://localhost:3128/iframe-host-1.1.html",
+    "finalUrl": "http://localhost:3128/iframe-host-1.1.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:26.026Z",
+    "contentLength": 304,
+    "level": 1,
+    "parent": "http://localhost:3128/iframe-host-1.html",
+    "text": null,
+    "urlData": "http://localhost:3128/iframe-host-1.1.html",
+    "size": 304,
+    "browsingContextStack": null,
+    "resourceIsEmbeded": true,
+    "timing": 78.865,
+    "_from": "onNavigationResponse",
+    "id": 10,
+    "extern": false
+  },
+  {
+    "finalUrl": "http://localhost:3128/",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 287,
+    "parent": "http://localhost:3128/iframe-host-1.1.html",
+    "level": 2,
+    "url": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 287,
+    "text": "home",
+    "urlData": "/",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-1.html"
+      ]
+    ],
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:26.042Z",
+    "id": 11
+  },
+  {
+    "url": "http://localhost:3128/nothing-to-see-here.html",
+    "finalUrl": null,
+    "httpStatusCode": 404,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:27.251Z",
+    "contentLength": 72,
+    "level": 1,
+    "parent": "http://localhost:3128/iframe-host-2.html",
+    "text": null,
+    "urlData": "http://localhost:3128/nothing-to-see-here.html",
+    "size": 72,
+    "browsingContextStack": null,
+    "resourceIsEmbeded": true,
+    "timing": 15.245,
+    "_from": "onNavigationResponse",
+    "id": 12,
+    "extern": false
+  },
+  {
+    "url": "http://localhost:3128/iframe-page-2.html",
+    "finalUrl": "http://localhost:3128/iframe-page-2.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:28.392Z",
+    "contentLength": 304,
+    "level": 1,
+    "parent": "http://localhost:3128/iframe-host-2.html",
+    "text": null,
+    "urlData": "http://localhost:3128/iframe-page-2.html",
+    "size": 304,
+    "browsingContextStack": null,
+    "resourceIsEmbeded": true,
+    "timing": 81.275,
+    "_from": "onNavigationResponse",
+    "id": 13,
+    "extern": false
+  },
+  {
+    "finalUrl": "http://localhost:3128/",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 287,
+    "parent": "http://localhost:3128/iframe-page-2.html",
+    "level": 2,
+    "url": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 287,
+    "text": "home",
+    "urlData": "/",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-2.html"
+      ]
+    ],
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:28.404Z",
+    "id": 14
+  },
+  {
+    "finalUrl": null,
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 72,
+    "parent": "http://localhost:3128/iframe-page-2.html",
+    "level": 2,
+    "url": "http://localhost:3128/nothing-to-see-here.html",
+    "httpStatusCode": 404,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 72,
+    "text": "Nothing to see here",
+    "urlData": "nothing-to-see-here.html",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-2.html"
+      ]
+    ],
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:28.405Z",
+    "id": 15
+  },
+  {
+    "finalUrl": "http://localhost:3128/other-page.html",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 228,
+    "parent": "http://localhost:3128/iframe-page-2.html",
+    "level": 1,
+    "url": "http://localhost:3128/other-page.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 228,
+    "text": null,
+    "urlData": "http://localhost:3128/other-page.html",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-2.html"
+      ]
+    ],
+    "resourceIsEmbeded": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:28.412Z",
+    "id": 16
+  },
+  {
+    "url": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "finalUrl": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:29.543Z",
+    "contentLength": 251,
+    "level": 1,
+    "parent": "http://localhost:3128/other-page.html",
+    "text": null,
+    "urlData": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "size": 251,
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-page-2.html",
+        [
+          [
+            "http://localhost:3128/iframe-host-2.html"
+          ]
+        ]
+      ]
+    ],
+    "resourceIsEmbeded": true,
+    "timing": 50.4,
+    "_from": "onNavigationResponse",
+    "id": 17,
+    "extern": false
+  },
+  {
+    "finalUrl": "http://localhost:3128/",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 287,
+    "parent": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "level": 2,
+    "url": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 287,
+    "text": "home",
+    "urlData": "/",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/other-page.html",
+        [
+          [
+            "http://localhost:3128/iframe-page-2.html",
+            [
+              [
+                "http://localhost:3128/iframe-host-2.html"
+              ]
+            ]
+          ]
+        ]
+      ]
+    ],
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:29.554Z",
+    "id": 18
+  },
+  {
+    "finalUrl": null,
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 72,
+    "parent": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "level": 1,
+    "url": "http://localhost:3128/nothing-to-see-here.html",
+    "httpStatusCode": 404,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 72,
+    "text": null,
+    "urlData": "http://localhost:3128/nothing-to-see-here.html",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/other-page.html",
+        [
+          [
+            "http://localhost:3128/iframe-page-2.html",
+            [
+              [
+                "http://localhost:3128/iframe-host-2.html"
+              ]
+            ]
+          ]
+        ]
+      ]
+    ],
+    "resourceIsEmbeded": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:29.558Z",
+    "id": 19
+  },
+  {
+    "url": "http://localhost:3128/iframe-page2.html",
+    "finalUrl": null,
+    "httpStatusCode": 404,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:30.713Z",
+    "contentLength": 65,
+    "level": 2,
+    "parent": "http://localhost:3128/iframe-host-1.1.html",
+    "text": "iframe-page2.html",
+    "urlData": "iframe-page2.html",
+    "size": 65,
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-1.html"
+      ]
+    ],
+    "extern": false,
+    "_from": "onNavigationResponse",
+    "timing": 31.535,
+    "id": 20
+  },
+  {
+    "url": "http://localhost:3128/iframe-page-1.1.1.html",
+    "finalUrl": "http://localhost:3128/iframe-page-1.1.1.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "isNavigationRequest": true,
+    "redirectChain": null,
+    "resourceType": "document",
+    "trials": 1,
+    "reports": null,
+    "created": "2022-08-31T21:14:31.837Z",
+    "contentLength": 249,
+    "level": 1,
+    "parent": "http://localhost:3128/iframe-host-1.1.html",
+    "text": null,
+    "urlData": "http://localhost:3128/iframe-page-1.1.1.html",
+    "size": 249,
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-1.html"
+      ]
+    ],
+    "resourceIsEmbeded": true,
+    "timing": 61.595,
+    "_from": "onNavigationResponse",
+    "id": 21,
+    "extern": false
+  },
+  {
+    "finalUrl": "http://localhost:3128/",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 287,
+    "parent": "http://localhost:3128/iframe-page-1.1.1.html",
+    "level": 2,
+    "url": "http://localhost:3128/",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 287,
+    "text": "home",
+    "urlData": "/",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-1.1.html",
+        [
+          [
+            "http://localhost:3128/iframe-host-1.html"
+          ]
+        ]
+      ]
+    ],
+    "isNavigationRequest": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:31.847Z",
+    "id": 22
+  },
+  {
+    "finalUrl": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "redirectChain": null,
+    "trials": 1,
+    "reports": null,
+    "contentLength": 251,
+    "parent": "http://localhost:3128/iframe-page-1.1.1.html",
+    "level": 1,
+    "url": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "httpStatusCode": 200,
+    "contentType": null,
+    "resourceType": "document",
+    "extern": false,
+    "size": 251,
+    "text": null,
+    "urlData": "http://localhost:3128/iframe-page-1.1.1.1.html",
+    "browsingContextStack": [
+      [
+        "http://localhost:3128/iframe-host-1.1.html",
+        [
+          [
+            "http://localhost:3128/iframe-host-1.html"
+          ]
+        ]
+      ]
+    ],
+    "resourceIsEmbeded": true,
+    "_from": "linkStore",
+    "created": "2022-08-31T21:14:31.853Z",
+    "id": 23
+  }
+]

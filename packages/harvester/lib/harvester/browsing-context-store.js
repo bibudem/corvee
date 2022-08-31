@@ -1,25 +1,27 @@
 import { isFunction } from 'underscore';
-import { normalizeUrl } from '../../../core'
+import { normalizeUrl as defaultNormalizeUrlFunction } from '../../../core'
 
 export class BrowsingContextStore {
 
-    constructor(data, normalizeUrl = normalizeUrl) {
+    constructor(data, normalizeUrl = defaultNormalizeUrlFunction) {
+
+        this._cache = new Map();
+        this.normalizeUrl = normalizeUrl
 
         if (arguments.length === 1) {
             if (isFunction(data)) {
-                normalizeUrl = data
+                this.normalizeUrl = data
                 data = null
             }
         }
-
-        this._cache = new Map();
 
         if (data) {
             Object
                 .keys(data)
                 .forEach(parentUrl => {
+                    console.log(parentUrl)
                     data[parentUrl].forEach(url => {
-                        this.addContext(normalizeUrl(url), normalizeUrl(parentUrl))
+                        this.addContext(this.normalizeUrl(url), this.normalizeUrl(parentUrl))
                     })
                 })
         }
@@ -31,7 +33,11 @@ export class BrowsingContextStore {
 
     getContext(url) {
 
-        // return contextStack;
+        if (this._cache.size === 0) {
+            return null
+        }
+
+        const self = this;
 
         /*
 
@@ -51,8 +57,8 @@ export class BrowsingContextStore {
         */
 
         function findParentsFor(url) {
-            return [...this._cache.keys()].filter(key => {
-                return [...this._cache.get(key)].includes(url)
+            return [...self._cache.keys()].filter(key => {
+                return [...self._cache.get(key)].includes(url)
             })
         }
 
@@ -71,15 +77,15 @@ export class BrowsingContextStore {
             return []
         }
 
-        url = normalizeUrl(url)
+        url = this.normalizeUrl(url)
         const result = doFind(url);
 
         return result.length > 0 ? result : null;
     }
 
     addContext(url, contextUrl) {
-        url = normalizeUrl(url);
-        contextUrl = normalizeUrl(contextUrl);
+        url = this.normalizeUrl(url);
+        contextUrl = this.normalizeUrl(contextUrl);
 
         const context = this._cache.get(contextUrl) || new Set();
 
@@ -94,4 +100,17 @@ export class BrowsingContextStore {
             return obj;
         }, {})
     }
+}
+
+//
+//
+//
+import { readFileSync } from 'fs'
+import { join } from 'path'
+if (require.main === module) {
+    const data = readFileSync(join(__dirname, '..', '..', '..', '..', '..', 'corvee-bib', 'data', '2022-08-29_browsing-contexts.json'), 'utf8')
+
+    const browsingContextStack = new BrowsingContextStore(data)
+    console.log(JSON.stringify(browsingContextStack.getContext('https://bib.umontreal.ca/citer/styles-bibliographiques/chicago?tab=5241967'), null, 2))
+
 }

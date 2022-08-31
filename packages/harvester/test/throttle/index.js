@@ -39,7 +39,7 @@ for (var i = 0; i < 100; i++) {
     }))
 }
 
-//console.z(urls)
+//console.todo(urls)
 
 const harvester = new Harvester(configs);
 

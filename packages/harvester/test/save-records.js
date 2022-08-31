@@ -76,7 +76,7 @@ export default async function saveRecords(dir, harvester, runOptions, filter) {
     })
 
     harvester.on('end', () => {
-        console.z('on end...')
+        console.todo('on end...')
         try {
             // toXML(dir, records);
             stream.end('\n]');
@@ -85,7 +85,7 @@ export default async function saveRecords(dir, harvester, runOptions, filter) {
             // fs.writeFileSync(path.join(dir, 'records-l.json'), records.map(record => JSON.stringify(record)).join('\n'), 'utf8');
             // await saveToDb(records)
         } catch (e) {
-            console.z(e)
+            console.todo(e)
         }
     })
 }

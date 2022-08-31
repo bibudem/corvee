@@ -29,7 +29,7 @@ proxy.on('request', (req, res) => {
 
     r.push(timeFromLast)
 
-    console.z(`[${Math.round(timeFromLast / 100) / 10}] request for ${req.url}`)
+    console.todo(`[${Math.round(timeFromLast / 100) / 10}] request for ${req.url}`)
     res.end('ok')
 })
 
@@ -45,8 +45,8 @@ const starter = (port = 3128) => {
 }
 
 process.on('exit', () => {
-    // console.z(JSON.stringify(Array.from(requestLog), null, 2))
-    console.z(JSON.stringify(r, null, 2))
+    // console.todo(JSON.stringify(Array.from(requestLog), null, 2))
+    console.todo(JSON.stringify(r, null, 2))
 })
 
 export default starter

@@ -104,7 +104,7 @@ const proxy = http.createServer();
 
 proxy.on('request', (req, res) => {
     const url = req.url
-    console.me(`[proxy] request for ${url}`)
+    console.todo(`[proxy] request for ${url}`)
     if (url in routes) {
         return res.end(html(routes[url]))
     }
@@ -125,8 +125,8 @@ const starter = (port = 3128) => {
 }
 
 process.on('exit', () => {
-    // console.z(JSON.stringify(Array.from(requestLog), null, 2))
-    //console.z(JSON.stringify(r, null, 2))
+    // console.todo(JSON.stringify(Array.from(requestLog), null, 2))
+    //console.todo(JSON.stringify(r, null, 2))
 })
 
 if (!module.parent) {

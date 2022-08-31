@@ -41,7 +41,6 @@
         "esm": "^3.2.25",
         "extend": "^3.0.2",
         "io-validate": "^2.1.13",
-        "is-number": "^7.0.0",
         "lru": "^3.1.0",
         "minimatch": "^3.0.4",
         "moment": "^2.24.0",
@@ -51,6 +50,7 @@
         "request-promise-native": "^1.0.8",
         "toidentifier": "^1.0.1",
         "underscore": "^1.13.4",
+        "uri-js": "^4.4.1",
         "xml-js": "^1.6.11",
         "xml2js": "^0.4.22",
         "yargs": "^13.3.0"

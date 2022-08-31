@@ -261,7 +261,7 @@ export class CorveeProcessor extends EventEmitter {
         console.debug(`Filtering ${this.filters.length} filters...`);
 
 
-        const progressBar = new ProgressBar(':bar :percent -- current filter: :filter', { total: this.filters.length })
+        const progressBar = new ProgressBar('[:bar] :percent :etas -- current filter: :filter', { total: this.filters.length })
 
         this.filters.forEach(filter => {
             progressBar.tick({ filter: filter.code })
