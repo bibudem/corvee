@@ -56,18 +56,20 @@
         "yargs": "^13.3.0"
     },
     "devDependencies": {
-        "babel-jest": "^24.9.0",
+        "@babel/preset-env": "^7.18.10",
+        "babel-jest": "^28.1.3",
         "express": "^4.17.1",
         "faker": "^4.1.0",
         "fast-xml-parser": "^3.14.0",
         "hbs": "^4.0.6",
         "he": "^1.2.0",
-        "jest": "^24.9.0",
-        "jest-cli": "^24.9.0",
+        "jest": "^28.1.3",
+        "jest-cli": "^28.1.3",
         "json-set-map": "^1.0.2",
         "random-uri": "^1.0.3",
         "rimraf": "^3.0.0",
         "toxy": "^0.3.16",
+        "ts-jest": "^28.0.8",
         "url-slug": "^2.2.0",
         "web-logger": "github:remillc/web-logger"
     }

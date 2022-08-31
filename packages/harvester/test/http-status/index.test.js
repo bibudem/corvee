@@ -1,11 +1,7 @@
-import path from 'path'
 import Apify from 'apify';
 import app from './server';
 
-import {
-    Harvester
-}
-from '../../lib/harvester'
+import { Harvester } from '../../lib/harvester'
 
 import configs from './config'
 
