@@ -1,5 +1,5 @@
 import { FailedToLaunchError, HttpError, BrowserHasDisconnectedError, MailError, NetError, CorveeError, PageCrashedError, TimeoutError, TargetClosedError, UrlError } from './definitions'
-import { Report, console, inspect } from '../../../core'
+import { console, inspect } from '../../../core'
 
 export function captureErrors(data) {
     if (!Array.isArray(data)) {
@@ -124,13 +124,6 @@ export function captureError(error) {
 
                 return targetClosedError
             }
-        }
-
-        //
-        // Report class
-        //
-        if (error instanceof Report) {
-            return error;
         }
 
         //
