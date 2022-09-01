@@ -1032,7 +1032,31 @@ export class Harvester extends EventEmitter {
 
                             page.setDefaultNavigationTimeout(self.config.requestTimeout)
 
-                            page.setRequestInterception(true);
+                            await page.setRequestInterception(true);
+
+                            const pageUrl = new URL(request.url)
+                            const authority = /(.+\.)*([a-z0-9\\u00a1-\\uffff_-]+\.[a-z\\u00a1-\\uffff]{2,})/i.exec(pageUrl.hostname)[2]
+
+                            await page.setExtraHTTPHeaders({
+                                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                                'accept-encoding': 'gzip, deflate, br',
+                                'cache-control': 'no-cache',
+                                'connection': 'keep-alive',
+                                // 'host': (new URL(request.url)).hostname
+                                // ':authority': authority,
+                                // ':method': 'GET',
+                                // ':path': pageUrl.pathname,
+                                // ':scheme': pageUrl.protocol.split(':')[0],
+                                'accept-language': 'en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7,en-US;q=0.6,la;q=0.5',
+                                'pragma': 'no-cache',
+                                'sec-ch-ua': '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+                                'sec-ch-ua-mobile': '?0',
+                                'sec-ch-ua-platform': 'Windows',
+                                'sec-ch-dest': 'document',
+                                'sec-fetch-site': 'none',
+                                'sec-fetch-user': '?1',
+                                'upgrade-insecure-requests': '1'
+                            })
 
                             // don't request assets if this is an external page
                             if (self.isExternLink(request.url)) {
@@ -1420,11 +1444,11 @@ export class Harvester extends EventEmitter {
 
                                             const httpError = new HttpError(statusCode, pupResponse.statusText())
 
-                                            if (!pupResponse.request().userData.reports) {
-                                                pupResponse.request().userData.reports = []
+                                            if (!request.userData.reports) {
+                                                request.userData.reports = []
                                             }
 
-                                            pupResponse.request().userData.reports.push(httpError);
+                                            request.userData.reports.push(httpError);
                                         }
 
                                     }
@@ -1567,11 +1591,7 @@ response: ${inspect(pupResponse)}`)
                         console.todo(`url: ${request.url}, error: ${inspect(error)}`)
                     }
 
-                    try {
-                        data.timing = await getTimingFor(pupResponse.url(), page)
-                    } catch (error) {
-                        data.timing = null
-                    }
+                    data.timing = request.userData.timing
 
                     if (self.config.getPerfData) {
                         data.perfData = await getPerformanceData(page, pupResponse.url())
@@ -1603,16 +1623,6 @@ response: ${inspect(pupResponse)}`)
 
                     try {
                         self.normalizeUrl(request.url, true);
-
-                        try {
-                            await page.exposeFunction('harvester', () => {
-                                return self
-                            });
-                        } catch (error) {
-                            // Sometimes Apify throws an error 'Error: Protocol error (Runtime.addBinding): Target closed.'
-                            // Ignore error
-                            console.verbose(error)
-                        }
 
                         const meta = {
                             _from: 'onNavigationResponse'

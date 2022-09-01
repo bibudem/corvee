@@ -2,7 +2,7 @@ export default {
     code: 'http-30x-permanent-redirect-failure',
     description: 'Matches a failed response after one or more redirections where at least one of that is permanent. Returns the URL of the last permanent redirect.',
     test: (report) => {
-        if ('redirectChain' in report &&
+        if (report.redirectChain &&
             report.redirectChain.length > 0 &&
             !Number.isNaN(report.httpStatusCode) &&
             report.httpStatusCode >= 400

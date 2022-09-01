@@ -1,6 +1,6 @@
-import { canonicalizeUrl } from '../../core'
+import { canonicalizeUrl } from '../../core/lib'
 
-export const name = 'http-30x-https-upgrade';
+export const name = 'http-30x-https-upgrade-strict';
 
 const defaultLevel = 'warning';
 
@@ -45,16 +45,20 @@ export default class Http30xHttpsUpgrade {
                 return
             }
 
-            const finalUrl = new URL(canonicalizeUrl(report.finalUrl)),
-                url = new URL(canonicalizeUrl(report.url)),
-                isHttpsUpgrade = finalUrl.protocol === url.protocol.replace(/:$/, 's:'),
-                isWwwUpgrade = this.options.ignoreWww ? new RegExp(`^w+(\d+)?\.${finalUrl.hostname.replace(/\./ig, '\\.')}$`).test(url.hostname) : false,
-                isSameUrlPath = `${url.pathname}${url.search}` === `${finalUrl.pathname}${finalUrl.search}`;
+            const finalUrl = new URL(canonicalizeUrl(report.finalUrl))
+            const url = new URL(canonicalizeUrl(report.url))
+            const isHttpsUpgrade = finalUrl.protocol === url.protocol.replace(/:$/, 's:')
+            const isSameDomain = url.hostname === finalUrl.hostname
+            const isSameUrlPath = `${url.pathname}${url.search}` === `${finalUrl.pathname}${finalUrl.search}`
+            const isWwwUpgrade = this.options.ignoreWww ? new RegExp(`^w+(\d+)?\.${finalUrl.hostname.replace(/\./ig, '\\.')}$`).test(url.hostname) : false
 
-            if (isSameUrlPath &&
+            if (
+                isSameDomain &&
+                isSameUrlPath &&
                 (isHttpsUpgrade || isWwwUpgrade) &&
-                'redirectChain' in report &&
-                report.redirectChain.length > 0) {
+                report.redirectChain &&
+                report.redirectChain.length > 0
+            ) {
                 return report.finalUrl;
             };
         }

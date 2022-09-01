@@ -55,15 +55,10 @@ export default class Http30xHttpsUpgrade {
                 domainRegex = new RegExp(`(^w+(\d+)?\.)?${finalUrl.hostname.replace(/\./ig, '\\.')}$`),
                 isSameDomain = this.options.ignoreWww ? domainRegex.test(url.hostname) : url.hostname === finalUrl.hostname;
 
-            // if (report.url === 'http://www.biosciencewriters.com/Digital-identifiers-of-scientific-literature-PMID-PMCID-NIHMS-DOI-and-how-to-use-them.aspx') {
-            //     console.warn(url)
-            //     console.warn(finalUrl)
-            //     process.exit()
-            // }
             return !isSamePathname &&
                 isSameDomain &&
                 isHttpsUpgrade &&
-                'redirectChain' in report &&
+                report.redirectChain &&
                 report.redirectChain.length > 0;
         }
     }

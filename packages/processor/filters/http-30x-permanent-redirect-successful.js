@@ -1,8 +1,12 @@
+const code = 'http-30x-permanent-redirect-successful'
+const level = 'info'
+const priority = -1
+
 export default {
-    code: 'http-30x-permanent-redirect-successful',
+    code,
     description: 'Matches a successful response after one or more redirections where at least one of that is permanent. Returns the URL of the last permanent redirect.',
     test: (report) => {
-        if ('redirectChain' in report &&
+        if (report.redirectChain &&
             report.redirectChain.length > 0 &&
             !Number.isNaN(report.httpStatusCode) &&
             report.httpStatusCode < 400
@@ -15,13 +19,14 @@ export default {
 
                 report.finalUrl = permanentRedirects[permanentRedirects.length - 1].url;
                 report.reports.push({
-                    code: 'http-30x-permanent-redirect-successful',
-                    level: 'info'
+                    code,
+                    level,
+                    priority
                 })
                 return report;
             }
         }
     },
-    level: 'info',
-    priority: -1
+    level,
+    priority
 }
