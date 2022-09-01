@@ -1,12 +1,7 @@
 
-import { promisify } from 'util'
 import { promises as fsPromises, existsSync, mkdir, renameSync } from 'fs'
 
-import rimraf from 'rimraf'
-
 import { inspect, console } from '../../../core'
-
-const rimrafP = promisify(rimraf);
 
 export function cleanupFolderPromise(path, tmpPath) {
   return new Promise(async (resolve, reject) => {
@@ -17,7 +12,6 @@ export function cleanupFolderPromise(path, tmpPath) {
         return reject(error)
       }
 
-      // rimrafP(tmpPath);
       fsPromises.rm(tmpPath, {
         force: true,
         recursive: true

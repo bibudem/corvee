@@ -79,7 +79,7 @@ const fileLogger = createLogger({
     }), printf((info) => {
         const stackInfo = getStackInfo(12);
 
-        return `${info.timestamp} <${info.level.toUpperCase()}> ${stackInfo.relativePath}:${stackInfo.line} ${stackInfo.method} ${info.message}`
+        return `${info.timestamp} <${info.level.toUpperCase()}> ${stackInfo.relativePath}:${stackInfo.line} ${stackInfo.method} ${info.message}`.replace(/\x1B\[\d+m/g, '') // strip colors
     })),
 
     transports: [

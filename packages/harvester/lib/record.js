@@ -124,54 +124,7 @@ export function handleResponse(request, response = null, meta = {}) {
         created: new Date().toISOString()
     });
 
-    if ('_isNavigationRequest' in request) {
-
-        /*
-         * puppeteer Request class && puppeteer Response class
-         * This is an asset response
-         */
-
-        const redirectChain = getRedirectChain(
-            request.redirectChain(),
-            request.url()
-        );
-
-        const record = extend(
-            true,
-            {},
-            baseReport,
-            {
-                url: request.url(),
-                httpStatusCode: response ? response.status() : null,
-                isNavigationRequest: request.isNavigationRequest(),
-                redirectChain,
-                resourceType: request.resourceType(),
-                trials: 'TODO',
-            },
-            userData,
-            meta
-        );
-
-        if (response && 'content-type' in response.headers()) {
-            record.contentType = response.headers()['content-type'].split(';')[0].trim();
-        }
-
-        record.httpStatusCode = getFinalStatus(record);
-
-        const {
-            finalUrl
-        } = getFinalUrl({
-            record,
-            httpStatusCode: response ? response.status() : null,
-            headers: response ? response.headers() : []
-        });
-
-        record.finalUrl = finalUrl;
-
-        return record;
-    }
-
-    if (response && '_client' in response) {
+    if (typeof request._client === 'undefined') {
 
         /*
          * apify request class && puppeteer Response class
@@ -182,6 +135,7 @@ export function handleResponse(request, response = null, meta = {}) {
             true,
             {},
             baseReport,
+            userData,
             {
                 /** @member {string} [urlData] - Url as found when crawling */
                 url: request.url,
@@ -194,7 +148,6 @@ export function handleResponse(request, response = null, meta = {}) {
                 resourceType: response.request().resourceType(),
                 trials: request.retryCount
             },
-            userData,
             meta
         );
 
@@ -220,6 +173,57 @@ export function handleResponse(request, response = null, meta = {}) {
         record.finalUrl = finalUrl;
 
         delete record.uniqueKey;
+
+        return record;
+    }
+
+    if ('_client' in request) {
+
+        /*
+         * puppeteer Request class && puppeteer Response class
+         * This is an asset response OR a document download response (pdf, etc.)
+         */
+
+        const redirectChain = getRedirectChain(
+            request.redirectChain(),
+            request.url()
+        );
+
+        const record = extend(
+            true,
+            {},
+            baseReport,
+            userData,
+            {
+                url: request.url(),
+                httpStatusCode: response.status(),
+                isNavigationRequest: request.isNavigationRequest(),
+                redirectChain,
+                resourceType: request.resourceType(),
+                trials: 'TODO',
+            },
+            meta
+        );
+
+        if (response && 'content-type' in response.headers()) {
+            record.contentType = response.headers()['content-type'].split(';')[0].trim();
+        }
+
+        if ('content-length' in response.headers()) {
+            record.contentLength = +response.headers()['content-length']
+        }
+
+        record.httpStatusCode = getFinalStatus(record);
+
+        const {
+            finalUrl
+        } = getFinalUrl({
+            record,
+            httpStatusCode: response ? response.status() : null,
+            headers: response ? response.headers() : []
+        });
+
+        record.finalUrl = finalUrl;
 
         return record;
     }
@@ -398,40 +402,51 @@ export function handleFailedRequest(request, error, meta) {
 }
 
 export function getRedirectChain(chain, sourceUrl) {
+
     if (chain.length === 0) {
         return null
     }
 
     return chain
-        .map(item => {
-            if ('_client' in item) {
-                // puppeteer Request class
-                const response = item.response();
-                return {
-                    url: absUrl(response.headers().location, response.url()),
-                    status: response.status(),
-                    statusText: response.statusText()
-                };
+        .map(request => {
+            if ('_client' in request) {
+
+                // puppeteer HTTPRequest class
+                const httpResponse = request.response();
+                let redirect = {}
+
+                redirect.url = absUrl(httpResponse.headers().location, httpResponse.url())
+
+                redirect = ((props) => {
+                    return props.reduce((obj, prop) => {
+                        try {
+                            obj[prop] = httpResponse[prop]();
+                            return obj;
+                        } catch (error) {
+                            console.error(inspect(error))
+                        }
+                    }, redirect)
+                })(['status', 'statusText', 'fromCache', 'fromServiceWorker']);
+
+                return redirect
             }
 
             // ???
             return {
-                url: item.redirectUri,
-                status: item.statusCode
+                url: request.redirectUri,
+                status: request.statusCode
             };
         })
         .map(({
             url,
-            status,
-            statusText
+            ...redirectData
         }, i, items) => {
             const baseUrl = i === 0 ? sourceUrl : items[i - 1].url;
             const newUrl = absUrl(url, baseUrl);
 
             return {
                 url: newUrl,
-                status,
-                statusText
+                ...redirectData
             };
         });
 }

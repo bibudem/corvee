@@ -24,7 +24,7 @@ import { console, inspect } from '../../../core'
 import Notifier from '../utils/notifier'
 
 import { defaultHarvesterOptions, defaultLaunchPuppeteerOptions, defaultPuppeteerPoolOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
-import { setRedirectChain, getPerformanceData, getTimingFor } from '.'
+import { getPerformanceData, getTimingFor } from '.'
 
 const extend = require('extend')
 const pkg = require('../../package.json')
@@ -1132,7 +1132,7 @@ export class Harvester extends EventEmitter {
                                         return pupRequest.continue()
                                     }
 
-                                    console.debug(`Request URL: ${inspect(pupRequest.url())}`)
+                                    console.debug(`Request URL: ${inspect(request.url)}`)
 
                                     const url = pupRequest.url();
                                     const parentUrl = page.url();
@@ -1178,14 +1178,12 @@ export class Harvester extends EventEmitter {
                                             let record;
                                             const meta = {
                                                 _from: 'onDocumentDownload',
-                                                resourceType: 'document',
                                                 trials: request.retryCount,
                                                 parent: request.userData.parent
                                             }
 
                                             try {
                                                 record = handleResponse(pupRequest, pupResponse, meta)
-                                                setRedirectChain(record, pupRequest.redirectChain())
 
                                             } catch (error) {
                                                 console.error(inspect(error))
@@ -1325,6 +1323,7 @@ export class Harvester extends EventEmitter {
 
                                     const meta = {
                                         _from: 'onAssetResponse',
+                                        trials: request.retryCount,
                                     }
 
                                     //
@@ -1351,8 +1350,6 @@ export class Harvester extends EventEmitter {
                                         if (pupResponse.ok()) {
 
                                             try {
-
-                                                setRedirectChain(meta, pupResponse.request().redirectChain())
 
                                                 const record = handleResponse(pupResponse.request(), pupResponse, meta)
 
@@ -1413,31 +1410,6 @@ export class Harvester extends EventEmitter {
 
                                         return;
                                     }
-
-                                    function setResponseChain(pupResponse) {
-                                        if (pupResponse.status() < 300) {
-                                            return
-                                        }
-
-                                        pupResponse.request().userData.responseChain = pupResponse.request().userData.responseChain || [];
-
-                                        const redirect = ((props) => {
-                                            return props.reduce((obj, prop) => {
-                                                try {
-                                                    obj[prop] = pupResponse[prop]();
-                                                    return obj;
-                                                } catch (error) {
-                                                    console.error(inspect(error))
-                                                }
-                                            }, {})
-                                        })(['url', 'status', 'statusText', 'headers', 'fromCache', 'fromServiceWorker']);
-
-                                        redirect.resourceType = pupResponse.request().resourceType();
-
-                                        pupResponse.request().userData.responseChain.push(redirect);
-                                    }
-
-                                    setResponseChain(pupResponse);
 
                                     if (!pupResponse.ok()) {
                                         const statusCode = pupResponse.status()
