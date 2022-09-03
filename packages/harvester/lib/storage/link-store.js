@@ -52,9 +52,9 @@ export class LinkStore {
     async init() {
         this._store = await Apify.openKeyValueStore('link-store')
         // In case of a --resume option
-        await this._store.forEachKey(async (key) => {
-            this._linkIdx.add(key)
-        })
+        // await this._store.forEachKey((key) => {
+        //     this._linkIdx.add(key)
+        // })
     }
 
     has(url) {

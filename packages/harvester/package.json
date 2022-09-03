@@ -34,7 +34,7 @@
         "cv": "./bin/cli.js"
     },
     "dependencies": {
-        "apify": "^0.16.1",
+        "apify": "^0.22.2",
         "assert-plus": "^1.0.0",
         "chromium-net-errors": "^9.0.0",
         "escape-html": "^1.0.3",

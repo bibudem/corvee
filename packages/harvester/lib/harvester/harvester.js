@@ -6,7 +6,7 @@ import * as URI from 'uri-js'
 import rp from 'request-promise-native'
 import Apify, { BasicCrawler, PuppeteerCrawler, utils as apifyUtils } from 'apify'
 import { launchPuppeteer } from 'apify/build/puppeteer'
-import { computeUniqueKey } from 'apify/build/request'
+import { computeUniqueKey } from '..'
 import v from 'io-validate'
 import assert from 'assert-plus'
 
@@ -160,13 +160,7 @@ export class Harvester extends EventEmitter {
         // }
 
         this.autoscaledPoolOptions = {
-            ...defaultAutoscaledPoolOptions,
-            isTaskReadyFunction: function isTaskReady() {
-                return true;
-            },
-            runTaskReadyFunction: function runTaskReady() {
-                return true;
-            }
+            ...defaultAutoscaledPoolOptions
         }
 
         console.verbose(`this.autoscaledPoolOptions: ${inspect(this.autoscaledPoolOptions)}`)
@@ -653,8 +647,7 @@ export class Harvester extends EventEmitter {
                     const extern = self.isExternLink(link.url)
 
                     const requestData = extend(true, {}, link, {
-                        retryCount: trials,
-                        extern
+                        retryCount: trials
                     })
 
                     // Don't process links in current page if it's url satisfies one of the options.noFollow[] rules
@@ -988,7 +981,7 @@ export class Harvester extends EventEmitter {
                     console.debug(inspect(request))
                 },
                 maxRequestRetries: self.config.maxRequestRetries,
-                handlePageTimeoutSecs: self.config.PageTimeout
+                handleRequestTimeoutSecs: self.config.requestTimeout
             });
 
             basicCrawler.pause = function pause(timeout) {
@@ -1740,16 +1733,6 @@ Exiting now...`)
                             console.error('Basic crawler ended with error.')
                             reject(error)
                         })
-
-                    const statsLoggerHandle = setInterval(() => {
-                        try {
-                            basicCrawler.stats.stopLogging();
-                            clearInterval(statsLoggerHandle);
-                            console.verbose('Canceled basicCrawler stats logging.')
-                        } catch (error) {
-                            console.error(inspect(error))
-                        }
-                    }, 100)
 
                 })
                     .catch(error => {

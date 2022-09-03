@@ -10,12 +10,10 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "apify": "^0.17.0",
         "colors": "^1.4.0",
         "filenamify-url": "^2.1.0",
         "io-validate": "^2.1.13",
         "is-relative-url": "^3.0.0",
-        "ismobilejs": "^1.0.3",
         "tracer": "^1.0.1",
         "underscore": "^1.9.1",
         "uri-js": "^4.2.2",

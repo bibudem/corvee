@@ -1,3 +1,4 @@
+export * from './compute-unique-key'
 export * from './display-url'
 export * from './human-duration'
 export * from './link-checker'
