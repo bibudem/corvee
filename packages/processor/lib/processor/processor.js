@@ -154,7 +154,7 @@ export class CorveeProcessor extends EventEmitter {
                     }
                 } catch (e) {
                     console.error(e)
-                    console.info('At record %o', record)
+                    console.info('At record', record)
                     process.exit()
                 }
 

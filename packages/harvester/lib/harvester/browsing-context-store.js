@@ -1,5 +1,5 @@
 import { isFunction } from 'underscore';
-import { normalizeUrl as defaultNormalizeUrlFunction } from '../../../core'
+import { normalizeUrl as defaultNormalizeUrlFunction, console } from '../../../core'
 
 export class BrowsingContextStore {
 
@@ -19,7 +19,6 @@ export class BrowsingContextStore {
             Object
                 .keys(data)
                 .forEach(parentUrl => {
-                    console.log(parentUrl)
                     data[parentUrl].forEach(url => {
                         this.addContext(this.normalizeUrl(url), this.normalizeUrl(parentUrl))
                     })

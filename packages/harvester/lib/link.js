@@ -14,7 +14,7 @@ const userDataDefaults = {
     size: null,
     redirectChain: null,
     reports: null,
-    browsingContextStack: []
+    browsingContextStack: null
 }
 
 /*

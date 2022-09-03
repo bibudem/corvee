@@ -6,7 +6,7 @@ export default {
         return 'httpStatusCode' in report &&
             report.httpStatusCode === 201 &&
             (
-                !'redirectChain' in report ||
+                !report.redirectChain ||
                 report.redirectChain.length === 0
             ) &&
             this.isMuted(report);
