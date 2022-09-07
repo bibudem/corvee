@@ -3,8 +3,6 @@ import express from 'express';
 import routes from './routes';
 import webLogger from 'web-logger'
 import hbs from 'hbs'
-import _ from 'underscore';
-import isNumber from 'is-number'
 
 const app = express();
 

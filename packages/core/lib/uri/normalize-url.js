@@ -71,7 +71,7 @@ export const normalizeUrl = (url, options) => {
     }
 
     if (uriObj.path) {
-        uriObj.path = uriObj.path.replace(/(index|default)\.html?($|\?)/, '$2')
+        uriObj.path = uriObj.path.replace(/(index|default)\.(html?|php|aspx|do)($|\?)/, '$2')
     }
 
     if (uriObj.query) {
@@ -97,7 +97,7 @@ export const normalizeUrl = (url, options) => {
         delete uriObj.fragment
     }
 
-    return URI.serialize(uriObj).toLowerCase()
+    return URI.serialize(uriObj)
 }
 
 //

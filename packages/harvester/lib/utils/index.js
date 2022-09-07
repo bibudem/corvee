@@ -1,7 +1,6 @@
 export * from './compute-unique-key'
 export * from './display-url'
 export * from './human-duration'
-export * from './link-checker'
 export * from './log-error-codes'
 export * from './make-array'
 export * from './wait'

@@ -1,14 +1,15 @@
 import EventEmitter from 'events'
 
 import minimatch from 'minimatch'
-import { pick, isRegExp, isFunction, isObject } from 'underscore'
+import { pick, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
 import rp from 'request-promise-native'
-import Apify, { BasicCrawler, PuppeteerCrawler, utils as apifyUtils } from 'apify'
-import { launchPuppeteer } from 'apify/build/puppeteer'
+import Apify, { BasicCrawler, PlaywrightCrawler, utils as apifyUtils } from 'apify'
+import playwright from 'playwright'
 import { computeUniqueKey } from '..'
 import v from 'io-validate'
 import assert from 'assert-plus'
+const extend = require('extend')
 
 import { getResponseData } from '../net/utils'
 import { normalizeUrl, isValidUrl, getRandomUserAgent } from '../../../core'
@@ -23,10 +24,9 @@ import { PseudoUrls } from '../pseudoUrls'
 import { console, inspect } from '../../../core'
 import Notifier from '../utils/notifier'
 
-import { defaultHarvesterOptions, defaultLaunchPuppeteerOptions, defaultPuppeteerPoolOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
+import { defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
 import { getPerformanceData, getTimingFor } from '.'
 
-const extend = require('extend')
 const pkg = require('../../package.json')
 
 process.on('unhandledRejection', function onUnhandledRejection(reason, promise) {
@@ -52,11 +52,9 @@ process.on('uncaughtException', function onUnhandledRejection(error, origin) {
     console.todo(`Uncaught Exception. Error: ${inspect(error)}. Origin: ${inspect(origin)}`);
 });
 
-const UNHANDLED_ERROR = 'CV::UNHANDLED_ERROR';
-
 const linkProps = new Set();
 
-const defaultOptions = extend(true, {}, defaultHarvesterOptions, defaultLaunchPuppeteerOptions, defaultPuppeteerPoolOptions)
+const defaultOptions = extend(true, {}, defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions)
 
 /**
  * Creates a new Harvester
@@ -88,7 +86,7 @@ export class Harvester extends EventEmitter {
         this._isRunning = false
         this._pausedAt = 0;
 
-        this.config = Object.assign({}, defaultOptions, config);
+        this.config = extend(true, {}, defaultOptions, config);
 
         console.log(`Setting log level to ${this.config.logLevel}`)
         console.setLevel(this.config.logLevel)
@@ -144,24 +142,13 @@ export class Harvester extends EventEmitter {
 
         this.urlList = [];
 
-        this.launchPuppeteerOptions = extend(true, {}, pick(this.config, ['proxyUrl', 'stealth', 'userAgent', 'useChrome', 'args', 'headless', 'userDataDir', 'defaultViewport']))
+        this.launchContextOptions = extend(true, {}, pick(this.config, Object.keys(defaultLaunchContextOptions)))
 
-        console.verbose(`this.launchPuppeteerOptions: ${inspect(this.launchPuppeteerOptions)}`)
+        this.launchContextOptions.launcher = playwright[this.config.browser]
 
-        // if (this.config.proxy) {
-        //     if (typeof this.launchPuppeteerOptions.args === 'undefined') {
-        //         this.launchPuppeteerOptions.args = []
-        //     }
+        console.verbose(`this.launchContextOptions: ${inspect(this.launchContextOptions)}`)
 
-        //     const proxyUrl = typeof this.config.proxy === 'object' ? (new URL(this.config.proxy)).href : this.config.proxy;
-
-        //     this.launchPuppeteerOptions.args.push(`--proxy-server=${proxyUrl}`);
-
-        // }
-
-        this.autoscaledPoolOptions = {
-            ...defaultAutoscaledPoolOptions
-        }
+        this.autoscaledPoolOptions = extend(true, {}, pick(this.config, Object.keys(defaultAutoscaledPoolOptions)))
 
         console.verbose(`this.autoscaledPoolOptions: ${inspect(this.autoscaledPoolOptions)}`)
     }
@@ -443,10 +430,10 @@ export class Harvester extends EventEmitter {
 
             // self.screenshotsStore = await Apify.openKeyValueStore('screenshots');
 
-            const puppeteerRequestQueue = await Apify.openRequestQueue('puppeteer');
+            const requestQueue = await Apify.openRequestQueue('playwright');
 
             setInterval(async function () {
-                const info = await puppeteerRequestQueue.getInfo();
+                const info = await requestQueue.getInfo();
                 self.emit('progress', {
                     handled: info.handledRequestCount,
                     handledPercent: info.handledRequestCount / info.totalRequestCount,
@@ -460,7 +447,7 @@ export class Harvester extends EventEmitter {
             const basicRequestQueue = await Apify.openRequestQueue('basic');
 
             self.notify.addMessage(async () => {
-                const info = await puppeteerRequestQueue.getInfo();
+                const info = await requestQueue.getInfo();
                 return `Request queue size: ${info.totalRequestCount} Handled: ${info.handledRequestCount}`
             })
 
@@ -504,7 +491,6 @@ export class Harvester extends EventEmitter {
 
                                     self.session.counts.success++
 
-                                    puppeteerCrawler.basicCrawler.handledRequestsCount++;
                                 } catch (error) {
                                     console.error(inspect(error));
                                 }
@@ -552,7 +538,6 @@ export class Harvester extends EventEmitter {
 
                                             self.session.counts.success++
 
-                                            puppeteerCrawler.basicCrawler.handledRequestsCount++;
                                         } catch (error) {
 
                                             console.error(inspect(error));
@@ -594,7 +579,7 @@ export class Harvester extends EventEmitter {
                     return Promise.resolve()
                 }
 
-                const queue = which === 'basic' ? basicRequestQueue : puppeteerRequestQueue;
+                const queue = which === 'basic' ? basicRequestQueue : requestQueue;
 
                 const addRequestPromises = [];
 
@@ -685,15 +670,13 @@ export class Harvester extends EventEmitter {
 
                             link.userData.reports = [urlError];
 
-                            const record = handleFailedRequest(link, {
+                            const record = await handleFailedRequest(link, {
                                 _from: 'addToRequestQueue'
                             })
 
                             await addRecord(record);
 
                             self.session.counts.fail++
-
-                            puppeteerCrawler.basicCrawler.handledRequestsCount++;
 
                             return
                         }
@@ -709,11 +692,9 @@ export class Harvester extends EventEmitter {
                             self.session.counts.success++
                         }
 
-                        const record = handleResponse(link)
+                        const record = await handleResponse(link)
 
                         await addRecord(record);
-
-                        puppeteerCrawler.basicCrawler.handledRequestsCount++;
 
                         return;
                     }
@@ -891,14 +872,14 @@ export class Harvester extends EventEmitter {
                     ...self.autoscaledPoolOptions,
                     loggingIntervalSecs: Infinity,
                     isFinishedFunction: async function isFinished() {
-                        const puppeteerRequestQueueIsFinished = await puppeteerRequestQueue.isFinished();
+                        const requestQueueIsFinished = await requestQueue.isFinished();
                         const basicRequestQueueIsFinished = await basicRequestQueue.isFinished();
 
                         if (self.isMaxRequestExceeded()) {
                             return true;
                         }
 
-                        if (!puppeteerRequestQueueIsFinished) {
+                        if (!requestQueueIsFinished) {
                             return false;
                         }
 
@@ -933,7 +914,7 @@ export class Harvester extends EventEmitter {
                                 console.log('---> response from basic crawler. Status: ', response.statusCode)
 
                                 if (request.retryCount >= self.config.maxRequestRetries) {
-                                    const record = handleResponse(request, response, {
+                                    const record = await handleResponse(request, response, {
                                         _from: 'handleBasicRequest'
                                     })
                                     await addRecord(record)
@@ -949,7 +930,7 @@ export class Harvester extends EventEmitter {
                                 }
 
                                 if (!self.isMaxRequestExceeded()) {
-                                    const record = handleResponse(request, response);
+                                    const record = await handleResponse(request, response);
                                     console.info(record)
                                     await addRecord(record);
 
@@ -995,10 +976,200 @@ export class Harvester extends EventEmitter {
             self.crawlers.push(basicCrawler)
 
             //
-            // Puppeteer crawler
+            // PLaywright crawler
             //
 
-            const puppeteerCrawler = new PuppeteerCrawler({
+            const playwrightCrawler = new PlaywrightCrawler({
+                handlePageFunction: async function onNavigationResponse({
+                    request,
+                    response: pwResponse,
+                    page
+                }) {
+
+                    console.debug(`[${request.retryCount}] Request URL: ${inspect(request.url)}
+request: ${inspect(request)}`)
+
+                    //
+                    // Main navigation responses handler
+                    // Here we process navigation responses. 
+                    // Some handling is also done on a `onNavigationResponse` handler registered on page.on()
+                    //
+
+                    if (!pwResponse) {
+
+                        console.debug(`Response is ${pwResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
+
+                        if (request.loadedUrl) {
+                            if (!(request.loadedUrl.startsWith('about:') || request.loadedUrl.startsWith('chrome:') || request.loadedUrl.startsWith('chrome-error:'))) {
+                                request.userData.finalUrl = request.loadedUrl
+                            }
+                        }
+
+                        if (request.retryCount >= self.config.maxRequestRetries) {
+
+                            if (pwResponse === null) {
+                                if (!request.userData.reports) {
+                                    request.userData.reports = []
+                                }
+                                request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
+                            }
+
+                        }
+
+                        //
+                        // These cases should be all handled at page.goto().catch()
+                        //
+
+                        return Promise.reject()
+                    }
+
+                    self.emit('response', {
+                        type: 'navigation',
+                        request: pwResponse.request(),
+                        response: pwResponse
+                    })
+
+                    // try {
+                    //     if (!pwResponse.ok()) {
+
+                    //         const screenshotBuffer = await page.screenshot();
+
+                    //         // The "key" of a KeyValueStore must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_
+                    //         const key = filenamifyUrl(request.url)
+
+                    //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
+                    //             contentType: 'image/png'
+                    //         })
+                    //     }
+                    // } catch (error) {
+                    //     console.todo(`Request url: ${request.url}`)
+                    //     console.todo(error)
+                    // }
+
+                    try {
+                        self.normalizeUrl(request.url, true);
+
+                        try {
+                            request.userData.timing = await getTimingFor(pwResponse.url(), page)
+                        } catch (error) {
+                            request.userData.timing = null
+                        }
+
+                        const meta = {
+                            _from: 'onNavigationResponse'
+                        }
+
+                        if (self.config.getPerfData) {
+                            meta.perfData = await getPerformanceData(pwResponse.url(), page)
+                        }
+
+                        if (self.plugins.onNavigationResponse.length && pwResponse) {
+                            self.plugins.onNavigationResponse.forEach(async plugin => {
+                                try {
+                                    console.verbose(`Processing plugin ${plugin.name}`)
+                                    await plugin.fn.call(self, request, pwResponse, page)
+                                } catch (error) {
+                                    console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
+                                }
+                            })
+                        }
+
+                        const record = await handleResponse(request, pwResponse, meta)
+
+                        await addRecord(record);
+
+                        self.session.counts.success++
+
+                        //
+                        // Should we parse further links in the resulting page?
+                        //
+
+                        const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
+
+                        const finalNavUrl = self.normalizeUrl(page.url(), true);
+
+                        if (!self.isExternLink(finalNavUrl) && pwResponse && pwResponse.ok()) {
+
+                            const links = await parseLinksInPage(page, {
+                                currentLevel: request.userData.level,
+                            });
+
+                            await addToRequestQueue('pup', links)
+
+                            try {
+                                for (const frame of page.mainFrame().childFrames()) {
+                                    // TODO: find a better test to detect cross origin frames then !== ''
+                                    // Some frames' url could be chrome-error://chromewebdata/
+
+                                    const frameUrl = frame.url();
+
+                                    if (frameUrl && !frameUrl.startsWith('chrome')) {
+
+                                        if (!self.isExternLink(frameUrl)) {
+                                            self.browsingContextStore.addContext(frameUrl, pageFinalUrl)
+                                        }
+
+                                        const link = new Link(frameUrl, {
+                                            parent: pageFinalUrl,
+                                            level: request.userData.level,
+                                            resourceIsEmbeded: true
+                                        }, self.normalizeUrl)
+
+                                        await addToRequestQueue('pup', link)
+                                    }
+
+                                }
+                            } catch (error) {
+                                console.error(inspect(error))
+                            }
+
+                        }
+                    } catch (error) {
+                        console.error(`Got an error while trying to get the record of the link ${request.url}
+Error: ${inspect(error)}
+Exiting now...`)
+                        process.exit();
+                    }
+                },
+                navigationTimeoutSecs: self.config.navigationTimeout / 1000,
+                // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
+                handleFailedRequestFunction: async function onNavigationRequestFailed({
+                    request,
+                    error
+                }) {
+                    // Nothing here
+                },
+                preNavigationHooks: [
+                    async function preNavigationHooksFunction({ crawler, request, session, page, browserController, proxyInfo }, gotoOptions) {
+
+                        const extraHTTPHeaders = {
+                            // 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                            // 'accept-encoding': 'gzip, deflate, br',
+                            // 'cache-control': 'no-cache',
+                            // 'connection': 'keep-alive',
+                            // 'accept-language': 'en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7,en-US;q=0.6,la;q=0.5',
+                            // 'pragma': 'no-cache',
+                            // 'sec-ch-ua': '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+                            // 'sec-ch-ua-mobile': '?0',
+                            // 'sec-ch-ua-platform': 'Windows',
+                            // 'sec-ch-dest': 'document',
+                            // 'sec-fetch-site': 'none',
+                            // 'sec-fetch-user': '?1',
+                            // 'upgrade-insecure-requests': '1'
+                        }
+
+                        if (self.config.useRandomUserAgent) {
+                            extraHTTPHeaders['user-agent'] = getRandomUserAgent()
+                        } else {
+                            extraHTTPHeaders['user-agent'] = self.config.userAgent
+                        }
+
+                        await page.setExtraHTTPHeaders(extraHTTPHeaders)
+
+                    }
+
+                ],
+                postNavigationHooks: [],
                 gotoFunction: async function gotoFunction({
                     request,
                     page
@@ -1015,53 +1186,11 @@ export class Harvester extends EventEmitter {
                             request.userData.trials = request.retryCount;
 
                             self.emit('request', request)
-                            console.debug(inspect(request))
 
-                            if (self.config.useRandomUserAgent) {
-                                page.setUserAgent(getRandomUserAgent());
-                            } else {
-                                page.setUserAgent(self.config.userAgent)
-                            }
-
-                            page.setDefaultNavigationTimeout(self.config.requestTimeout)
-
-                            await page.setRequestInterception(true);
-
-                            const pageUrl = new URL(request.url)
-                            const authority = /(.+\.)*([a-z0-9\\u00a1-\\uffff_-]+\.[a-z\\u00a1-\\uffff]{2,})/i.exec(pageUrl.hostname)[2]
-
-                            await page.setExtraHTTPHeaders({
-                                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                                'accept-encoding': 'gzip, deflate, br',
-                                'cache-control': 'no-cache',
-                                'connection': 'keep-alive',
-                                // 'host': (new URL(request.url)).hostname
-                                // ':authority': authority,
-                                // ':method': 'GET',
-                                // ':path': pageUrl.pathname,
-                                // ':scheme': pageUrl.protocol.split(':')[0],
-                                'accept-language': 'en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7,en-US;q=0.6,la;q=0.5',
-                                'pragma': 'no-cache',
-                                'sec-ch-ua': '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
-                                'sec-ch-ua-mobile': '?0',
-                                'sec-ch-ua-platform': 'Windows',
-                                'sec-ch-dest': 'document',
-                                'sec-fetch-site': 'none',
-                                'sec-fetch-user': '?1',
-                                'upgrade-insecure-requests': '1'
-                            })
-
-                            // don't request assets if this is an external page
-                            if (self.isExternLink(request.url)) {
-                                apifyUtils.puppeteer.blockRequests(page, {
-                                    urlPatterns: self.config.blockRequestsFromUrlPatterns
-                                })
-                            }
-
-                            await page._client.send('Network.enable', {
-                                maxResourceBufferSize: 1024 * 1204 * 100,
-                                maxTotalBufferSize: 1024 * 1204 * 400,
-                            })
+                            // await page._client.send('Network.enable', {
+                            //     maxResourceBufferSize: 1024 * 1204 * 100,
+                            //     maxTotalBufferSize: 1024 * 1204 * 400,
+                            // })
 
                             page.on('error', function onError(error) {
 
@@ -1082,103 +1211,76 @@ export class Harvester extends EventEmitter {
                                 await dialog.dismiss();
                             });
 
-                            await apifyUtils.puppeteer.addInterceptRequestHandler(page, function onRequest(pupRequest) {
+                            page.on('request', async function onRequest(pwRequest) {
 
                                 //
                                 // Initialization of userData
                                 //
 
                                 // TODO: remove this test when it is stated that it will never be true
-                                if ('userData' in pupRequest) {
-                                    console.error('pupRequest already have a .userData property. Check why.')
+                                if ('userData' in pwRequest) {
+                                    console.error('pwRequest already have a .userData property. Check why.')
                                     process.exit(1);
                                 }
 
-                                if (!pupRequest.isNavigationRequest() && self.config.navigationOnly) {
+                                if (!pwRequest.isNavigationRequest() && self.config.navigationOnly) {
                                     // Don't initialize userData if this is an asset request AND settings say we are interrested only on navigation requests
-                                    return pupRequest.continue()
+                                    return
                                 }
 
-                                if (!pupRequest.isNavigationRequest() && self.isExternLink(pupRequest.url())) {
+                                if (!pwRequest.isNavigationRequest() && self.isExternLink(pwRequest.url())) {
                                     // Don't initialize userData if this is an asset request on an external page
-                                    return pupRequest.continue()
+                                    return
                                 }
 
-                                const url = pupRequest.url();
+                                const url = pwRequest.url();
                                 const parent = page.url();
 
-                                pupRequest.userData = Object.assign({ trials: 1 }, request.userData,
+                                pwRequest.userData = Object.assign({ trials: 1 }, request.userData,
                                     {
                                         _from: 'onRequest',
                                         url,
                                         parent,
                                         id: request.id
                                     })
-
-                                pupRequest.continue()
                             })
 
-                            await apifyUtils.puppeteer.addInterceptRequestHandler(page, function onDocumentRequest(pupRequest) {
-                                if (pupRequest.isNavigationRequest()) {
+                            page.on('request', async function onDocumentRequest(pwRequest) {
+                                if (pwRequest.isNavigationRequest()) {
 
                                     // Don't request if extern setting meets
                                     if (!self.config.checkExtern && self.isExternLink(url)) {
 
                                         console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(url)} from settings.`);
 
-                                        return pupRequest.abort('blockedbyclient')
+                                        return pwRequest.abort('blockedbyclient')
                                     }
                                 }
-
-                                pupRequest.continue()
                             })
 
-                            await apifyUtils.puppeteer.addInterceptRequestHandler(page, function onAssetRequest(pupRequest) {
+                            page.on('request', async function onAssetRequest(pwRequest) {
 
                                 //
                                 // Main asset request handler
                                 //
                                 // Here we process pages assets only, since they are not handled natively by apifyjs.
-                                // Page requests are processesd via the puppeteerCrawler handlePageFunction
+                                // Page requests are processesd via the playwrightCrawler handlePageFunction
                                 //
 
-                                if (!pupRequest.isNavigationRequest() && !self.config.navigationOnly) {
+                                if (!pwRequest.isNavigationRequest() && !self.config.navigationOnly) {
 
-                                    if (self.isExternLink(pupRequest.url())) {
+                                    if (self.isExternLink(pwRequest.url())) {
                                         // This is an asset of an external page
-                                        return pupRequest.continue()
+                                        return
                                     }
 
-                                    console.debug(`Request URL: ${inspect(request.url)}`)
+                                    console.debug(`Request URL: ${pwRequest.url()}`)
 
-                                    const url = pupRequest.url();
-                                    const parentUrl = page.url();
-
-                                    pupRequest.userData._from = 'onAssetRequest'
-
-                                    // don't request assets if this is an external page 
-                                    // this may be unnecessary since we use puppeteer.blockRequests()
-                                    if (self.config.checkExtern && self.isExternLink(parentUrl)) {
-
-                                        console.verbose(`Skipping loading assets for an external resource: ${displayUrl(parentUrl)} -> ${displayUrl(url)}`);
-
-                                        return pupRequest.abort('blockedbyclient')
-                                    }
-
-                                    // Stop processing if filtering settings meet
-                                    const ignoreRule = self.shouldIgnoreUrl(request.url)
-                                    if (ignoreRule) {
-
-                                        console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${request.url} -> ${url}`);
-
-                                        return pupRequest.abort('blockedbyclient')
-                                    }
+                                    pwRequest.userData._from = 'onAssetRequest'
                                 }
-
-                                pupRequest.continue();
                             })
 
-                            page.on('requestfailed', async function onDocumentDownload(pupRequest) {
+                            page.on('requestfailed', async function onDocumentDownload(pwRequest) {
 
                                 //
                                 // Here we process navigation downloads
@@ -1186,11 +1288,11 @@ export class Harvester extends EventEmitter {
                                 //
 
                                 // Catch download navigation (pdf, zip, docx, etc.) occuring on first try before puppeteer throws an net::ERR_ABORTED error
-                                if (pupRequest.isNavigationRequest() && pupRequest.failure().errorText === 'net::ERR_ABORTED') {
+                                if (pwRequest.isNavigationRequest() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
 
                                     if (request.retryCount === 1) {
-                                        const pupResponse = pupRequest.response();
-                                        if (pupResponse) {
+                                        const pwResponse = await pwRequest.response();
+                                        if (pwResponse) {
 
                                             let record;
                                             const meta = {
@@ -1200,8 +1302,7 @@ export class Harvester extends EventEmitter {
                                             }
 
                                             try {
-                                                record = handleResponse(pupRequest, pupResponse, meta)
-
+                                                record = await handleResponse(pwRequest, pwResponse, meta)
                                             } catch (error) {
                                                 console.error(inspect(error))
                                             }
@@ -1213,26 +1314,30 @@ export class Harvester extends EventEmitter {
                                     }
 
                                     request.userData._ignore = true
-                                    pupRequest.userData._ignore = true
+                                    pwRequest.userData._ignore = true
 
                                     return Promise.resolve()
 
                                 }
                             })
 
-                            page.on('requestfailed', async function onDocumentRequestFailed(pupRequest) {
+                            page.on('requestfailed', async function onDocumentRequestFailed(pwRequest) {
 
                                 //
                                 // Main document request failed handler is located at page.goto().catch()
                                 //
 
-                                if (pupRequest.failure() && pupRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
-                                    return;
-                                }
+                                if (pwRequest.isNavigationRequest()) {
 
-                                if (pupRequest.isNavigationRequest()) {
+                                    if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
+                                        return;
+                                    }
 
-                                    if (pupRequest.failure() && pupRequest.failure().errorText === 'net::ERR_ABORTED') {
+                                    if (request.retryCount < self.config.maxRequestRetries) {
+                                        return;
+                                    }
+
+                                    if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
 
                                         //
                                         // This is a navigation request error
@@ -1242,37 +1347,24 @@ export class Harvester extends EventEmitter {
                                         return;
                                     }
 
-                                    if (request.retryCount < self.config.maxRequestRetries) {
-                                        return;
-                                    }
-
-                                    // This is not a navigation download
                                     // Retry count maxed out.
 
-                                    if (pupRequest.failure() && !pupRequest.failure().errorText.startsWith('net::')) {
-                                        // Chromium net errors are handled by the function captureError
-                                        console.todo(`This request failure has not been handled at try [${request.retryCount}]. ${displayUrl(url)}, request: ${inspect(request)}. Failure: ${inspect(pupRequest.failure())}`)
-                                    }
-
-                                    // console.todo(`request: ${inspect(request)}
-                                    // pupRequest: ${inspect(pupRequest)}`)
-                                    // request.userData.reports.push(pupRequest.failure().errorText);
                                 }
                             })
 
-                            page.on('requestfailed', async function onAssetRequestFailed(pupRequest) {
+                            page.on('requestfailed', async function onAssetRequestFailed(pwRequest) {
 
                                 //
                                 // Main asset failed request handler
                                 // Since they are not handled natively by apifyjs.
-                                // Page requests are processesd via the puppeteerCrawler handlePageFunction
+                                // Page requests are processesd via the playwrightCrawler handlePageFunction
                                 //
 
-                                if (pupRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
+                                if (pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
                                     return;
                                 }
 
-                                if (pupRequest.isNavigationRequest()) {
+                                if (pwRequest.isNavigationRequest()) {
                                     return;
                                 }
 
@@ -1280,17 +1372,17 @@ export class Harvester extends EventEmitter {
                                 // Request failed start
                                 //
 
-                                const url = pupRequest.url();
+                                const url = pwRequest.url();
 
-                                console.verbose(`${pupRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pupRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pupRequest.failure().errorText} at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
+                                console.verbose(`${pwRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pwRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pwRequest.failure().errorText} at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
 
                                 if (!self.homeBasePUrl.matches(page.url())) {
                                     console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`);
 
                                     return Promise.resolve();
                                 } else {
-                                    if (['document', 'other'].includes(pupRequest.resourceType)) {
-                                        console.warn(`This should be a page asset of the crawled website: ${displayUrl(pupRequest.url())}, resource type: ${pupRequest.resourceType()}`)
+                                    if (['document', 'other'].includes(pwRequest.resourceType)) {
+                                        console.warn(`This should be a page asset of the crawled website: ${displayUrl(pwRequest.url())}, resource type: ${pwRequest.resourceType()}`)
                                     }
                                 }
 
@@ -1300,7 +1392,7 @@ export class Harvester extends EventEmitter {
 
                                 if (!self.config.navigationOnly) {
 
-                                    if (pupRequest.failure().errorText === 'net::ERR_ABORTED') {
+                                    if (pwRequest.failure().errorText === 'net::ERR_ABORTED') {
                                         console.verbose(`Silently ignoring failed 'net::ERR_ABORTED' request for ${displayUrl(url)}`)
                                         return Promise.resolve();
                                     }
@@ -1309,13 +1401,13 @@ export class Harvester extends EventEmitter {
                                         return Promise.reject();
                                     }
 
-                                    if (!pupRequest.userData.reports) {
-                                        pupRequest.userData.reports = []
+                                    if (!pwRequest.userData.reports) {
+                                        pwRequest.userData.reports = []
                                     }
 
-                                    pupRequest.userData.reports.push(pupRequest.failure().errorText)
+                                    pwRequest.userData.reports.push(pwRequest.failure().errorText)
 
-                                    const record = handleFailedRequest(request, pupRequest, {
+                                    const record = await handleFailedRequest(request, pwRequest, {
                                         _from: 'onAssetRequestFailed'
                                     });
 
@@ -1325,7 +1417,7 @@ export class Harvester extends EventEmitter {
                                 }
                             })
 
-                            page.on('response', async function onAssetResponse(pupResponse) {
+                            page.on('response', async function onAssetResponse(pwResponse) {
 
                                 //
                                 // Main asset responses handler
@@ -1333,94 +1425,99 @@ export class Harvester extends EventEmitter {
                                 // HANDLE ONLY NON DOCUMENT RESOURCES HERE
                                 //
 
-                                // Is this an asset request? and Do config allow to record assets?
-                                if (!pupResponse.request().isNavigationRequest() && !self.config.navigationOnly && !self.isExternLink(pupResponse.request().url())) {
+                                if (
+                                    // Is this an asset request?
+                                    !pwResponse.request().isNavigationRequest() &&
 
-                                    const parentUrl = page.url();
+                                    // Do config allow to record assets?
+                                    !self.config.navigationOnly &&
 
-                                    const meta = {
-                                        _from: 'onAssetResponse',
-                                        trials: request.retryCount,
-                                    }
+                                    // Is the asset an intern link?
+                                    !self.isExternLink(pwResponse.request().url()) &&
+
+                                    // Is this asset on a page that is in the domain's website?
+                                    self.homeBasePUrl.matches(page.url())
+                                ) {
 
                                     //
                                     // This is an asset
                                     //
 
-                                    // Is this asset on a page that is in the domain's website?
-                                    if (self.homeBasePUrl.matches(parentUrl)) {
+                                    const statusCode = pwResponse.status()
 
-                                        try {
-                                            meta.size = (await pupResponse.buffer()).length;
-                                        } catch (error) {
-                                            // pupResponse.buffer() is undefined
-                                            meta.size = null
+                                    if (statusCode >= 300 && statusCode < 400) {
+                                        return
+                                    }
+
+                                    // Is the asset loaded?
+                                    if (pwResponse.ok() || statusCode >= 400) {
+
+                                        const meta = {
+                                            _from: 'onAssetResponse',
                                         }
 
-                                        meta.timing = await getTimingFor(pupResponse.url(), page);
+                                        const firstResponseUrl = (
+                                            request => {
+                                                while (!isNull(request.redirectedFrom())) {
+                                                    request = request.redirectedFrom()
+                                                }
+                                                return request.url()
+                                            }
+                                        )(pwResponse.request())
+
+                                        meta.timing = await getTimingFor(firstResponseUrl, page);
 
                                         if (self.config.getPerfData) {
-                                            meta.perfData = await getPerformanceData(page, pupResponse.url())
+                                            meta.perfData = await getPerformanceData(firstResponseUrl, page)
                                         }
 
-                                        // Is the asset loaded?
-                                        if (pupResponse.ok()) {
+                                        try {
 
-                                            try {
-
-                                                const record = handleResponse(pupResponse.request(), pupResponse, meta)
-
-                                                await addRecord(record);
-
-                                                self.session.counts.success++
-
-                                                return
-                                            } catch (error) {
-                                                console.error(inspect(error))
-                                            }
-                                        }
-
-                                        // Log other http status
-                                        if (pupResponse.status()) {
-                                            const record = handleResponse(pupResponse.request(), pupResponse, meta)
+                                            const record = await handleResponse(pwResponse.request(), pwResponse, meta)
 
                                             await addRecord(record);
 
                                             self.session.counts.success++
 
-                                            return;
+                                        } catch (error) {
+                                            console.error(inspect(error))
                                         }
 
-                                        self.session.counts.fail++
-                                        self.session.counts.activeRequests--
-                                        self.session.counts.finishedRequests++
-
-                                        console.error('This response is not handled:', pupResponse.url())
-                                        console.error('Request url:', pupResponse.request().url())
-                                        console.error('Parent:', request.url)
-                                        console.error(pupResponse.headers())
-                                        process.exit()
-
+                                        return
                                     }
+
+                                    self.session.counts.fail++
+                                    self.session.counts.activeRequests--
+                                    self.session.counts.finishedRequests++
+
+                                    console.error('This response is not handled:', pwResponse.url())
+                                    console.todo('Response status: ', pwResponse.status())
+                                    console.todo('Response ok?: ', pwResponse.ok())
+                                    console.error('Request url:', pwResponse.request().url())
+                                    console.error('Parent:', request.url)
+                                    console.error(pwResponse.headers())
+                                    process.exit()
+
+
                                 }
 
                             })
 
-                            page.on('response', async function onNavigationResponse(pupResponse) {
+                            page.on('response', async function onNavigationResponse(pwResponse) {
 
                                 //
                                 // Here we process some navigation responses only.
-                                // The main navigation responses handler is in the puppeteerCrawler handlePageFunction
+                                // The main navigation responses handler is in the playwrightCrawler handlePageFunction
                                 //
 
                                 // Is this an navigation request?
-                                if (pupResponse.request().isNavigationRequest()) {
+                                if (pwResponse.request().isNavigationRequest()) {
 
                                     //
                                     // This is a navigation response
                                     //
 
-                                    if (pupResponse.status() === 0) {
+                                    if (pwResponse.status() === 0) {
 
                                         // This is a Network error.
                                         // Will be handled in onNavigationRequest handler
@@ -1428,14 +1525,28 @@ export class Harvester extends EventEmitter {
                                         return;
                                     }
 
-                                    if (!pupResponse.ok()) {
-                                        const statusCode = pupResponse.status()
+                                    if (!pwResponse.ok() && request.retryCount >= self.config.maxRequestRetries) {
 
-                                        console.debug(`[${request.retryCount}] got a status = ${statusCode} for ${pupResponse.request().url()}`)
+                                        const statusCode = pwResponse.status()
+
+                                        console.debug(`[${request.retryCount}] got a status = ${statusCode} for ${pwResponse.request().url()}`)
+                                        if (statusCode >= 300 && statusCode < 400) {
+
+                                            if (isNull(request.userData.redirectChain)) {
+                                                request.userData.redirectChain = []
+                                            }
+
+                                            request.userData.redirectChain.push({
+                                                url: pwResponse.url(),
+                                                status: statusCode,
+                                                statusText: pwResponse.statusText(),
+                                                fromServiceWorker: pwResponse.fromServiceWorker()
+                                            })
+                                        }
 
                                         if (statusCode >= 400) {
 
-                                            const httpError = new HttpError(statusCode, pupResponse.statusText())
+                                            const httpError = new HttpError(statusCode, pwResponse.statusText())
 
                                             if (!request.userData.reports) {
                                                 request.userData.reports = []
@@ -1485,7 +1596,7 @@ Request: ${inspect(request)}`)
                                             _from: 'page.goto().catch()'
                                         }
 
-                                        const record = handleFailedRequest(request, meta)
+                                        const record = await handleFailedRequest(request, meta)
 
                                         await addRecord(record);
 
@@ -1513,213 +1624,26 @@ Request: ${inspect(request)}`)
                         }
                     })
                 },
-                autoscaledPoolOptions: self.autoscaledPoolOptions,
-                launchPuppeteerOptions: self.launchPuppeteerOptions,
-                puppeteerPoolOptions: {
-                    recycleDiskCache: self.config.useCache,
-                    puppeteerOperationTimeoutSecs: self.config.puppeteerOperationTimeoutSecs
-                },
-                launchPuppeteerFunction: (launchPuppeteerOptions) => {
-                    console.info(`launchPuppeteerOptions: ${inspect(launchPuppeteerOptions)}`)
-                    return launchPuppeteer(launchPuppeteerOptions)
-                },
+                handlePageTimeoutSecs: self.config.handlePageTimeout,
+                launchContext: self.launchContextOptions,
+                // handlePageTimeoutSecs: 60,
+                // browserPoolOptions: {},
+                requestQueue: requestQueue,
                 maxRequestRetries: self.config.maxRequestRetries,
-                requestQueue: puppeteerRequestQueue,
-                handlePageTimeoutSecs: self.config.pageTimeout / 1000,
-                handlePageFunction: async function onNavigationResponse({
-                    request,
-                    response: pupResponse,
-                    page
-                }) {
-
-                    console.debug(`[${request.retryCount}] Request URL: ${inspect(request.url)}
-request: ${inspect(request)}
-response: ${inspect(pupResponse)}`)
-
-                    //
-                    // Main navigation responses handler
-                    // Here we process navigation responses. 
-                    // Some handling is also done on a `onNavigationResponse` handler registered on page.on()
-                    //
-
-                    if (!pupResponse) {
-
-                        console.debug(`Response is ${pupResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
-
-                        if (request.loadedUrl) {
-                            if (!(request.loadedUrl.startsWith('about:') || request.loadedUrl.startsWith('chrome:') || request.loadedUrl.startsWith('chrome-error:'))) {
-                                request.userData.finalUrl = request.loadedUrl
-                            }
-                        }
-
-                        if (request.retryCount >= self.config.maxRequestRetries) {
-
-                            if (pupResponse === null) {
-                                if (!request.userData.reports) {
-                                    request.userData.reports = []
-                                }
-                                request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
-                            }
-
-                        }
-
-                        //
-                        // These cases should be all handled at page.goto().catch()
-                        //
-
-                        return Promise.reject()
-                    }
-
-                    try {
-                        request.userData.timing = await getTimingFor(pupResponse.url(), page)
-                    } catch (error) {
-                        request.userData.timing = null
-                    }
-
-                    let data = {};
-
-                    try {
-                        data = await getResponseData(pupResponse.request()._requestId, pupResponse)
-                    } catch (error) {
-                        console.todo(`url: ${request.url}, error: ${inspect(error)}`)
-                    }
-
-                    data.timing = request.userData.timing
-
-                    if (self.config.getPerfData) {
-                        data.perfData = await getPerformanceData(page, pupResponse.url())
-                    }
-
-                    self.emit('response', {
-                        type: 'navigation',
-                        data,
-                        request: pupResponse.request(),
-                        response: pupResponse
-                    })
-
-                    // try {
-                    //     if (!pupResponse.ok()) {
-
-                    //         const screenshotBuffer = await page.screenshot();
-
-                    //         // The "key" of a KeyValueStore must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_
-                    //         const key = filenamifyUrl(request.url)
-
-                    //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
-                    //             contentType: 'image/png'
-                    //         })
-                    //     }
-                    // } catch (error) {
-                    //     console.todo(`Request url: ${request.url}`)
-                    //     console.todo(error)
-                    // }
-
-                    try {
-                        self.normalizeUrl(request.url, true);
-
-                        const meta = {
-                            _from: 'onNavigationResponse'
-                        }
-
-                        try {
-                            meta.size = (await pupResponse.buffer()).length;
-                        } catch (error) {
-                            // pupResponse.buffer() is undefined
-                            meta.size = null
-                        }
-
-                        if (self.config.getPerfData) {
-                            meta.perfData = await getPerformanceData(page, pupResponse.url())
-                        }
-
-                        if (self.plugins.onNavigationResponse.length && pupResponse) {
-                            self.plugins.onNavigationResponse.forEach(async plugin => {
-                                try {
-                                    console.verbose(`Processing plugin ${plugin.name}`)
-                                    await plugin.fn.call(self, request, pupResponse, page)
-                                } catch (error) {
-                                    console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
-                                }
-                            })
-                        }
-
-                        const record = handleResponse(request, pupResponse, meta)
-
-                        await addRecord(record);
-
-                        self.session.counts.success++
-
-                        //
-                        // Should we parse further links in the resulting page?
-                        //
-
-                        const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
-
-                        const finalNavUrl = self.normalizeUrl(page.url(), true);
-
-                        if (!self.isExternLink(finalNavUrl) && pupResponse && pupResponse.ok()) {
-
-                            const links = await parseLinksInPage(page, {
-                                currentLevel: request.userData.level,
-                            });
-
-                            await addToRequestQueue('pup', links)
-
-                            try {
-                                for (const frame of page.mainFrame().childFrames()) {
-                                    // TODO: find a better test to detect cross origin frames then !== ''
-                                    // Some frames' url could be chrome-error://chromewebdata/
-
-                                    const frameUrl = frame.url();
-
-                                    if (frameUrl && !frameUrl.startsWith('chrome')) {
-
-                                        if (!self.isExternLink(frameUrl)) {
-                                            self.browsingContextStore.addContext(frameUrl, pageFinalUrl)
-                                        }
-
-                                        const link = new Link(frameUrl, {
-                                            parent: pageFinalUrl,
-                                            level: request.userData.level,
-                                            resourceIsEmbeded: true
-                                        }, self.normalizeUrl)
-
-                                        await addToRequestQueue('pup', link)
-                                    }
-
-                                }
-                            } catch (error) {
-                                console.error(inspect(error))
-                            }
-
-                        }
-                    } catch (error) {
-                        console.error(`Got an error while trying to get the record of the link ${request.url}
-Error: ${inspect(error)}
-Exiting now...`)
-                        process.exit();
-                    }
-                },
-                // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
-                handleFailedRequestFunction: async function onNavigationRequestFailed({
-                    request,
-                    error
-                }) {
-                    // Nothing here
-                },
                 maxRequestsPerCrawl: self.config.maxRequests,
-                maxConcurrency: self.config.maxConcurrency,
+                autoscaledPoolOptions: self.autoscaledPoolOptions,
+                useSessionPool: true,
             });
 
-            puppeteerCrawler.pause = function pause(timeout) {
-                return puppeteerCrawler.basicCrawler.autoscaledPool.pause(timeout);
+            playwrightCrawler.pause = async function pause(timeout) {
+                return playwrightCrawler.autoscaledPool.pause(timeout);
             }
 
-            puppeteerCrawler.resume = function resume() {
-                return puppeteerCrawler.basicCrawler.autoscaledPool.resume();
+            playwrightCrawler.resume = async function resume() {
+                return playwrightCrawler.autoscaledPool.resume();
             }
 
-            self.crawlers.push(puppeteerCrawler)
+            self.crawlers.push(playwrightCrawler)
 
             async function launchBasicCrawler() {
                 return new Promise((resolve, reject) => {
@@ -1741,7 +1665,7 @@ Exiting now...`)
             }
 
             await Promise.all([
-                puppeteerCrawler
+                playwrightCrawler
                     .run()
                     .then(() => {
                         console.info('Puppeteer crawler is done.')

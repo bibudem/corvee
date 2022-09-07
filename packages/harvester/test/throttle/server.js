@@ -4,7 +4,7 @@ import routes from './routes';
 import webLogger from 'web-logger'
 import hbs from 'hbs'
 import _ from 'underscore';
-import isNumber from 'is-number'
+import { isNumber } from 'underscore'
 
 const app = express();
 

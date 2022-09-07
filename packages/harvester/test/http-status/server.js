@@ -3,17 +3,11 @@ import express from 'express';
 import routes from './routes';
 import webLogger from 'web-logger'
 import hbs from 'hbs'
-import _ from 'underscore';
-import isNumber from 'is-number'
+import { isNumber } from 'underscore'
 
-import harvesterConfig, {
-    server as config
-} from './config'
+import harvesterConfig, { server as config } from './config'
 
-import {
-    console
-}
-    from '../../../core/lib/logger';
+import { console } from '../../../core/lib/logger';
 
 const app = express();
 

@@ -33,6 +33,7 @@ async function doGetResponseData(response) {
     try {
         // Puppeteer response
         if ('_client' in response) {
+
             ({
                 _url: url,
                 _headers: headers,

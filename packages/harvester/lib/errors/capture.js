@@ -1,5 +1,5 @@
 import { isObject, isString } from 'underscore';
-import { FailedToLaunchError, HttpError, BrowserHasDisconnectedError, MailError, NetError, CorveeError, PageCrashedError, TimeoutError, TargetClosedError, UrlError } from './definitions'
+import { FailedToLaunchError, HttpError, BrowserHasDisconnectedError, MailError, MozillaError, MOZILLA_ERROR_REGEX, NetError, CorveeError, PageCrashedError, TimeoutError, TargetClosedError, UrlError } from './definitions'
 import { console, inspect } from '../../../core'
 
 export function captureErrors(data) {
@@ -81,6 +81,17 @@ export function captureError(error) {
         }
 
         //
+        // Mozilla error
+        //
+        if ('message' in error && MOZILLA_ERROR_REGEX.test(error.message)) {
+
+            const mozillaError = new MozillaError(error.message);
+            mozillaError._from = "'message' in error && MOZILLA_ERROR_REGEX.test(error.message) (OBJECT)"
+
+            return mozillaError
+        }
+
+        //
         // Puppeteer TimeoutError class
         //
         if (error.constructor.name === 'TimeoutError') {
@@ -148,8 +159,10 @@ export function captureError(error) {
     return {
         level: 'info',
         code: 'unhandled-error',
-        _fixme: true,
+        stack: error.stack,
+        message: error.message,
         _from: 'unhandledError',
+        _fixme: true,
         _original: error,
     }
 }

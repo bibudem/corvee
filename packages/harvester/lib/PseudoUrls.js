@@ -9,6 +9,6 @@ export class PseudoUrls {
     }
 
     matches(url) {
-        return this.purls.length > 0 ? this.purls.some(purl => purl.matches(url)) || url.startsWith('corvee:') : true;
+        return this.purls.length > 0 ? this.purls.some(purl => purl.matches(url)) || url.startsWith('corvee:') || url.startsWith('about:') : true;
     }
 }

@@ -1,30 +1,32 @@
-import { console, inspect } from '../../../core'
+import { console as logger, inspect } from '../../../core'
 
-export async function getPerformanceData(page, name) {
+export async function getPerformanceData(resourceName, page) {
   if (typeof page === 'undefined') {
     return null;
   }
 
   async function logConsole(msg) {
-    for (let i = 0; i < msg.args().length; ++i) {
-      console.warn(`${i}: ${msg.args()[i]}`);
+    const values = [];
+    for (const arg of msg.args()) {
+      values.push(await arg.jsonValue());
     }
+    logger[msg.type()](...values);
   }
 
   page.on('console', logConsole)
 
   const perf = await page.evaluate(
-    (name) => {
+    (resourceName) => {
       var data;
       try {
-        data = name ? window.performance.getEntriesByName(name) : window.performance.getEntries();
+        data = resourceName ? window.performance.getEntriesByName(resourceName) : window.performance.getEntries();
         data = JSON.stringify(data)
       } catch (error) {
-        console.warn(`Failed to get ${name ? `window.performance.getEntriesByName(${name})` : 'window.performance.getEntries()'} from ${location.href}. Error: ${inspect(error)}`)
+        console.error(`Failed to get ${resourceName ? `window.performance.getEntriesByName(${resourceName})` : 'window.performance.getEntries()'} from ${location.href}. Error: ${error}, ${error.stack}`)
         return ''
       }
       return data
-    }, name
+    }, resourceName
   )
 
   page.removeListener('console', logConsole)
