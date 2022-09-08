@@ -1,11 +1,8 @@
 import { omit, isNull } from 'underscore'
 const extend = require('extend')
-import { Response } from 'playwright-core/lib/server/network'
 
-import { absUrl, console, inspect } from './../../core'
-import { ResourceType } from './resource-type';
-import { captureErrors } from './errors';
-import { request } from 'express';
+import { console, inspect } from './../../core'
+import { captureErrors, HttpError } from './errors';
 
 export const defaultOptions = {
     url: null,
@@ -171,13 +168,33 @@ export async function handleResponse(request, response = null, meta = {}) {
 
         record.finalUrl = finalUrl;
 
+        if (!response.ok()) {
+
+            console.debug(`[${record.trials}] got a status = ${record.httpStatusCode} for ${record.url}`)
+
+            if (record.httpStatusCode >= 400) {
+
+                const httpError = new HttpError(record.httpStatusCode, response.statusText())
+
+                if (!record.reports) {
+                    record.reports = []
+                }
+
+                record.reports.push(httpError);
+            }
+
+        }
+
+        record.timing_ = response.request().timing()
+        record.sizes_ = response.request().sizes()
+
         delete record.uniqueKey;
 
         return record;
     }
 
     if (typeof request.id !== 'undefined') {
-        console.todo("This is a navigation response")
+
         /*
          * apify request class && playwright Response class
          * This is a navigation response
@@ -224,111 +241,30 @@ export async function handleResponse(request, response = null, meta = {}) {
 
         record.finalUrl = finalUrl;
 
+        if (!response.ok()) {
+
+            console.debug(`[${record.trials}] got a status = ${record.httpStatusCode} for ${record.url}`)
+
+            if (record.httpStatusCode >= 400) {
+
+                const httpError = new HttpError(record.httpStatusCode, response.statusText())
+
+                if (!record.reports) {
+                    record.reports = []
+                }
+
+                record.reports.push(httpError);
+            }
+
+        }
+
+        record.timing_ = response.request().timing()
+        record.sizes_ = response.request().sizes()
+
         delete record.uniqueKey;
 
         return record;
     }
-
-    // if ('_client' in request) {
-
-    //     /*
-    //      * puppeteer Request class && puppeteer Response class
-    //      * This is an asset response
-    //      */
-
-    //     // const redirectChain = await getRedirectChain(
-    //     //     request.redirectChain(),
-    //     //     request.url()
-    //     // );
-
-    //     const record = extend(
-    //         true,
-    //         {},
-    //         baseReport,
-    //         userData,
-    //         {
-    //             url: request.url(),
-    //             httpStatusCode: response.status(),
-    //             isNavigationRequest: request.isNavigationRequest(),
-    //             // redirectChain,
-    //             resourceType: request.resourceType(),
-    //             trials: 'TODO',
-    //         },
-    //         meta
-    //     );
-
-    //     if (response && 'content-type' in response.headers()) {
-    //         record.contentType = response.headers()['content-type'].split(';')[0].trim();
-    //     }
-
-    //     if ('content-length' in response.headers()) {
-    //         record.contentLength = +response.headers()['content-length']
-    //     }
-
-    //     record.httpStatusCode = getFinalStatus(record);
-
-    //     const finalUrl = getFinalUrl({
-    //         record,
-    //         httpStatusCode: response ? response.status() : null,
-    //         headers: response ? response.headers() : []
-    //     });
-
-    //     record.finalUrl = finalUrl;
-
-    //     return record;
-    // }
-
-    // if (response && response.constructor.name === 'IncomingMessage') {
-
-    //     /*
-    //      * apify request class && (request-promise-native) IncomingMessage class response
-    //      * This is a basicCrawler response
-    //      */
-
-    //     const redirectChain = await getRedirectChain(
-    //         response.request._redirect.redirects,
-    //         request.url
-    //     );
-
-    //     const record = extend(
-    //         true,
-    //         {},
-    //         baseReport,
-    //         {
-    //             /** @member {string} [urlData] - Url as found when crawling */
-    //             url: request.url,
-    //             httpStatusCode: response.statusCode,
-    //             isNavigationRequest: 'TODO',
-    //             redirectChain,
-    //             resourceType_: ResourceType.fromMimeType(
-    //                 response.headers['content-type']
-    //             ).name(),
-    //             trials: request.retryCount
-    //         },
-    //         userData,
-    //         meta
-    //     );
-
-    //     if ('content-type' in response.headers) {
-    //         record.contentType = response.headers['content-type'].split(';')[0].trim();
-    //     }
-
-    //     if ('content-length' in response.headers) {
-    //         record.contentLength = response.headers['content-length'];
-    //     }
-
-    //     record.httpStatusCode = getFinalStatus(record);
-
-    //     const finalUrl = getFinalUrl({
-    //         record,
-    //         httpStatusCode: response.statusCode,
-    //         headers: response.headers,
-    //     });
-
-    //     record.finalUrl = finalUrl;
-
-    //     return record;
-    // }
 
     if (request.url.startsWith('mailto:')) {
 

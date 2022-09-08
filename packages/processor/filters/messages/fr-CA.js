@@ -72,6 +72,10 @@ export const messagesFrCA = {
         msg: "Cette page a été retirée."
     },
 
+    "http-412": {
+        msg: "Accès refusé. Certaines conditions n'ont pas été remplies."
+    },
+
     "http-429": {
         msg: "Trop de requêtes ont été émises."
     },
@@ -90,6 +94,10 @@ export const messagesFrCA = {
 
     "http-503": {
         msg: "Impossible de vérifier le lien. Service temporairement indisponible ou en maintenance. Vérifiez le lien."
+    },
+
+    "http-504": {
+        msg: "Impossible de vérifier le lien. Délai d'attente expiré lors du traitement de la requête. Vérifiez le lien."
     },
 
     "http-512-599": {

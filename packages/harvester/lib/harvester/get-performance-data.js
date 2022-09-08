@@ -6,11 +6,10 @@ export async function getPerformanceData(resourceName, page) {
   }
 
   async function logConsole(msg) {
-    const values = [];
-    for (const arg of msg.args()) {
-      values.push(await arg.jsonValue());
+    if (msg.type() === 'error') {
+      const { url, lineNumber, columnNumber } = msg.location()
+      logger[msg.type()](`[${url}] ${lineNumber}:${columnNumber} ${msg.text()}`);
     }
-    logger[msg.type()](...values);
   }
 
   page.on('console', logConsole)
