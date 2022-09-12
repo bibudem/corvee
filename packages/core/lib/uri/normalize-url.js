@@ -72,7 +72,7 @@ export function normalizeUrl(url, options = {}) {
     }
 
     if (uriObj.path) {
-        uriObj.path = uriObj.path.replace(/(index|default)\.(html?|php|aspx|do)($|\?)/, '$2')
+        uriObj.path = uriObj.path.replace(/((?:index|default)\.(?:html?|php|aspx|do))($|\?)/, '$2')
     }
 
     if (uriObj.query) {
