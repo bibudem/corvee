@@ -1,7 +1,5 @@
-import {
-    ParsedURL
-} from '../lib/parsed-url'
-import urlList from '../test/urls/url-list'
+import { ParsedURL } from '../lib/parsed-url.js'
+import urlList from '../test/urls/url-list.js'
 
 function testLibrary({
     fn,
@@ -27,7 +25,7 @@ function testLibrary({
         let result = null;
         try {
             result = fn(url);
-        } catch (e) {}
+        } catch (e) { }
 
         let lbl = false;
         if (result === valid) {

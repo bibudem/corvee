@@ -1,6 +1,6 @@
 import { isObject, isString } from 'underscore';
-import { FailedToLaunchError, HttpError, BrowserHasDisconnectedError, MailError, MozillaError, MOZILLA_ERROR_REGEX, NetError, CorveeError, PageCrashedError, TimeoutError, TargetClosedError, UrlError } from './definitions'
-import { console, inspect } from '../../../core'
+import { FailedToLaunchError, HttpError, BrowserHasDisconnectedError, MailError, MozillaError, MOZILLA_ERROR_REGEX, NetError, CorveeError, PageCrashedError, TimeoutError, TargetClosedError, UrlError } from './definitions/index.js'
+import { console, inspect } from '../../../core/index.js'
 
 export function captureErrors(data) {
     if (data === null) {

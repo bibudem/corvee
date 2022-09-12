@@ -1,4 +1,4 @@
-import { console } from '../../../core'
+import { console } from '../../../core/index.js'
 
 export default class Notifier {
     constructor(messages = [], {

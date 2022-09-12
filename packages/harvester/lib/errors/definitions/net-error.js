@@ -1,7 +1,8 @@
 import * as chromiumNetErrors from 'chromium-net-errors'
 import paramCase from 'param-case'
+import esMain from 'es-main'
 
-import { BaseError } from '.'
+import { BaseError } from './error.js'
 
 export class NetError extends BaseError {
     constructor(description, message) {
@@ -201,7 +202,7 @@ export class NetError extends BaseError {
 //
 //
 
-if (require.main === module) {
+if (esMain(import.meta)) {
     const e = new NetError('net::ERR_IO_PENDING')
     console.log(JSON.stringify(e, null, 2))
     // console.log(`${e.stack}`)

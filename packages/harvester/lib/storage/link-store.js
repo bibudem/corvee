@@ -3,7 +3,7 @@ import LRU from 'lru'
 import v from 'io-validate'
 import extend from 'extend';
 import { omit, pick } from 'underscore'
-import { idFromUrl, normalizeUrl, console, inspect } from '../../../core'
+import { idFromUrl, normalizeUrl, console, inspect } from '../../../core/index.js'
 
 /*
 Link props:

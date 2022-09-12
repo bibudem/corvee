@@ -1,4 +1,4 @@
-import { console, inspect } from '../../core'
+import { console, inspect } from '../../core/index.js'
 
 export function messageFactory(messages) {
 

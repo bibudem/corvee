@@ -1,3 +1,3 @@
-export * from './harvester'
-export * from './record'
-export * from './utils'
+export * from './harvester/index.js'
+export * from './record.js'
+export * from './utils/index.js'

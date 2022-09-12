@@ -1,10 +1,10 @@
 import EventEmitter from 'eventemitter3';
 import isPlainObject from 'is-plain-object'
 import ProgressBar from 'progress'
-import { LEVELS } from './levels'
+import { LEVELS } from './levels.js'
 
-import { messageFactory } from '../messages'
-import { console } from '../../../core'
+import { messageFactory } from '../messages.js'
+import { console } from '../../../core/index.js'
 
 class FilterPriorities extends Map {
 
@@ -261,7 +261,7 @@ export class CorveeProcessor extends EventEmitter {
         console.debug(`Filtering ${this.filters.length} filters...`);
 
 
-        const progressBar = new ProgressBar('[:bar] :percent :etas -- current filter: :filter', { total: this.filters.length })
+        const progressBar = new ProgressBar('[:bar] :percent :etas -- current filter: :filter', { total: this.filters.length, width: 60 })
 
         this.filters.forEach(filter => {
             progressBar.tick({ filter: filter.code })

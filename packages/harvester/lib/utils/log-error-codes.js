@@ -1,11 +1,11 @@
-import fs from 'fs'
-import { join } from 'path'
+import fs from 'node:fs'
+import { join } from 'node:path'
 
-import { console, inspect } from '../../../core'
+import { console, inspect } from '../../../core/index.js'
 
 export function saveErrorCodes(harvester, jobId) {
 
-    const dir = join(__dirname, '..', 'data');
+    const dir = join(import.meta.url, '..', 'data');
     const fileName = join(dir, `${jobId}_error-codes.json`);
 
     const errorCodes = new Map();

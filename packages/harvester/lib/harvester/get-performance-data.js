@@ -1,4 +1,4 @@
-import { console as logger, inspect } from '../../../core'
+import { console as logger, inspect } from '../../../core/index.js'
 
 export async function getPerformanceData(resourceName, page) {
   if (typeof page === 'undefined') {

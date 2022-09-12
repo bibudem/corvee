@@ -1,7 +1,7 @@
 
-import { promises as fsPromises, existsSync, mkdir, renameSync } from 'fs'
+import { promises as fsPromises, existsSync, mkdir, renameSync } from 'node:fs'
 
-import { inspect, console } from '../../../core'
+import { inspect, console } from '../../../core/index.js'
 
 export function cleanupFolderPromise(path, tmpPath) {
   return new Promise(async (resolve, reject) => {

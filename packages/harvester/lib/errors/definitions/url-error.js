@@ -1,4 +1,4 @@
-import { BaseError } from '..'
+import { BaseError } from './error.js'
 
 export class UrlError extends BaseError {
     constructor(msg = 'Invalid URL') {

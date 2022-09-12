@@ -1,14 +1,15 @@
-import { join, basename, relative } from 'path'
-import fs from 'fs'
+import { join, basename, relative, dirname } from 'node:path'
+import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
-import { createLogger, format, transports } from 'winston';
-import tracer from 'tracer';
-import colors from 'colors/safe';
+import { createLogger, format, transports } from 'winston'
+import tracer from 'tracer'
+import colors from 'colors/safe.js'
+import yargs from 'yargs'
 
-import { hookStdout } from './hook-stdout'
-import yargs from 'yargs';
+import { hookStdout } from './hook-stdout.js'
 
-const PROJECT_ROOT = join(__dirname, '..');
+const PROJECT_ROOT = process.cwd()
 
 const today = new Date();
 const year = today.getFullYear();
@@ -17,7 +18,7 @@ const day = `${today.getDate()}`.padStart(2, '0');
 
 const defaultTodayDashedPrefix = `${year}-${month}-${day}`;
 
-const argv = yargs
+const argv = yargs()
     .options({
         j: {
             alias: 'job',
@@ -63,9 +64,10 @@ const tracerLevelColors = {
 
 const DEFAULT_LEVEL = 'debug'
 
-// const logFilePath = join(process.mainModule.path, `console.log`)
-const basePath = process.mainModule ? process.mainModule.path : __dirname;
+const basePath = process.cwd();
 const logFilePath = join(basePath, 'logs', `console-${argv.$0.split('.')[0]}-${job}.log`)
+
+Error.stackTraceLimit = 20
 
 try {
     fs.unlinkSync(logFilePath)
@@ -77,6 +79,7 @@ const fileLogger = createLogger({
     format: combine(timestamp({
         format: 'HH:mm:ss.SSS'
     }), printf((info) => {
+
         const stackInfo = getStackInfo(12);
 
         return `${info.timestamp} <${info.level.toUpperCase()}> ${stackInfo.relativePath}:${stackInfo.line} ${stackInfo.method} ${info.message}`.replace(/\x1B\[\d+m/g, '') // strip colors
@@ -147,7 +150,7 @@ function getStackInfo(stackIndex) {
     // http://code.google.com/p/v8/wiki/JavaScriptStackTraceApi
     // do not remove the regex expresses to outside of this method (due to a BUG in node.js)
     var stackReg = /at\s+(.*)\s+\((.*):(\d*):(\d*)\)/gi
-    var stackReg2 = /at\s+()(.*):(\d*):(\d*)/gi
+    var stackReg2 = /at(.*)(file:\/\/\/.+):(\d*):(\d*)/gi
 
     var s = stacklist[stackIndex] || stacklist[0]
     var sp = stackReg.exec(s) || stackReg2.exec(s)
@@ -155,7 +158,7 @@ function getStackInfo(stackIndex) {
     if (sp && sp.length === 5) {
         return {
             method: sp[1],
-            relativePath: relative(PROJECT_ROOT, sp[2]),
+            relativePath: relative(PROJECT_ROOT, fileURLToPath(sp[2])),
             line: sp[3],
             pos: sp[4],
             file: basename(sp[2]),

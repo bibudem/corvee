@@ -1,8 +1,8 @@
 import { omit, isNull } from 'underscore'
-const extend = require('extend')
+import extend from 'extend'
 
-import { console, inspect } from './../../core'
-import { captureErrors, HttpError } from './errors';
+import { console, inspect } from './../../core/index.js'
+import { captureErrors, HttpError } from './errors/index.js';
 
 export const defaultOptions = {
     url: null,
@@ -122,7 +122,7 @@ export async function handleResponse(request, response = null, meta = {}) {
     });
 
     if (typeof request._events !== 'undefined') {
-        console.todo("This is a navigation response from 'onDocumentDownload' or 'onAssetResponse'")
+
         /*
          * playwright Request class && playwright Response class
          * This is a navigation response from 'onDocumentDownload' or 'onAssetResponse'

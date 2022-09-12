@@ -1,6 +1,6 @@
 import paramCase from 'param-case'
 
-import { BaseError } from './index.js'
+import { BaseError } from './error.js'
 import mozillaErrorList from './mozilla-error-list.js'
 
 export const MOZILLA_ERROR_REGEX = /((XP|NS|SEC)_[A-Z_]+)/

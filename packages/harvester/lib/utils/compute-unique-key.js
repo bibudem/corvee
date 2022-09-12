@@ -1,5 +1,5 @@
-import { createHash } from 'crypto'
-import { normalizeUrl } from "../../../core/lib";
+import { createHash } from 'node:crypto'
+import { normalizeUrl } from "../../../core/lib/index.js";
 
 function hashPayload(payload) {
   return createHash('sha256').update(payload).digest('base64').replace(/(\+|\/|=)/g, '').substr(0, 8);

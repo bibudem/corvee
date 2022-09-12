@@ -1,5 +1,5 @@
 import { isFunction } from 'underscore';
-import { normalizeUrl as defaultNormalizeUrlFunction, console } from '../../../core'
+import { normalizeUrl as defaultNormalizeUrlFunction, console } from '../../../core/index.js'
 
 export class BrowsingContextStore {
 
@@ -104,10 +104,11 @@ export class BrowsingContextStore {
 //
 //
 //
-import { readFileSync } from 'fs'
-import { join } from 'path'
-if (require.main === module) {
-    const data = readFileSync(join(__dirname, '..', '..', '..', '..', '..', 'corvee-bib', 'data', '2022-08-29_browsing-contexts.json'), 'utf8')
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import esMain from 'es-main'
+if (esMain(import.meta)) {
+    const data = readFileSync(join(import.meta.url, '..', '..', '..', '..', '..', 'corvee-bib', 'data', '2022-08-29_browsing-contexts.json'), 'utf8')
 
     const browsingContextStack = new BrowsingContextStore(data)
     console.log(JSON.stringify(browsingContextStack.getContext('https://bib.umontreal.ca/citer/styles-bibliographiques/chicago?tab=5241967'), null, 2))

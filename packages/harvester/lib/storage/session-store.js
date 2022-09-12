@@ -1,5 +1,5 @@
 import { openKeyValueStore } from 'apify';
-import { console } from '../../../core'
+import { console } from '../../../core/index.js'
 
 export async function sessionStore({
     interval = 5000,

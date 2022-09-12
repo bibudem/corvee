@@ -1,6 +1,7 @@
-import { join } from 'path'
-const pkg = require('../../package.json')
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path'
 
+const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
 const tmpDir = join(process.env.TEMP, 'corvee');
 
 //

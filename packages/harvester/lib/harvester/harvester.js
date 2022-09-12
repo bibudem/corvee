@@ -1,31 +1,30 @@
-import EventEmitter from 'events'
+import EventEmitter from 'node:events'
+import { readFile } from 'node:fs/promises'
 
 import minimatch from 'minimatch'
 import { pick, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
 import rp from 'request-promise-native'
-import Apify, { BasicCrawler, PlaywrightCrawler, utils as apifyUtils } from 'apify'
+import Apify, { BasicCrawler, PlaywrightCrawler } from 'apify'
 import playwright from 'playwright'
-import { computeUniqueKey } from '..'
 import v from 'io-validate'
 import assert from 'assert-plus'
-const extend = require('extend')
+import extend from 'extend'
 
-import { normalizeUrl, isValidUrl, getRandomUserAgent } from '../../../core'
-import { cleanupFolderPromise } from './cleanup-folder-promise'
-import { CorveeError, HttpError, PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors'
-import { humanDuration, displayUrl } from '../utils'
-import { LinkStore, sessionStore } from '../storage'
-import { Link } from '../link'
-import { handleResponse, handleFailedRequest } from '../record'
-import { PseudoUrls } from '../pseudoUrls'
-import Notifier from '../utils/notifier'
-import { console, inspect } from '../../../core'
+import { computeUniqueKey } from '../index.js'
+import { cleanupFolderPromise } from './cleanup-folder-promise.js'
+import { CorveeError, HttpError, PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors/index.js'
+import { humanDuration, displayUrl } from '../utils/index.js'
+import { LinkStore, sessionStore } from '../storage/index.js'
+import { Link } from '../link.js'
+import { handleResponse, handleFailedRequest } from '../record.js'
+import { PseudoUrls } from '../pseudoUrls.js'
+import Notifier from '../utils/notifier.js'
+import { console, inspect, normalizeUrl, isValidUrl, getRandomUserAgent } from '../../../core/index.js'
 
-import { defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
-import { getPerformanceData, getTimingFor } from '.'
+import { defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore, getPerformanceData, getTimingFor } from './index.js'
 
-const pkg = require('../../package.json')
+const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
 
 process.on('unhandledRejection', function onUnhandledRejection(reason, promise) {
 
@@ -52,8 +51,6 @@ process.on('uncaughtException', function onUnhandledRejection(error, origin) {
 
 const linkProps = new Set();
 
-const defaultOptions = extend(true, {}, defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions)
-
 /**
  * Creates a new Harvester
  * @class
@@ -76,6 +73,8 @@ export class Harvester extends EventEmitter {
      */
 
     constructor(config = {}) {
+
+        const defaultOptions = extend(true, {}, defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions)
 
         super();
 
@@ -980,9 +979,6 @@ export class Harvester extends EventEmitter {
                     page
                 }) {
 
-                    console.debug(`[${request.retryCount}] Request URL: ${inspect(request.url)}
-request: ${inspect(request)}`)
-
                     //
                     // Main navigation responses handler
                     // Here we process navigation responses. 
@@ -1120,9 +1116,7 @@ request: ${inspect(request)}`)
                         }
                     } catch (error) {
                         console.error(`Got an error while trying to get the record of the link ${request.url}
-Error: ${inspect(error)}
-Exiting now...`)
-                        process.exit();
+Error: ${inspect(error)}`)
                     }
                 },
                 navigationTimeoutSecs: self.config.navigationTimeout / 1000,
@@ -1566,12 +1560,10 @@ Exiting now...`)
                                 resolve(response);
                             })
                             .catch(async function onDocumentRequestFailed(error) {
-                                console.debug(`${inspect(request)}, ${inspect(error)}`)
 
                                 if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
 
                                     // This is handled at onDocumentDownload (pdf downloads)
-                                    console.debug('Stopping page.goto().catch()')
                                     return resolve()
                                 }
 
