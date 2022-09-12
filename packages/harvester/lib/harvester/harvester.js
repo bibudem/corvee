@@ -13,7 +13,7 @@ import extend from 'extend'
 
 import { computeUniqueKey } from '../index.js'
 import { cleanupFolderPromise } from './cleanup-folder-promise.js'
-import { CorveeError, HttpError, PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors/index.js'
+import { PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors/index.js'
 import { humanDuration, displayUrl } from '../utils/index.js'
 import { LinkStore, sessionStore } from '../storage/index.js'
 import { Link } from '../link.js'
@@ -601,6 +601,7 @@ export class Harvester extends EventEmitter {
 
                     //
                     // Don't collect the same link twice per page
+                    //
                     const pageUrl = link.userData.parent;
 
                     if (!uniqueLinksPerPage.has(pageUrl)) {
@@ -856,7 +857,14 @@ export class Harvester extends EventEmitter {
 
                         return !link.extern;
                     })
-                    .filter(link => link.url !== parent) // exclude internal links (href="#some-anchor")
+                    // exclude internal links (href="#some-anchor")
+                    .filter(link => {
+                        if (link.userData.urlData && link.userData.urlData.startsWith('#')) {
+                            return false
+                        }
+
+                        return link.url !== parent
+                    })
             }
 
             const basicCrawler = new BasicCrawler({
