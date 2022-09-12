@@ -85,6 +85,13 @@ export class Harvester extends EventEmitter {
 
         this.config = extend(true, {}, defaultOptions, config);
 
+        if (typeof config.pageWaitUntil === 'string') {
+            this.config.pageWaitUntil = {
+                intern: config.pageWaitUntil,
+                extern: config.pageWaitUntil
+            }
+        }
+
         console.log(`Setting log level to ${this.config.logLevel}`)
         console.setLevel(this.config.logLevel)
         console.verbose('### THIS IS VERBOSE ###')
@@ -1133,7 +1140,38 @@ Error: ${inspect(error)}`)
                     request,
                     error
                 }) {
-                    // Nothing here
+
+                    if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
+
+                        // This is handled at onDocumentDownload (pdf downloads)
+                        return
+                    }
+
+                    if (request.userData.trials >= self.config.maxRequestRetries) {
+
+                        //
+                        // Main document failed request handler
+                        // Here we deal with network / browser errors
+                        //
+
+                        console.todo(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}. Error: ${inspect(error)}
+Request: ${inspect(request)}`)
+
+                        if (!request.userData.reports) {
+                            request.userData.reports = []
+                        }
+                        request.userData.reports.push(error)
+
+                        const meta = {
+                            _from: 'onNavigationRequestFailed'
+                        }
+
+                        const record = await handleFailedRequest(request, meta)
+
+                        await addRecord(record);
+
+                        self.session.counts.fail++
+                    }
                 },
                 preNavigationHooks: [
                     async function preNavigationHooksFunction({ crawler, request, session, page, browserController, proxyInfo }, gotoOptions) {
@@ -1162,466 +1200,370 @@ Error: ${inspect(error)}`)
 
                         await page.setExtraHTTPHeaders(extraHTTPHeaders)
 
-                    }
+                        gotoOptions.waitUntil = self.isExternLink(request.url) ? self.config.pageWaitUntil.extern : self.config.pageWaitUntil.intern
+                        console.todo(gotoOptions.waitUntil)
 
-                ],
-                postNavigationHooks: [],
-                gotoFunction: async function gotoFunction({
-                    request,
-                    page
-                }) {
+                    },
+                    async function pageEventsHandlers({ crawler, request, session, page, browser, proxyInfo }, gotoOptions) {
 
-                    return new Promise(async (resolve, reject) => {
 
-                        if (request.userData._ignore) {
-                            return resolve()
-                        }
+                        if (typeof request.userData._ignore === 'undefined') {
 
-                        // self.queue.add(async () => {
+                            request.userData.trials = request.retryCount;
 
-                        request.userData.trials = request.retryCount;
+                            self.emit('request', request)
 
-                        self.emit('request', request)
+                            // await page._client.send('Network.enable', {
+                            //     maxResourceBufferSize: 1024 * 1204 * 100,
+                            //     maxTotalBufferSize: 1024 * 1204 * 400,
+                            // })
 
-                        // await page._client.send('Network.enable', {
-                        //     maxResourceBufferSize: 1024 * 1204 * 100,
-                        //     maxTotalBufferSize: 1024 * 1204 * 400,
-                        // })
+                            page.on('error', function onError(error) {
 
-                        page.on('error', function onError(error) {
+                                if (request.retryCount >= self.config.maxRequestRetries) {
 
-                            if (request.retryCount >= self.config.maxRequestRetries) {
+                                    console.todo(`Page error at [try: ${request.retryCount}] ${request.url}. Error: ${inspect(error)} Request: ${inspect(request)}`)
 
-                                console.todo(`Page error at [try: ${request.retryCount}] ${request.url}. Error: ${inspect(error)} Request: ${inspect(request)}`)
-
-                                if (!request.userData.reports) {
-                                    request.userData.reports = []
+                                    if (!request.userData.reports) {
+                                        request.userData.reports = []
+                                    }
+                                    request.userData.reports.push(error);
                                 }
-                                request.userData.reports.push(error);
-                            }
 
-                            return reject(error)
-                        })
+                                return reject(error)
+                            })
 
-                        page.on('dialog', async function onDialog(dialog) {
-                            await dialog.dismiss();
-                        });
+                            page.on('dialog', async function onDialog(dialog) {
+                                await dialog.dismiss();
+                            });
 
-                        page.on('request', async function onRequest(pwRequest) {
+                            page.on('request', async function onRequest(pwRequest) {
 
-                            //
-                            // Initialization of userData
-                            //
+                                //
+                                // Initialization of userData
+                                //
 
-                            // TODO: remove this test when it is stated that it will never be true
-                            if ('userData' in pwRequest) {
-                                console.error('pwRequest already have a .userData property. Check why.')
-                                process.exit(1);
-                            }
-
-                            if (!pwRequest.isNavigationRequest() && self.config.navigationOnly) {
-                                // Don't initialize userData if this is an asset request AND settings say we are interrested only on navigation requests
-                                return
-                            }
-
-                            if (!pwRequest.isNavigationRequest() && self.isExternLink(pwRequest.url())) {
-                                // Don't initialize userData if this is an asset request on an external page
-                                return
-                            }
-
-                            const url = pwRequest.url();
-                            const parent = page.url();
-
-                            pwRequest.userData = Object.assign({ trials: 1 }, request.userData,
-                                {
-                                    _from: 'onRequest',
-                                    url,
-                                    parent,
-                                    id: request.id
-                                })
-                        })
-
-                        page.on('request', async function onDocumentRequest(pwRequest) {
-                            if (pwRequest.isNavigationRequest()) {
-
-                                // Don't request if extern setting meets
-                                if (!self.config.checkExtern && self.isExternLink(url)) {
-
-                                    console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(url)} from settings.`);
-
-                                    return pwRequest.abort('blockedbyclient')
+                                // TODO: remove this test when it is stated that it will never be true
+                                if ('userData' in pwRequest) {
+                                    console.error('pwRequest already have a .userData property. Check why.')
+                                    process.exit(1);
                                 }
-                            }
-                        })
 
-                        page.on('request', async function onAssetRequest(pwRequest) {
-
-                            //
-                            // Main asset request handler
-                            //
-                            // Here we process pages assets only, since they are not handled natively by apifyjs.
-                            // Page requests are processesd via the playwrightCrawler handlePageFunction
-                            //
-
-                            if (!pwRequest.isNavigationRequest() && !self.config.navigationOnly) {
-
-                                if (self.isExternLink(pwRequest.url())) {
-                                    // This is an asset of an external page
+                                if (!pwRequest.isNavigationRequest() && self.config.navigationOnly) {
+                                    // Don't initialize userData if this is an asset request AND settings say we are interrested only on navigation requests
                                     return
                                 }
 
-                                console.debug(`Request URL: ${pwRequest.url()}`)
-
-                                pwRequest.userData._from = 'onAssetRequest'
-                            }
-                        })
-
-                        page.on('requestfailed', async function onDocumentDownload(pwRequest) {
-
-                            //
-                            // Here we process navigation downloads
-                            // pdf, zip, docx, etc. documents
-                            //
-
-                            // Catch download navigation (pdf, zip, docx, etc.) occuring on first try before puppeteer throws an net::ERR_ABORTED error
-                            if (pwRequest.isNavigationRequest() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
-
-                                if (request.retryCount === 1) {
-                                    const pwResponse = await pwRequest.response();
-                                    if (pwResponse) {
-
-                                        let record;
-                                        const meta = {
-                                            _from: 'onDocumentDownload',
-                                            trials: request.retryCount,
-                                            parent: request.userData.parent
-                                        }
-
-                                        try {
-                                            record = await handleResponse(pwRequest, pwResponse, meta)
-                                        } catch (error) {
-                                            console.error(inspect(error))
-                                        }
-
-                                        await addRecord(record);
-
-                                        self.session.counts.success++
-                                    }
+                                if (!pwRequest.isNavigationRequest() && self.isExternLink(pwRequest.url())) {
+                                    // Don't initialize userData if this is an asset request on an external page
+                                    return
                                 }
 
-                                request.userData._ignore = true
-                                pwRequest.userData._ignore = true
+                                const url = pwRequest.url();
+                                const parent = page.url();
 
-                                return Promise.resolve()
+                                pwRequest.userData = Object.assign({ trials: 1 }, request.userData,
+                                    {
+                                        _from: 'onRequest',
+                                        url,
+                                        parent,
+                                        id: request.id
+                                    })
+                            })
 
-                            }
-                        })
+                            page.on('request', async function onDocumentRequest(pwRequest) {
+                                if (pwRequest.isNavigationRequest()) {
 
-                        page.on('requestfailed', async function onDocumentRequestFailed(pwRequest) {
+                                    // Don't request if extern setting meets
+                                    if (!self.config.checkExtern && self.isExternLink(url)) {
 
-                            //
-                            // Main document request failed handler is located at page.goto().catch()
-                            //
+                                        console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(url)} from settings.`);
 
-                            if (pwRequest.isNavigationRequest()) {
+                                        return pwRequest.abort('blockedbyclient')
+                                    }
+                                }
+                            })
+
+                            page.on('request', async function onAssetRequest(pwRequest) {
+
+                                //
+                                // Main asset request handler
+                                //
+                                // Here we process pages assets only, since they are not handled natively by apifyjs.
+                                // Page requests are processesd via the playwrightCrawler handlePageFunction
+                                //
+
+                                if (!pwRequest.isNavigationRequest() && !self.config.navigationOnly) {
+
+                                    if (self.isExternLink(pwRequest.url())) {
+                                        // This is an asset of an external page
+                                        return
+                                    }
+
+                                    console.debug(`Request URL: ${pwRequest.url()}`)
+
+                                    pwRequest.userData._from = 'onAssetRequest'
+                                }
+                            })
+
+                            page.on('requestfailed', async function onDocumentDownload(pwRequest) {
+
+                                //
+                                // Here we process navigation downloads
+                                // pdf, zip, docx, etc. documents
+                                //
+
+                                // Catch download navigation (pdf, zip, docx, etc.) occuring on first try before puppeteer throws an net::ERR_ABORTED error
+                                if (pwRequest.isNavigationRequest() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
+
+                                    if (request.retryCount === 1) {
+                                        const pwResponse = await pwRequest.response();
+                                        if (pwResponse) {
+
+                                            let record;
+                                            const meta = {
+                                                _from: 'onDocumentDownload',
+                                                trials: request.retryCount,
+                                                parent: request.userData.parent
+                                            }
+
+                                            try {
+                                                record = await handleResponse(pwRequest, pwResponse, meta)
+                                            } catch (error) {
+                                                console.error(inspect(error))
+                                            }
+
+                                            await addRecord(record);
+
+                                            self.session.counts.success++
+                                        }
+                                    }
+
+                                    request.userData._ignore = true
+                                    pwRequest.userData._ignore = true
+
+                                    return Promise.resolve()
+
+                                }
+                            })
+
+                            page.on('requestfailed', async function onDocumentRequestFailed(pwRequest) {
+
+                                //
+                                // Main document request failed handler is located at page.goto().catch()
+                                //
+
+                                if (pwRequest.isNavigationRequest()) {
+
+                                    if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
+                                        return;
+                                    }
+
+                                    if (request.retryCount < self.config.maxRequestRetries) {
+                                        return;
+                                    }
+
+                                    if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
+
+                                        //
+                                        // This is a navigation request error
+                                        // Has been handled at 'onDocumentDownload'
+                                        //
+
+                                        return;
+                                    }
+
+                                    // Retry count maxed out.
+
+                                }
+                            })
+
+                            page.on('requestfailed', async function onAssetRequestFailed(pwRequest) {
+
+                                //
+                                // Main asset failed request handler
+                                // Since they are not handled natively by apifyjs.
+                                // Page requests are processesd via the playwrightCrawler handlePageFunction
+                                //
+
+                                if (pwRequest.isNavigationRequest()) {
+                                    return;
+                                }
 
                                 if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
                                     return;
                                 }
 
-                                if (request.retryCount < self.config.maxRequestRetries) {
-                                    return;
-                                }
+                                //
+                                // Request failed start
+                                //
 
-                                if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
+                                const url = pwRequest.url();
 
-                                    //
-                                    // This is a navigation request error
-                                    // Has been handled at 'onDocumentDownload'
-                                    //
+                                console.verbose(`${pwRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pwRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pwRequest.failure() ? `${pwRequest.failure().errorText} ` : ` `}at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
 
-                                    return;
-                                }
+                                if (!self.homeBasePUrl.matches(page.url())) {
+                                    console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`);
 
-                                // Retry count maxed out.
-
-                            }
-                        })
-
-                        page.on('requestfailed', async function onAssetRequestFailed(pwRequest) {
-
-                            //
-                            // Main asset failed request handler
-                            // Since they are not handled natively by apifyjs.
-                            // Page requests are processesd via the playwrightCrawler handlePageFunction
-                            //
-
-                            if (pwRequest.isNavigationRequest()) {
-                                return;
-                            }
-
-                            if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
-                                return;
-                            }
-
-                            //
-                            // Request failed start
-                            //
-
-                            const url = pwRequest.url();
-
-                            console.verbose(`${pwRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pwRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pwRequest.failure() ? `${pwRequest.failure().errorText} ` : ` `}at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
-
-                            if (!self.homeBasePUrl.matches(page.url())) {
-                                console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`);
-
-                                return Promise.resolve();
-                            } else {
-                                if (['document', 'other'].includes(pwRequest.resourceType)) {
-                                    console.warn(`This should be a page asset of the crawled website: ${displayUrl(pwRequest.url())}, resource type: ${pwRequest.resourceType()}`)
-                                }
-                            }
-
-                            //
-                            // Asset request failed start
-                            //
-
-                            if (!self.config.navigationOnly) {
-
-                                if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
-                                    console.verbose(`Silently ignoring failed 'net::ERR_ABORTED' request for ${displayUrl(url)}`)
                                     return Promise.resolve();
-                                }
-
-                                if (request.retryCount <= self.config.maxRequestRetries) {
-                                    return Promise.reject();
-                                }
-
-                                if (pwRequest.failure()) {
-
-                                    if (!pwRequest.userData.reports) {
-                                        pwRequest.userData.reports = []
+                                } else {
+                                    if (['document', 'other'].includes(pwRequest.resourceType)) {
+                                        console.warn(`This should be a page asset of the crawled website: ${displayUrl(pwRequest.url())}, resource type: ${pwRequest.resourceType()}`)
                                     }
-
-                                    pwRequest.userData.reports.push(pwRequest.failure().errorText)
-
                                 }
-
-                                const record = await handleFailedRequest(request, pwRequest, {
-                                    _from: 'onAssetRequestFailed'
-                                });
-
-                                await addRecord(record);
-
-                                self.session.counts.fail++
-                            }
-                        })
-
-                        page.on('response', async function onAssetResponse(pwResponse) {
-
-                            //
-                            // Main asset responses handler
-                            //
-                            // HANDLE ONLY NON DOCUMENT RESOURCES HERE
-                            //
-
-                            if (
-                                // Is this an asset request?
-                                !pwResponse.request().isNavigationRequest() &&
-
-                                // Do config allow to record assets?
-                                !self.config.navigationOnly &&
-
-                                // Is the asset an intern link?
-                                !self.isExternLink(pwResponse.request().url()) &&
-
-                                // Is this asset on a page that is in the domain's website?
-                                self.homeBasePUrl.matches(page.url())
-                            ) {
 
                                 //
-                                // This is an asset
+                                // Asset request failed start
                                 //
 
-                                const statusCode = pwResponse.status()
+                                if (!self.config.navigationOnly) {
 
-                                if (statusCode >= 300 && statusCode < 400) {
-                                    return
-                                }
-
-                                // Is the asset loaded?
-                                if (pwResponse.ok() || statusCode >= 400) {
-
-                                    const meta = {
-                                        _from: 'onAssetResponse',
+                                    if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
+                                        console.verbose(`Silently ignoring failed 'net::ERR_ABORTED' request for ${displayUrl(url)}`)
+                                        return Promise.resolve();
                                     }
 
-                                    const firstResponseUrl = (
-                                        request => {
-                                            while (!isNull(request.redirectedFrom())) {
-                                                request = request.redirectedFrom()
-                                            }
-                                            return request.url()
+                                    if (request.retryCount <= self.config.maxRequestRetries) {
+                                        return Promise.reject();
+                                    }
+
+                                    if (pwRequest.failure()) {
+
+                                        if (!pwRequest.userData.reports) {
+                                            pwRequest.userData.reports = []
                                         }
-                                    )(pwResponse.request())
 
-                                    meta.timing = await getTimingFor(firstResponseUrl, page);
+                                        pwRequest.userData.reports.push(pwRequest.failure().errorText)
 
-                                    if (self.config.getPerfData) {
-                                        meta.perfData = await getPerformanceData(firstResponseUrl, page)
                                     }
 
-                                    try {
-
-                                        const record = await handleResponse(pwResponse.request(), pwResponse, meta)
-
-                                        await addRecord(record);
-
-                                        self.session.counts.success++
-
-                                    } catch (error) {
-                                        console.error(inspect(error))
-                                    }
-
-                                    return
-                                }
-
-                                self.session.counts.fail++
-                                self.session.counts.activeRequests--
-                                self.session.counts.finishedRequests++
-
-                                console.error('This response is not handled:', pwResponse.url())
-                                console.todo('Response status: ', pwResponse.status())
-                                console.todo('Response ok?: ', pwResponse.ok())
-                                console.error('Request url:', pwResponse.request().url())
-                                console.error('Parent:', request.url)
-                                console.error(pwResponse.headers())
-                                process.exit()
-
-
-                            }
-
-                        })
-
-                        page.on('response', async function onNavigationResponse(pwResponse) {
-
-                            //
-                            // Here we process some navigation responses only.
-                            // The main navigation responses handler is in the playwrightCrawler handlePageFunction
-                            //
-
-                            // Is this an navigation request?
-                            if (pwResponse.request().isNavigationRequest()) {
-
-                                //
-                                // This is a navigation response
-                                //
-
-                                if (pwResponse.status() === 0) {
-
-                                    // This is a Network error.
-                                    // Will be handled in onNavigationRequest handler
-
-                                    return;
-                                }
-
-                                // if (!pwResponse.ok() && request.retryCount >= self.config.maxRequestRetries) {
-
-                                //     const statusCode = pwResponse.status()
-
-                                //     console.debug(`[${request.retryCount}] got a status = ${statusCode} for ${pwResponse.request().url()}`)
-                                //     if (statusCode >= 300 && statusCode < 400) {
-
-                                //         if (isNull(request.userData.redirectChain)) {
-                                //             request.userData.redirectChain = []
-                                //         }
-
-                                //         request.userData.redirectChain.push({
-                                //             url: pwResponse.url(),
-                                //             status: statusCode,
-                                //             statusText: pwResponse.statusText(),
-                                //             fromServiceWorker: pwResponse.fromServiceWorker()
-                                //         })
-                                //     }
-
-                                //     if (statusCode >= 400) {
-
-                                //         const httpError = new HttpError(statusCode, pwResponse.statusText())
-
-                                //         if (!request.userData.reports) {
-                                //             request.userData.reports = []
-                                //         }
-
-                                //         request.userData.reports.push(httpError);
-                                //     }
-
-                                // }
-                            }
-
-                        })
-
-                        page
-                            .goto(request.url, {
-                                waitUntil: self.config.pageWaitUntil
-                            })
-                            .then(response => {
-                                resolve(response);
-                            })
-                            .catch(async function onDocumentRequestFailed(error) {
-
-                                if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
-
-                                    // This is handled at onDocumentDownload (pdf downloads)
-                                    return resolve()
-                                }
-
-                                if (request.userData.trials >= self.config.maxRequestRetries) {
-
-                                    //
-                                    // Main document failed request handler
-                                    // Here we deal with network / browser errors
-                                    //
-
-                                    console.todo(`Request failed at page.goto().catch() after try [${request.retryCount}] ${request.url}. Error: ${inspect(error)}
-Request: ${inspect(request)}`)
-
-                                    if (!request.userData.reports) {
-                                        request.userData.reports = []
-                                    }
-                                    request.userData.reports.push(error)
-
-                                    const meta = {
-                                        _from: 'page.goto().catch()'
-                                    }
-
-                                    const record = await handleFailedRequest(request, meta)
+                                    const record = await handleFailedRequest(request, pwRequest, {
+                                        _from: 'onAssetRequestFailed'
+                                    });
 
                                     await addRecord(record);
 
                                     self.session.counts.fail++
                                 }
+                            })
 
-                                resolve()
-                            });
-                        // })
-                    }).catch(async error => {
+                            page.on('response', async function onAssetResponse(pwResponse) {
 
-                        if (request.retryCount >= self.config.maxRequestRetries) {
+                                //
+                                // Main asset responses handler
+                                //
+                                // HANDLE ONLY NON DOCUMENT RESOURCES HERE
+                                //
 
-                            console.todo(`Unhandled error at gotoFunction at try [${request.retryCount}]. Error: ${inspect(error)}, request: ${inspect(request)}`)
+                                if (
+                                    // Is this an asset request?
+                                    !pwResponse.request().isNavigationRequest() &&
 
-                            // Function captureError handles chromium net errors, so we don't log thoses
-                            if (!(error.errorText && error.errorText.indexOf('net::') > 0)) {
-                                console.todo(`Unhandled error at gotoFunction after max request retries at ${request.url}. Error: ${inspect(error)}, request: ${inspect(request)}`)
-                            }
+                                    // Do config allow to record assets?
+                                    !self.config.navigationOnly &&
 
-                            if (!request.userData.reports) {
-                                request.userData.reports = []
-                            }
-                            request.userData.reports.push(error)
+                                    // Is the asset an intern link?
+                                    !self.isExternLink(pwResponse.request().url()) &&
+
+                                    // Is this asset on a page that is in the domain's website?
+                                    self.homeBasePUrl.matches(page.url())
+                                ) {
+
+                                    //
+                                    // This is an asset
+                                    //
+
+                                    const statusCode = pwResponse.status()
+
+                                    if (statusCode >= 300 && statusCode < 400) {
+                                        return
+                                    }
+
+                                    // Is the asset loaded?
+                                    if (pwResponse.ok() || statusCode >= 400) {
+
+                                        const meta = {
+                                            _from: 'onAssetResponse',
+                                        }
+
+                                        const firstResponseUrl = (
+                                            request => {
+                                                while (!isNull(request.redirectedFrom())) {
+                                                    request = request.redirectedFrom()
+                                                }
+                                                return request.url()
+                                            }
+                                        )(pwResponse.request())
+
+                                        meta.timing = await getTimingFor(firstResponseUrl, page);
+
+                                        if (self.config.getPerfData) {
+                                            meta.perfData = await getPerformanceData(firstResponseUrl, page)
+                                        }
+
+                                        try {
+
+                                            const record = await handleResponse(pwResponse.request(), pwResponse, meta)
+
+                                            await addRecord(record);
+
+                                            self.session.counts.success++
+
+                                        } catch (error) {
+                                            console.error(inspect(error))
+                                        }
+
+                                        return
+                                    }
+
+                                    self.session.counts.fail++
+                                    self.session.counts.activeRequests--
+                                    self.session.counts.finishedRequests++
+
+                                    console.error('This response is not handled:', pwResponse.url())
+                                    console.todo('Response status: ', pwResponse.status())
+                                    console.todo('Response ok?: ', pwResponse.ok())
+                                    console.error('Request url:', pwResponse.request().url())
+                                    console.error('Parent:', request.url)
+                                    console.error(pwResponse.headers())
+                                    process.exit()
+
+
+                                }
+
+                            })
+
+                            page.on('response', async function onNavigationResponse(pwResponse) {
+
+                                //
+                                // Here we process some navigation responses only.
+                                // The main navigation responses handler is in the playwrightCrawler handlePageFunction
+                                //
+
+                                // Is this an navigation request?
+                                if (pwResponse.request().isNavigationRequest()) {
+
+                                    //
+                                    // This is a navigation response
+                                    //
+
+                                    if (pwResponse.status() === 0) {
+
+                                        // This is a Network error.
+                                        // Will be handled in onNavigationRequest handler
+
+                                        return;
+                                    }
+
+                                    // Nothing here
+                                }
+
+                            })
+
                         }
-                    })
-                },
+                    },
+                ],
+                postNavigationHooks: [],
                 handlePageTimeoutSecs: self.config.handlePageTimeout,
                 launchContext: self.launchContextOptions,
                 // handlePageTimeoutSecs: 60,

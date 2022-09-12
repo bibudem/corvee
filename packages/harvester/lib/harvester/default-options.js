@@ -10,15 +10,35 @@ const tmpDir = join(process.env.TEMP, 'corvee');
 
 export const defaultHarvesterOptions = {
 
+    /**
+     * @typedef {'domcontentloaded' | 'load' | 'networkidle'} WaitUntilProperty
+    */
+
+    /**
+     * A string or an object.
+     * @typedef { { intern: WaitUntilProperty, extern: WaitUntilProperty } | WaitUntilProperty } WaitUntilType
+     */
+
     //
     // Intern options. Do not use
     //
 
-    // Wether to use defaultHarvesterOptions.ignoreDefaults or not
+    /*
+     * Wether to use defaultHarvesterOptions.ignoreDefaults or not
+     * @private
+     */
     useIgnoreDefaults: true,
-    // Wether to use defaultHarvesterOptions.schemesDefaults or not
+
+    /*
+     * Wether to use defaultHarvesterOptions.schemesDefaults or not
+     * @private
+     */
     useSchemesDefaults: true,
-    // Wether to use defaultHarvesterOptions.noFollowDefaults or not
+
+    /*
+     * Wether to use defaultHarvesterOptions.noFollowDefaults or not
+     * @private
+     */
     useNoFollowDefaults: true,
 
     //
@@ -55,7 +75,14 @@ export const defaultHarvesterOptions = {
     notify: true,
     notifyDelay: 10000,
     notifyLogLevel: 'info',
-    pageWaitUntil: ['domcontentloaded'],
+    /*
+     * Wait for the page event before consider operation succeeded.
+     * @property {WaitUntilType} pageWaitUntil
+     */
+    pageWaitUntil: {
+        intern: 'domcontentloaded',
+        extern: 'load'
+    },
     requestTimeout: 30000,
     schemes: [],
     schemesDefaults: ['corvee', 'http', 'https'],
