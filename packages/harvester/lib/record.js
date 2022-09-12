@@ -102,7 +102,7 @@ function getFinalUrl({
             finalUrl = redirectChain[redirectChain.length - 1].url;
         }
 
-        if (httpStatusCode >= 200 && httpStatusCode <= 299) {
+        if ((httpStatusCode >= 200 && httpStatusCode <= 299) || httpStatusCode >= 400) {
             // Pick the last redirect
             finalUrl = redirectChain[redirectChain.length - 1].url;
         }
