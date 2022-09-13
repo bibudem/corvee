@@ -17,7 +17,6 @@
         "eventemitter3": "^4.0.0",
         "io-validate": "^2.1.13",
         "is-plain-object": "^3.0.0",
-        "lodash": "^4.17.15",
         "progress": "^2.0.3",
         "underscore": "^1.9.1"
     }

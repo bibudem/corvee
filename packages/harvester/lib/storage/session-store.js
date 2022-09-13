@@ -1,4 +1,4 @@
-import { openKeyValueStore } from 'apify';
+import apify from 'apify';
 import { console } from '../../../core/index.js'
 
 export async function sessionStore({
@@ -6,7 +6,7 @@ export async function sessionStore({
     resume = false
 } = {}) {
 
-    const store = await openKeyValueStore('session');
+    const store = await apify.openKeyValueStore('session');
 
     let storedData = {};
 

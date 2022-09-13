@@ -5,7 +5,7 @@ import minimatch from 'minimatch'
 import { pick, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
 import rp from 'request-promise-native'
-import Apify, { BasicCrawler, PlaywrightCrawler } from 'apify'
+import apify from 'apify'
 import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
@@ -381,14 +381,14 @@ export class Harvester extends EventEmitter {
                     })
             }
 
-            self.assetsLinksStore = await Apify.openDataset('assets-urls');
+            self.assetsLinksStore = await apify.openDataset('assets-urls');
 
             if (self.config.fetchLinksOnce) {
                 self.linkStore = new LinkStore();
                 await self.linkStore.init();
             }
 
-            self.recordStore = await Apify.openDataset('records');
+            self.recordStore = await apify.openDataset('records');
 
             self.session.recordCount = 0;
             self.session.counts = {
@@ -426,9 +426,9 @@ export class Harvester extends EventEmitter {
 
             });
 
-            // self.screenshotsStore = await Apify.openKeyValueStore('screenshots');
+            // self.screenshotsStore = await apify.openKeyValueStore('screenshots');
 
-            const requestQueue = await Apify.openRequestQueue('playwright');
+            const requestQueue = await apify.openRequestQueue('playwright');
 
             setInterval(async function () {
                 const info = await requestQueue.getInfo();
@@ -442,7 +442,7 @@ export class Harvester extends EventEmitter {
                 })
             }, self.config.notifyDelay)
 
-            const basicRequestQueue = await Apify.openRequestQueue('basic');
+            const basicRequestQueue = await apify.openRequestQueue('basic');
 
             self.notify.addMessage(async () => {
                 const info = await requestQueue.getInfo();
@@ -508,7 +508,7 @@ export class Harvester extends EventEmitter {
                                 // process.exit()
                                 requestData.userData.trials++
 
-                                const request = new Apify.Request({
+                                const request = new apify.Request({
                                     url: requestData.userData.url,
                                     userData: requestData.userData,
                                     retryCount: requestData.userData.trials
@@ -874,7 +874,7 @@ export class Harvester extends EventEmitter {
                     })
             }
 
-            const basicCrawler = new BasicCrawler({
+            const basicCrawler = new apify.BasicCrawler({
                 requestQueue: basicRequestQueue,
                 autoscaledPoolOptions: {
                     ...self.autoscaledPoolOptions,
@@ -987,7 +987,7 @@ export class Harvester extends EventEmitter {
             // PLaywright crawler
             //
 
-            const playwrightCrawler = new PlaywrightCrawler({
+            const playwrightCrawler = new apify.PlaywrightCrawler({
                 handlePageFunction: async function onNavigationResponse({
                     request,
                     response: pwResponse,
