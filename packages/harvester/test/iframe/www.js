@@ -1,10 +1,6 @@
-import http from 'http';
-import {
-    URL
-} from 'url'
-import {
-    console
-} from '../../../core/lib/logger'
+import http from 'node:http'
+import esMain from 'es-main'
+import { console } from '../../../core/index.js'
 
 function html(page) {
 
@@ -129,8 +125,8 @@ process.on('exit', () => {
     //console.todo(JSON.stringify(r, null, 2))
 })
 
-if (!module.parent) {
+export default starter
+
+if (esMain(import.meta)) {
     starter();
 }
-
-export default starter

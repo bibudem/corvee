@@ -1,35 +1,24 @@
-import path from 'path'
-import Apify from 'apify';
-import server from './server';
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import server from './server.js'
+import { Harvester } from '../../lib/harvester/index.js'
+import saveRecords from '../save-records.js'
+import { logErrorCodes } from '../../lib/utils/index.js'
+import { console } from '../../../core/index.js';
+import configs from './config.js'
 
-import {
-    Harvester
-}
-    from '../../lib/harvester'
-
-import saveRecords from '../save-records'
-
-import {
-    logErrorCodes
-} from '../../lib/utils'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
-
-import configs from './config'
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 const harvester = new Harvester(configs);
 
-saveRecords(__dirname, harvester)
+saveRecords(DIRNAME, harvester)
 
-logErrorCodes(harvester, path.join(__dirname, './error-codes.json'))
+logErrorCodes(harvester, join(DIRNAME, './error-codes.json'))
 
 try {
-    server.listen(3000, () => {
+    server.listen(3000, async () => {
         console.log('Server running.')
-        Apify.main(harvester.run());
+        await harvester.run()
     });
     console.log(`Server listening on port 3000`);
 } catch (e) {

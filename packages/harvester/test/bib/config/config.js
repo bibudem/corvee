@@ -1,22 +1,19 @@
-import path from 'path'
-import {
-    getRandomUserAgent
-} from '../../../../core'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url';
+import { adressesSimplifiees } from './adresses-simplifiees.js'
 
-import {
-    adressesSimplifiees
-} from './adresses-simplifiees'
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 export const config = {
-    apifyLocalStorageDir: path.join(__dirname, '../.storage'),
-    puppeteerCacheDir: path.join(__dirname, '../.cache'),
+    apifyLocalStorageDir: join(DIRNAME, '../.storage'),
+    puppeteerCacheDir: join(DIRNAME, '../.cache'),
     startUrl: 'https://bib.umontreal.ca/',
     // startUrl: 'https://bib.umontreal.ca/anthropologie-demographie-sociologie',
     internLinks: [
         /https?:\/\/[^\/]*bib\.umontreal\.ca(:\d+)?(\/.*)?/
     ],
     checkExtern: true,
-    pageWaitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+    pageWaitUntil: 'networkidle',
     navigationOnly: true,
     userAgent: getRandomUserAgent(),
     useCache: true,

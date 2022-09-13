@@ -1,32 +1,17 @@
-import path from 'path'
-import Apify from 'apify';
-//import server from './server';
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { Harvester } from '../../lib/harvester/index.js'
+import { Link } from '../../index.js'
+import { logErrorCodes } from '../../index.js'
+import { console } from '../../../core/index.js'
+import urlList from './url-list.js'
+import configs from './config.js'
 
-import {
-    Harvester
-} from '../../lib/harvester'
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
-import {
-    Link
-} from '../../lib/link'
-
-import {
-    logErrorCodes
-} from '../utils/log-error-codes'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
-
-import urlList from './url-list'
-
-import configs from './config'
-
-//const errorCodes = new Set();
 const harvester = new Harvester(configs);
 
-logErrorCodes(harvester, path.join(__dirname, './error-codes.json'))
+logErrorCodes(harvester, join(DIRNAME, './error-codes.json'))
 
 const urls = urlList
     //.filter(item => item.valid)
@@ -43,11 +28,7 @@ const urls = urlList
 harvester.addUrl(urls)
 
 try {
-    //server.listen(3000, () => {
-    //console.log('Server running.')
-    Apify.main(harvester.run());
-    //});
-    //console.log(`Server listening: ${server.listening}`);
+    await harvester.run()
 } catch (e) {
     console.error(e)
 }

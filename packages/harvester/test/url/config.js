@@ -1,15 +1,17 @@
-import path from 'path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 export default {
-    apifyLocalStorageDir: path.join(__dirname, './.storage'),
-    puppeteerCacheDir: path.join(__dirname, './.cache'),
+    apifyLocalStorageDir: join(DIRNAME, './.storage'),
+    puppeteerCacheDir: join(DIRNAME, './.cache'),
     //startUrl: 'http://localhost:3000/',
     checkExtern: true,
     cookies: true,
-    pageWaitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+    pageWaitUntil: 'networkidle',
     requestTimeout: 2000,
     navigationOnly: true,
-    userAgent: 'Mozilla/5.0 (Corvee/1.0.0)',
     useCache: true,
     maxConcurrency: 10,
     maxRequests: 100,
@@ -27,17 +29,7 @@ export default {
         '^https?://dx\\.doi\\.org',
         '^https?://calypso\\.bib\\.umontreal\\.ca'
     ],
-    ignorewarnings: ['http-robots-denied', 'file-missing-slash', 'url-unnormed', 'url-unicode-domain', 'url-anchor-not-found', 'http-cookie-store-error', 'url-content-duplicate', 'https-certificate-error'],
     internLinks: [
         'http://localhost:3000[.*]'
     ],
-
-    /**
-     * Node.js URL class.
-     * @external URL
-     * @see {@link https://nodejs.org/api/url.html#url_class_url}
-     */
-
-    /** @member {(string|external:URL)} [proxy] - Url of a web proxy server (string or URL object) */
-    // proxy: 'some-url'
 }

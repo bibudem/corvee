@@ -1,7 +1,7 @@
-import path from 'path'
-import {
-    utils
-} from 'apify'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 export const server = {
     origin: 'http://www.site.com',
@@ -11,16 +11,15 @@ export const server = {
 }
 
 export default {
-    apifyLocalStorageDir: path.join(__dirname, './.storage'),
-    puppeteerCacheDir: path.join(__dirname, './.cache'),
+    apifyLocalStorageDir: join(DIRNAME, './.storage'),
+    puppeteerCacheDir: join(DIRNAME, './.cache'),
     startUrl: 'http://www.site.com/',
     internLinks: [
         'http://www.site.com[.*]'
     ],
     checkExtern: true,
-    pageWaitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+    pageWaitUntil: 'networkidle',
     navigationOnly: true,
-    userAgent: utils.getRandomUserAgent(),
     useCache: true,
     maxConcurrency: 100,
     // maxRequests: 20,

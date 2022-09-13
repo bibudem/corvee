@@ -1,11 +1,7 @@
-import http from 'http';
-import {
-    console
-} from '../../../core/lib/logger'
+import http from 'node:http'
+import { console } from '../../../core/index.js'
 
-const proxy = http.createServer();
-
-const requestLog = new Map()
+const proxy = http.createServer()
 
 const r = []
 
@@ -24,7 +20,6 @@ function getTimeFromLast(currentReqTime) {
 
 proxy.on('request', (req, res) => {
     const now = Date.now()
-    const time = now - proxy.startTime
     const timeFromLast = getTimeFromLast(now)
 
     r.push(timeFromLast)

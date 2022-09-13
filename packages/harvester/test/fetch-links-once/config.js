@@ -1,8 +1,11 @@
-import path from 'path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 export default {
-    apifyLocalStorageDir: path.join(__dirname, './.storage'),
-    puppeteerCacheDir: path.join(__dirname, './.cache'),
+    apifyLocalStorageDir: join(DIRNAME, './.storage'),
+    puppeteerCacheDir: join(DIRNAME, './.cache'),
     startUrl: 'https://www.bib.umontreal.ca/CS/expositions/livres-heures/default.htm',
     internLinks: [
         // 'https://www.bib.umontreal.ca/CS/expositions/livres-heures/[.*]'
@@ -10,7 +13,7 @@ export default {
     ],
     fetchLinksOnce: true,
     checkExtern: true,
-    pageWaitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+    pageWaitUntil: 'networkidle',
     navigationOnly: true,
     useCache: true,
     maxConcurrency: 100,

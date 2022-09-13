@@ -1,22 +1,9 @@
-import Apify from 'apify';
 import _ from 'underscore'
-
-import {
-    Harvester
-} from '../../lib/harvester'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
-
-import configs from './config'
-
-import sets from './sets'
-
-import {
-    Link
-} from '../../lib/link';
+import { Harvester } from '../../lib/harvester/index.js'
+import { console } from '../../../core/index.js'
+import configs from './config.js'
+import sets from './sets.js'
+import { Link } from '../../index.js';
 
 sets.forEach(({
     heading,
@@ -64,7 +51,7 @@ harvester.on('record', ({
 
 try {
     console.log('Starting tests.')
-    Apify.main(harvester.run());
+    await harvester.run()
 } catch (e) {
     console.error(e)
 }

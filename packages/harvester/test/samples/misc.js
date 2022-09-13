@@ -1,18 +1,11 @@
-import path from 'path'
-import Apify from 'apify';
+import { dirname } from 'node:path'
+import { Harvester } from '../../lib/harvester/index.js'
+import saveRecords from '../save-records.js'
+import { console } from '../../../core/index.js';
+import configs from './config.js'
+import { fileURLToPath } from 'node:url';
 
-import {
-    Harvester
-} from '../../lib/harvester'
-
-import saveRecords from '../save-records'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
-
-import configs from './config'
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 configs.startUrl = 'http://132.204.52.60:8080/'
 
@@ -21,7 +14,7 @@ const tt = []
 //const errorCodes = new Set();
 const harvester = new Harvester(configs);
 
-saveRecords(__dirname, harvester)
+saveRecords(DIRNAME, harvester)
 
 harvester.on('link', function (url) {
     tt.push(url)
@@ -47,11 +40,7 @@ harvester.addLinkParser(function linkParserFunction() {
 })
 
 try {
-    //server.listen(3000, () => {
-    //console.log('Server running.')
-    Apify.main(harvester.run());
-    //});
-    //console.log(`Server listening: ${server.listening}`);
+    await harvester.run()
 } catch (e) {
     console.error(e)
 }

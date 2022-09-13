@@ -1,13 +1,15 @@
-import { join } from 'path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 export default {
-    apifyLocalStorageDir: join(__dirname, '.storage'),
-    puppeteerCacheDir: join(__dirname, '.cache'),
+    apifyLocalStorageDir: join(DIRNAME, '.storage'),
+    puppeteerCacheDir: join(DIRNAME, '.cache'),
     startUrl: 'http://localhost:3128/',
     checkExtern: true,
-    pageWaitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+    pageWaitUntil: 'networkidle',
     navigationOnly: true,
-    userAgent: 'Mozilla/5.0 (Corvee/1.0.0)',
     useCache: true,
     maxConcurrency: 1,
     maxRequestRetries: 3,

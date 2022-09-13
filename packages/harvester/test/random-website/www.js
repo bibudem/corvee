@@ -1,13 +1,9 @@
-import http from 'http';
-import faker from 'faker';
-import urlSlug from 'url-slug';
-import {
-    server as config
-} from './config'
-
-import {
-    console
-} from '../../../core/lib/logger'
+import http from 'node:http'
+import faker from 'faker'
+import urlSlug from 'url-slug'
+import esMain from 'es-main'
+import { server as config } from './config.js'
+import { console } from '../../../core/index.js'
 
 console.log('starting...')
 
@@ -27,10 +23,6 @@ function html(links) {
         </body>
     </html>`
 }
-
-function wait(millis) {
-    return new Promise(res => setTimeout(res, millis));
-};
 
 function createRoutes(args, currentDepth = 1) {
 
@@ -135,8 +127,12 @@ process.on('exit', () => {
     //console.todo(JSON.stringify(r, null, 2))
 })
 
-if (!module.parent) {
+export default starter
+
+//
+//
+//
+
+if (esMain(import.meta)) {
     starter();
 }
-
-export default starter
