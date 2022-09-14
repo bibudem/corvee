@@ -1,4 +1,4 @@
-import Apify from 'apify';
+import { KeyValueStore } from '@crawlee/playwright';
 import LRU from 'lru'
 import v from 'io-validate'
 import extend from 'extend';
@@ -50,11 +50,11 @@ export class LinkStore {
     }
 
     async init() {
-        this._store = await Apify.openKeyValueStore('link-store')
+        this._store = await KeyValueStore.open('link-store')
         // In case of a --resume option
-        // await this._store.forEachKey((key) => {
-        //     this._linkIdx.add(key)
-        // })
+        await this._store.forEachKey((key) => {
+            this._linkIdx.add(key)
+        })
     }
 
     has(url) {

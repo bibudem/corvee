@@ -196,7 +196,7 @@ export async function handleResponse(request, response = null, meta = {}) {
     if (typeof request.id !== 'undefined') {
 
         /*
-         * apify request class && playwright Response class
+         * crawlee Request class && playwright Response class
          * This is a navigation response
          */
 
@@ -310,7 +310,7 @@ export async function handleResponse(request, response = null, meta = {}) {
 }
 
 export async function handleFailedRequest(request, error, meta) {
-    // apify Request class
+    // crawlee Request class
 
     if (arguments.length === 2) {
         meta = error

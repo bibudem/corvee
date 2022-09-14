@@ -1,3 +1,17 @@
+/*
+ * Ranges:
+ *     0- 99 System related errors
+ *   100-199 Connection related errors
+ *   200-299 Certificate errors
+ *   300-399 HTTP errors
+ *   400-499 Cache errors
+ *   500-599 ?
+ *   600-699 FTP errors
+ *   700-799 Certificate manager errors
+ *   800-899 DNS resolver errors
+ * @see: @link{https://source.chromium.org/chromium/chromium/src/+/master:net/base/net_error_list.h}
+ */
+
 export default [{
     name: "IoPendingError",
     code: -1,
@@ -735,7 +749,7 @@ export default [{
     code: -311,
     description: "UNSAFE_REDIRECT",
     type: "http",
-    message: "Attempting to load an URL resulted in an unsafe redirect (e.g., a redirect\nto file:// is considered unsafe)."
+    message: "Attempting to load an URL resulted in an unsafe redirect (e.g., a redirect\nto file: * is considered unsafe)."
 }, {
     name: "UnsafePortError",
     code: -312,

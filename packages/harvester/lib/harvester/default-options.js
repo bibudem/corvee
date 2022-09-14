@@ -4,9 +4,9 @@ import { join } from 'node:path'
 const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
 const tmpDir = join(process.env.TEMP, 'corvee');
 
-//
-// Corvée options
-//
+/*
+ * Corvée options
+ */
 
 export const defaultHarvesterOptions = {
 
@@ -56,7 +56,7 @@ export const defaultHarvesterOptions = {
     checkExtern: true,
     fetchLinksOnce: true,
     getPerfData: false,
-    handlePageTimeout: 30000,
+    requestHandlerTimeout: 30000,
     // URLs matching the given strings / regular expression will be ignored and not checked.
     ignore: [],
     ignoreDefaults: ['www.google-analytics.com', '/gtag/js', 'ga.js', 'analytics.js', 'https://www.googleadservices.com/', 'doubleclick.net'],
@@ -88,14 +88,13 @@ export const defaultHarvesterOptions = {
     schemesDefaults: ['corvee', 'http', 'https'],
     storageDir: join(tmpDir, '.storage'),
     normalizeUrlFunction: null,
-    useRandomUserAgent: false,
     waitInterval: 50,
 }
 
 export const defaultLaunchContextOptions = {
     /*
-     * Apify.launchPLaywright() options
-     * @see https://sdk.apify.com/docs/1.3/typedefs/playwright-launch-context
+     * Launch options of Playwright
+     * @see {@link https://crawlee.dev/api/playwright-crawler/interface/PlaywrightLaunchContext}
      */
 
     /*
@@ -108,14 +107,14 @@ export const defaultLaunchContextOptions = {
      */
     useChrome: false,
 
-    // /*
-    //  * @type boolean
-    //  */
-    // stealth: true,
+    /*
+     * @type string
+     */
+    userAgent: undefined,
 
     /*
      * Native Playwright options
-     * @See https://playwright.dev/docs/api/class-browsertype#browser-type-launch
+     * @See {@link https://playwright.dev/docs/api/class-browsertype#browser-type-launch}
      */
     launchOptions: {
 
@@ -143,8 +142,10 @@ export const defaultLaunchContextOptions = {
          */
         userAgent: `Mozilla/5.0 (Corvee/${pkg.version})`,
 
-        // Browser connect options
-        // see https://pptr.dev/api/puppeteer.browserconnectoptions/
+        /*
+         * Browser connect options
+         * @see {@link https://pptr.dev/api/puppeteer.browserconnectoptions/}
+         */
         viewport: {
             width: 1920,
             height: 1080
@@ -154,18 +155,24 @@ export const defaultLaunchContextOptions = {
 
 }
 
+/*
+ * Autoscaled pool options
+ * @see {@link https://crawlee.dev/api/core/interface/AutoscaledPoolOptions}
+ */
 export const defaultAutoscaledPoolOptions = {
-    // Autoscaled pool options
-    // se https://sdk.apify.com/docs/typedefs/autoscaled-pool-options
     minConcurrency: 1,
     maxConcurrency: 10,
     scaleUpStepRatio: .05,
-    scaleDownStepRatio: .08,
-    maybeRunIntervalSecs: .05,
+    scaleDownStepRatio: .05,
+    maybeRunIntervalSecs: .5,
     loggingIntervalSecs: 30,
     autoscaleIntervalSecs: 10,
+    /*
+     * SystemStatus Options
+     * @see {@link https://crawlee.dev/api/core/interface/SystemStatusOptions}
+     */
     systemStatusOptions: {
         maxCpuOverloadedRatio: .3,
-        currentHistorySecs: 3
+        currentHistorySecs: 5
     }
 }
