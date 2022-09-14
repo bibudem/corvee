@@ -6,6 +6,7 @@ import { createLogger, format, transports } from 'winston'
 import tracer from 'tracer'
 import colors from 'colors/safe.js'
 import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
 
 import { hookStdout } from './hook-stdout.js'
 
@@ -18,7 +19,7 @@ const day = `${today.getDate()}`.padStart(2, '0');
 
 const defaultTodayDashedPrefix = `${year}-${month}-${day}`;
 
-const argv = yargs()
+const argv = yargs(hideBin(process.argv))
     .options({
         j: {
             alias: 'job',
