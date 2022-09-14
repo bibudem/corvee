@@ -4,7 +4,7 @@ import ProgressBar from 'progress'
 import { LEVELS } from './levels.js'
 
 import { messageFactory } from '../messages.js'
-import { console } from '../../../core/index.js'
+import { console, inspect } from '../../../core/index.js'
 
 class FilterPriorities extends Map {
 
@@ -21,21 +21,24 @@ export class CorveeProcessor extends EventEmitter {
     constructor({
         filters = [],
         errors = [],
+        messages = {},
         ...config
     } = {}) {
-        super();
-        this.records = [];
-        this.unfilteredRecords = [];
-        this.filters = [];
-        this.filterPriorities = new FilterPriorities();
-        this._errors = [];
-        this.config = config;
-        this.config.errorLevel = this.config.errorLevel || LEVELS.WARNING;
-        this.getMessage = messageFactory(this.config.messages);
-        this.filtersWithoutMessages = new Set();
+        super()
+        this.records = []
+        this.unfilteredRecords = []
+        this.filters = []
+        this.messages = messages
+        this.filterPriorities = new FilterPriorities()
+        this._errors = []
+        this.config = config
+        this.config.errorLevel = this.config.errorLevel || LEVELS.WARNING
+        this.filtersWithoutMessages = new Set()
 
-        this.addFilters(filters);
-        this.addErrors(errors);
+        this.getMessage = messageFactory(this.messages)
+
+        this.addFilters(filters)
+        this.addErrors(errors)
     }
 
     isMuted(record) {
@@ -66,6 +69,10 @@ export class CorveeProcessor extends EventEmitter {
 
             this.filterPriorities.set(filter.code, filter.priority);
 
+            if (typeof this.messages[filter.code] === 'undefined') {
+                this.filtersWithoutMessages.add(filter.code)
+            }
+
             return filter;
         }));
 
@@ -87,6 +94,7 @@ export class CorveeProcessor extends EventEmitter {
         records = records.map(record => {
             record._filtered = false;
             record.reports = (record.reports || []).map(report => {
+
                 return {
                     ...reportType,
                     ...report
@@ -106,9 +114,12 @@ export class CorveeProcessor extends EventEmitter {
             const result = [];
 
             records.forEach((record, i) => {
+
                 try {
                     self.emit('beforeProcess', record, filter)
+
                     const testResult = filter.test(record, filter);
+
                     if (testResult) {
                         filter.matches++;
                         filteredRecords.add(record.id);
@@ -240,8 +251,6 @@ export class CorveeProcessor extends EventEmitter {
                     delete report._message
                     if (message) {
                         report.message = message;
-                    } else {
-                        self.filtersWithoutMessages.add(report.code);
                     }
                 })
 
@@ -252,13 +261,13 @@ export class CorveeProcessor extends EventEmitter {
             return result;
         }
 
-        console.debug(`Adding ${this._errors.length} custom errors...`);
+        console.debug(`Processing ${this._errors.length} custom errors...`);
 
         this._errors.forEach(error => {
             this.records = doErrors(this.records, error)
         });
 
-        console.debug(`Filtering ${this.filters.length} filters...`);
+        console.debug(`Processing ${this.filters.length} filters...`);
 
 
         const progressBar = new ProgressBar('[:bar] :percent :etas -- current filter: :filter', { total: this.filters.length, width: 60 })
