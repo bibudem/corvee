@@ -1,4 +1,4 @@
-import { omit, isNull } from 'underscore'
+import { omit, isNull, isNumber } from 'underscore'
 import extend from 'extend'
 
 import { console, inspect } from './../../core/index.js'
@@ -20,17 +20,23 @@ export const defaultOptions = {
 
 export function getFinalStatus(report) {
     const statuses = [];
-    const sortedHttpStatuses = [308, 301, 307, 302, 303]
+    const sortedHttpStatuses = [
+        { code: 308, text: null },
+        { code: 301, text: null },
+        { code: 307, text: null },
+        { code: 302, text: null },
+        { code: 303, text: null }
+    ]
     if ('httpStatusCode' in report) {
-        statuses.push(report.httpStatusCode)
+        statuses.push({ code: report.httpStatusCode, text: report.httpStatusText })
     }
     if (report.redirectChain) {
-        statuses.push(...report.redirectChain.map(r => r.status))
+        statuses.push(...report.redirectChain.map(r => ({ code: r.status, text: r.statusText })))
     }
 
     return statuses.reduce((winner, current) => {
 
-        const currentLvl = Math.floor(current / 100)
+        const currentLvl = Math.floor(current.code / 100)
         const newWinner = {
             status: current,
             lvl: currentLvl
@@ -53,7 +59,7 @@ export function getFinalStatus(report) {
 
         // Here, we have a status code >= 300
         // Return the heaviest code from winner vs current
-        const candidateStatus = [winner.status, newWinner.status];
+        const candidateStatus = [winner.status.code, newWinner.status.code];
 
         for (const s of sortedHttpStatuses) {
 
@@ -64,11 +70,11 @@ export function getFinalStatus(report) {
         }
 
         // Status is in the 300's, but not a redirect
-        return current;
+        return { status: current, lvl: Math.floor(current.code / 100) }
 
     }, {
         status: statuses[0],
-        lvl: Math.floor(statuses[0] / 100)
+        lvl: Math.floor(statuses[0].code / 100)
     }).status
 }
 
@@ -98,7 +104,7 @@ function getFinalUrl({
     if (redirectChain) {
         // Edge case where there is no location header with a redirect status,
         // else, get the last redirection url
-        if ([301, 302, 307, 308].includes(httpStatusCode)) {
+        if ([301, 302, 303, 307, 308].includes(httpStatusCode)) {
             finalUrl = redirectChain[redirectChain.length - 1].url;
         }
 
@@ -121,78 +127,6 @@ export async function handleResponse(request, response = null, meta = {}) {
         created: new Date().toISOString()
     });
 
-    if (typeof request._events !== 'undefined') {
-
-        /*
-         * playwright Request class && playwright Response class
-         * This is a navigation response from 'onDocumentDownload' or 'onAssetResponse'
-         */
-
-        const record = extend(
-            true,
-            {},
-            baseReport,
-            userData,
-            {
-                url: getRequestUrl(request),
-                httpStatusCode: response.status(),
-                isNavigationRequest: request.isNavigationRequest(),
-                redirectChain: await getRedirectChain(request),
-                resourceType: request.resourceType()
-            },
-            meta
-        );
-
-        try {
-            record.size = (await response.body()).length;
-        } catch (error) {
-            // pwResponse.buffer() is undefined
-            record.size = null
-        }
-
-        if ('content-type' in response.headers()) {
-            record.contentType = response.headers()['content-type'].split(';')[0].trim();
-        }
-
-        if ('content-length' in response.headers()) {
-            record.contentLength = +response.headers()['content-length']
-        }
-
-        record.httpStatusCode = getFinalStatus(record);
-
-        const finalUrl = getFinalUrl({
-            record,
-            httpStatusCode: response.status(),
-            headers: response.headers(),
-        });
-
-        record.finalUrl = finalUrl;
-
-        if (!response.ok()) {
-
-            console.debug(`[${record.trials}] got a status = ${record.httpStatusCode} for ${record.url}`)
-
-            if (record.httpStatusCode >= 400) {
-
-                const httpError = new HttpError(record.httpStatusCode, response.statusText())
-
-                if (!record.reports) {
-                    record.reports = []
-                }
-
-                record.reports.push(httpError);
-            }
-
-        }
-
-        record.timing_ = response.request().timing()
-        record.sizes_ = response.request().sizes()
-
-        delete record.uniqueKey;
-
-        return record;
-    }
-
     if (typeof request.id !== 'undefined') {
 
         /*
@@ -208,7 +142,7 @@ export async function handleResponse(request, response = null, meta = {}) {
             {
                 url: request.url,
                 httpStatusCode: response.status(),
-                isNavigationRequest: response.request().isNavigationRequest(),
+                httpStatusText: response.statusText(),
                 redirectChain: await getRedirectChain(response.request()),
                 resourceType: response.request().resourceType(),
                 trials: request.retryCount
@@ -231,7 +165,20 @@ export async function handleResponse(request, response = null, meta = {}) {
             record.contentLength = +response.headers()['content-length']
         }
 
-        record.httpStatusCode = getFinalStatus(record);
+        const { code, text } = getFinalStatus(record)
+        record.httpStatusCode = code
+        record.httpStatusText = text
+
+        if (isNumber(record.httpStatusCode)) {
+
+            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+
+            if (!record.reports) {
+                record.reports = []
+            }
+
+            record.reports.push(httpError);
+        }
 
         const finalUrl = getFinalUrl({
             record,
@@ -241,25 +188,76 @@ export async function handleResponse(request, response = null, meta = {}) {
 
         record.finalUrl = finalUrl;
 
-        if (!response.ok()) {
+        record.timing_ = response.request().timing()
+        record.sizes_ = await response.request().sizes()
 
-            console.debug(`[${record.trials}] got a status = ${record.httpStatusCode} for ${record.url}`)
+        delete record.uniqueKey;
 
-            if (record.httpStatusCode >= 400) {
+        return record;
+    }
 
-                const httpError = new HttpError(record.httpStatusCode, response.statusText())
+    if (typeof request._events !== 'undefined') {
 
-                if (!record.reports) {
-                    record.reports = []
-                }
+        /*
+         * playwright Request class && playwright Response class
+         * This is a navigation response from 'onDocumentDownload' or 'onAssetResponse'
+         */
 
-                record.reports.push(httpError);
-            }
+        const record = extend(
+            true,
+            {},
+            baseReport,
+            userData,
+            {
+                url: getRequestUrl(request),
+                httpStatusCode: response.status(),
+                httpStatusText: response.statusText(),
+                redirectChain: await getRedirectChain(request),
+                resourceType: request.resourceType()
+            },
+            meta
+        );
 
+        try {
+            record.size = (await response.body()).length;
+        } catch (error) {
+            // pwResponse.buffer() is undefined
+            record.size = null
         }
 
+        if ('content-type' in response.headers()) {
+            record.contentType = response.headers()['content-type'].split(';')[0].trim();
+        }
+
+        if ('content-length' in response.headers()) {
+            record.contentLength = +response.headers()['content-length']
+        }
+
+        const { code, text } = getFinalStatus(record)
+        record.httpStatusCode = code
+        record.httpStatusText = text
+
+        if (isNumber(record.httpStatusCode)) {
+
+            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+
+            if (!record.reports) {
+                record.reports = []
+            }
+
+            record.reports.push(httpError);
+        }
+
+        const finalUrl = getFinalUrl({
+            record,
+            httpStatusCode: response.status(),
+            headers: response.headers(),
+        });
+
+        record.finalUrl = finalUrl;
+
         record.timing_ = response.request().timing()
-        record.sizes_ = response.request().sizes()
+        record.sizes_ = await response.request().sizes()
 
         delete record.uniqueKey;
 
@@ -309,11 +307,14 @@ export async function handleResponse(request, response = null, meta = {}) {
     return record;
 }
 
-export async function handleFailedRequest(request, error, meta) {
+export async function handleFailedRequest(request, pwRequest, meta) {
+
+    //
     // crawlee Request class
+    //
 
     if (arguments.length === 2) {
-        meta = error
+        meta = pwRequest
     }
 
     const reports = captureErrors(request.userData.reports);
@@ -346,23 +347,34 @@ export async function handleFailedRequest(request, error, meta) {
     }
 
     if (meta._from === 'onNavigationRequestFailed') {
+
         const record = extend(
             true,
             {},
             baseReport,
-            {
-                url: request.url,
-                isNavigationRequest: true,
-            },
             userData,
             meta
         );
+
+        const { code, text } = getFinalStatus(record)
+        record.httpStatusCode = code
+        record.httpStatusText = text
+
+        if (isNumber(record.httpStatusCode)) {
+
+            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+
+            if (!record.reports) {
+                record.reports = []
+            }
+
+            record.reports.push(httpError);
+        }
 
         return record;
     }
 
     if (meta._from === 'onAssetRequestFailed') {
-        const pwRequest = error;
 
         const record = extend(
             true,
@@ -370,7 +382,6 @@ export async function handleFailedRequest(request, error, meta) {
             baseReport,
             {
                 url: request.url,
-                isNavigationRequest: pwRequest.isNavigationRequest(),
                 redirectChain: await getRedirectChain(pwRequest),
                 resourceType: pwRequest.resourceType(),
                 status: pwRequest.failure().errorText,
@@ -402,28 +413,35 @@ export async function getRedirectChain(request) {
 
     async function doGetRedirectChain(request, redirectChain) {
 
+        const response = await request.response()
+
+        let redirectedUrl;
+
+        const locationHeader = await response.headerValue('location')
+
+        if (locationHeader) {
+
+            try {
+                redirectedUrl = (new URL(locationHeader, request.url())).href
+            } catch (e) {
+                console.warn(e)
+                redirectedUrl = locationHeader
+            }
+        } else {
+            redirectedUrl = response.url()
+        }
+
+        redirectChain.unshift({
+            url: redirectedUrl,
+            status: response.status(),
+            statusText: response.statusText(),
+        })
+
         const redirectedRequest = request.redirectedFrom()
 
         if (isNull(redirectedRequest)) {
             return redirectChain
         }
-
-        const redirectedResponse = await redirectedRequest.response()
-
-        let redirectedUrl;
-
-        try {
-            redirectedUrl = (new URL(await redirectedResponse.headerValue('location'), request.url())).href
-        } catch (e) {
-            console.warn(e)
-            redirectedUrl = await redirectedResponse.headerValue('location')
-        }
-
-        redirectChain.unshift({
-            url: redirectedUrl,
-            status: redirectedResponse.status(),
-            statusText: redirectedResponse.statusText(),
-        })
 
         return doGetRedirectChain(redirectedRequest, redirectChain)
     }

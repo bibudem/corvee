@@ -13,7 +13,7 @@ import extend from 'extend'
 
 import { computeUniqueKey } from '../index.js'
 import { cleanupFolderPromise } from './cleanup-folder-promise.js'
-import { PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors/index.js'
+import { PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError, HttpError } from '../errors/index.js'
 import { humanDuration, displayUrl } from '../utils/index.js'
 import { LinkStore, sessionStore } from '../storage/index.js'
 import { Link } from '../link.js'
@@ -23,6 +23,7 @@ import Notifier from '../utils/notifier.js'
 import { console, inspect, normalizeUrl, isValidUrl } from '../../../core/index.js'
 
 import { defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore, getPerformanceData, getTimingFor } from './index.js'
+import { response } from 'express'
 
 const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
 
@@ -894,27 +895,27 @@ export class Harvester extends EventEmitter {
                     harvester: self
                 })
 
-                if (!self.isExternLink(page.url())) {
+                // if (!self.isExternLink(page.url())) {
 
-                    try {
+                //     try {
 
-                        const screenshotBuffer = await page.screenshot();
+                //         const screenshotBuffer = await page.screenshot();
 
-                        const key = filenamifyUrl(request.url, { replacement: '_' })
+                //         const key = filenamifyUrl(request.url, { replacement: '_' })
 
-                        // The "key" argument must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_.'()
-                        if (key.length > 256) {
-                            key = key.substring(0, 255)
-                        }
+                //         // The "key" argument must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_.'()
+                //         if (key.length > 256) {
+                //             key = key.substring(0, 255)
+                //         }
 
-                        await self.screenshotsStore.setValue(key, screenshotBuffer, {
-                            contentType: 'image/png'
-                        })
-                    } catch (error) {
-                        console.todo(`Request url: ${request.url}`)
-                        console.todo(error)
-                    }
-                }
+                //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
+                //             contentType: 'image/png'
+                //         })
+                //     } catch (error) {
+                //         console.todo(`Request url: ${request.url}`)
+                //         console.todo(error)
+                //     }
+                // }
 
                 try {
                     self.normalizeUrl(request.url, true);
@@ -1019,8 +1020,7 @@ Error: ${inspect(error)}`)
                     // Here we deal with network / browser errors
                     //
 
-                    console.todo(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}. Error: ${inspect(error)}
-Request: ${inspect(request)}`)
+                    console.debug(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}. \nError: ${inspect(error)}\nRequest: ${inspect(request)}`)
 
                     if (!request.userData.reports) {
                         request.userData.reports = []
@@ -1117,6 +1117,8 @@ Request: ${inspect(request)}`)
                                 return
                             }
 
+                            request.userData.isNavigationRequest = pwRequest.isNavigationRequest()
+
                             const url = pwRequest.url();
                             const parent = page.url();
 
@@ -1164,6 +1166,37 @@ Request: ${inspect(request)}`)
                             }
                         })
 
+                        page.on('requestfailed', async function onDocumentRequestFailed(pwRequest) {
+
+                            //
+                            // Main document request failed handler is located at page.goto().catch()
+                            //
+
+                            if (pwRequest.isNavigationRequest()) {
+
+                                if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
+                                    return;
+                                }
+
+                                if (request.retryCount < self.config.maxRequestRetries) {
+                                    return;
+                                }
+
+                                if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
+
+                                    //
+                                    // This is a navigation request error
+                                    // Has been handled at 'onDocumentDownload'
+                                    //
+
+                                    return;
+                                }
+
+                                // Retry count maxed out.
+
+                            }
+                        })
+
                         page.on('requestfailed', async function onDocumentDownload(pwRequest) {
 
                             //
@@ -1201,37 +1234,6 @@ Request: ${inspect(request)}`)
                                 pwRequest.userData._ignore = true
 
                                 return Promise.resolve()
-
-                            }
-                        })
-
-                        page.on('requestfailed', async function onDocumentRequestFailed(pwRequest) {
-
-                            //
-                            // Main document request failed handler is located at page.goto().catch()
-                            //
-
-                            if (pwRequest.isNavigationRequest()) {
-
-                                if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
-                                    return;
-                                }
-
-                                if (request.retryCount < self.config.maxRequestRetries) {
-                                    return;
-                                }
-
-                                if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
-
-                                    //
-                                    // This is a navigation request error
-                                    // Has been handled at 'onDocumentDownload'
-                                    //
-
-                                    return;
-                                }
-
-                                // Retry count maxed out.
 
                             }
                         })
@@ -1276,23 +1278,8 @@ Request: ${inspect(request)}`)
 
                             if (!self.config.navigationOnly) {
 
-                                if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
-                                    console.verbose(`Silently ignoring failed 'net::ERR_ABORTED' request for ${displayUrl(url)}`)
-                                    return Promise.resolve();
-                                }
-
-                                if (request.retryCount <= self.config.maxRequestRetries) {
-                                    return Promise.reject();
-                                }
-
-                                if (pwRequest.failure()) {
-
-                                    if (!pwRequest.userData.reports) {
-                                        pwRequest.userData.reports = []
-                                    }
-
-                                    pwRequest.userData.reports.push(pwRequest.failure().errorText)
-
+                                if (request.retryCount < self.config.maxRequestRetries) {
+                                    return
                                 }
 
                                 const record = await handleFailedRequest(request, pwRequest, {
@@ -1302,6 +1289,48 @@ Request: ${inspect(request)}`)
                                 await addRecord(record);
 
                                 self.session.counts.fail++
+                            }
+                        })
+
+                        page.on('response', async function onResponse(pwResponse) {
+
+                            //
+                            // Here we process common navigation/asset responses.
+                            //
+
+                            if (self.config.navigationOnly && !pwResponse.request().isNavigationRequest()) {
+                                return
+                            }
+
+                            if (request.retryCount >= self.config.maxRequestRetries) {
+
+                                // Processing start
+
+                                request.userData.httpStatusCode = pwResponse.status()
+                                request.userData.httpStatusText = pwResponse.statusText()
+                            }
+
+                        })
+
+                        page.on('response', async function onNavigationResponse(pwResponse) {
+
+                            //
+                            // Here we process some navigation responses only.
+                            // The main navigation responses handler is in the playwrightCrawler handlePageFunction
+                            //
+
+                            // Is this an navigation request?
+                            if (!pwResponse.request().isNavigationRequest()) {
+                                return
+                            }
+
+                            if (request.retryCount >= self.config.maxRequestRetries) {
+
+                                //
+                                // This is a navigation response
+                                //
+
+                                // Nothing here
                             }
                         })
 
@@ -1321,10 +1350,7 @@ Request: ${inspect(request)}`)
                                 !self.config.navigationOnly &&
 
                                 // Is the asset an intern link?
-                                !self.isExternLink(pwResponse.request().url()) &&
-
-                                // Is this asset on a page that is in the domain's website?
-                                self.homeBasePUrl.matches(page.url())
+                                !self.isExternLink(pwResponse.request().url())
                             ) {
 
                                 //
@@ -1334,6 +1360,8 @@ Request: ${inspect(request)}`)
                                 const statusCode = pwResponse.status()
 
                                 if (statusCode >= 300 && statusCode < 400) {
+                                    // This is a redirect response. 
+                                    // Wait for the last response of the redirect chain
                                     return
                                 }
 
@@ -1387,33 +1415,6 @@ Request: ${inspect(request)}`)
                                 process.exit()
 
 
-                            }
-
-                        })
-
-                        page.on('response', async function onNavigationResponse(pwResponse) {
-
-                            //
-                            // Here we process some navigation responses only.
-                            // The main navigation responses handler is in the playwrightCrawler handlePageFunction
-                            //
-
-                            // Is this an navigation request?
-                            if (pwResponse.request().isNavigationRequest()) {
-
-                                //
-                                // This is a navigation response
-                                //
-
-                                if (pwResponse.status() === 0) {
-
-                                    // This is a Network error.
-                                    // Will be handled in onNavigationRequest handler
-
-                                    return;
-                                }
-
-                                // Nothing here
                             }
 
                         })
