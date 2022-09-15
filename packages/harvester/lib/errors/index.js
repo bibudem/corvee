@@ -1,2 +1,2 @@
-export * from './definitions'
-export * from './capture'
+export * from './definitions/index.js'
+export * from './capture.js'

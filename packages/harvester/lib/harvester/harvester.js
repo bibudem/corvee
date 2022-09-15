@@ -1,46 +1,44 @@
-import EventEmitter from 'events'
+import EventEmitter from 'node:events'
+import { readFile } from 'node:fs/promises'
 
 import minimatch from 'minimatch'
-import { pick, isRegExp, isFunction, isObject } from 'underscore'
+import { pick, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
-import rp from 'request-promise-native'
-import Apify, { BasicCrawler, PuppeteerCrawler, utils as apifyUtils } from 'apify'
-import { launchPuppeteer } from 'apify/build/puppeteer'
-import { computeUniqueKey } from 'apify/build/request'
+import filenamifyUrl from 'filenamify-url'
+import { PlaywrightCrawler, Dataset, KeyValueStore, RequestQueue, Request, BasicCrawler } from '@crawlee/playwright'
+import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
+import extend from 'extend'
 
-import { getResponseData } from '../net/utils'
-import { normalizeUrl, isValidUrl, getRandomUserAgent } from '../../../core'
-import { cleanupFolderPromise } from './cleanup-folder-promise'
-import { CorveeError, HttpError, PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError } from '../errors'
-import { humanDuration, displayUrl } from '../utils'
-import { LinkStore, sessionStore } from '../storage'
-import { Link } from '../link'
-import { handleResponse, handleFailedRequest } from '../record'
-import { RequestQueue } from '../request-queue'
-import { PseudoUrls } from '../pseudoUrls'
-import { console, inspect } from '../../../core'
-import Notifier from '../utils/notifier'
+import { computeUniqueKey } from '../index.js'
+import { cleanupFolderPromise } from './cleanup-folder-promise.js'
+import { PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError, HttpError } from '../errors/index.js'
+import { humanDuration, displayUrl } from '../utils/index.js'
+import { LinkStore, sessionStore } from '../storage/index.js'
+import { Link } from '../link.js'
+import { handleResponse, handleFailedRequest } from '../record.js'
+import { PseudoUrls } from '../pseudoUrls.js'
+import Notifier from '../utils/notifier.js'
+import { console, inspect, normalizeUrl, isValidUrl } from '../../../core/index.js'
 
-import { defaultHarvesterOptions, defaultLaunchPuppeteerOptions, defaultPuppeteerPoolOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore } from '.'
-import { getPerformanceData, getTimingFor } from '.'
+import { defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore, getPerformanceData, getTimingFor } from './index.js'
+import { response } from 'express'
 
-const extend = require('extend')
-const pkg = require('../../package.json')
+const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
 
 process.on('unhandledRejection', function onUnhandledRejection(reason, promise) {
 
     // Case: Error: Error removing file 'data' in directory 'D:\projets\corvee-bib\.storage\key_value_stores\session' referred by APIFY_LOCAL_STORAGE_DIR environment variable: ENOENT: no such file or directory, unlink 'D:\projets\corvee-bib\.storage\key_value_stores\session\data.json'
     if (reason && inspect(reason).indexOf('Error removing file \'data\' in directory') > 0) {
-        // This is an unhandled rejected promise from the apify api.
+        // This is an unhandled rejected promise from the crawlee api.
         // Will silently ignore this
         return
     }
 
     // Case: Error: Error writing file 'data' in directory 'D:\projets\corvee-bib\.storage\key_value_stores\session' referred by APIFY_LOCAL_STORAGE_DIR environment variable: EPERM: operation not permitted, open 'D:\projets\corvee-bib\.storage\key_value_stores\session\data.json'
     if (reason && inspect(reason).indexOf('Error writing file \'data\' in directory') > 0) {
-        // This is an unhandled rejected promise from the apify api.
+        // This is an unhandled rejected promise from the crawlee api.
         // Will silently ignore this
         return
     }
@@ -52,24 +50,16 @@ process.on('uncaughtException', function onUnhandledRejection(error, origin) {
     console.todo(`Uncaught Exception. Error: ${inspect(error)}. Origin: ${inspect(origin)}`);
 });
 
-const UNHANDLED_ERROR = 'CV::UNHANDLED_ERROR';
-
-const linkProps = new Set();
-
-const defaultOptions = extend(true, {}, defaultHarvesterOptions, defaultLaunchPuppeteerOptions, defaultPuppeteerPoolOptions)
-
 /**
  * Creates a new Harvester
- * @class
  * @extends EventEmitter
- * @property {boolean} isPaused - Indicates if the harvester is harvesting or paused
- * @property
  */
 
 export class Harvester extends EventEmitter {
 
     /**
-     * 
+     * Creates a new Harvester
+     * @class
      * @param {object} config 
      * @param {boolean|number} config.notifyDelay - Notifies at `notify` interval
      * @param {function} config.plugins - TODO
@@ -81,6 +71,8 @@ export class Harvester extends EventEmitter {
 
     constructor(config = {}) {
 
+        const defaultOptions = extend(true, {}, defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions)
+
         super();
 
         this.version = pkg.version;
@@ -88,14 +80,23 @@ export class Harvester extends EventEmitter {
         this._isRunning = false
         this._pausedAt = 0;
 
-        this.config = Object.assign({}, defaultOptions, config);
+        this.config = extend(true, {}, defaultOptions, config);
+
+        if (typeof config.pageWaitUntil === 'string') {
+            this.config.pageWaitUntil = {
+                intern: config.pageWaitUntil,
+                extern: config.pageWaitUntil
+            }
+        }
 
         console.log(`Setting log level to ${this.config.logLevel}`)
         console.setLevel(this.config.logLevel)
         console.verbose('### THIS IS VERBOSE ###')
 
-        if (!process.env.APIFY_LOCAL_STORAGE_DIR) {
-            process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir;
+        if (!process.env.CRAWLEE_STORAGE_DIR) {
+            process.env.CRAWLEE_STORAGE_DIR = this.config.storageDir
+            // This to prevent a WARN message from crawlee
+            process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir
         }
 
         this.linkParser = defaultLinkParser;
@@ -113,7 +114,7 @@ export class Harvester extends EventEmitter {
             })
         }
 
-        this.crawlers = [];
+        this.crawler = null;
 
         this.plugins = {
             onNavigationResponse: []
@@ -144,30 +145,13 @@ export class Harvester extends EventEmitter {
 
         this.urlList = [];
 
-        this.launchPuppeteerOptions = extend(true, {}, pick(this.config, ['proxyUrl', 'stealth', 'userAgent', 'useChrome', 'args', 'headless', 'userDataDir', 'defaultViewport']))
+        this.launchContextOptions = extend(true, {}, pick(this.config, Object.keys(defaultLaunchContextOptions)))
 
-        console.verbose(`this.launchPuppeteerOptions: ${inspect(this.launchPuppeteerOptions)}`)
+        this.launchContextOptions.launcher = playwright[this.config.browser]
 
-        // if (this.config.proxy) {
-        //     if (typeof this.launchPuppeteerOptions.args === 'undefined') {
-        //         this.launchPuppeteerOptions.args = []
-        //     }
+        console.verbose(`this.launchContextOptions: ${inspect(this.launchContextOptions)}`)
 
-        //     const proxyUrl = typeof this.config.proxy === 'object' ? (new URL(this.config.proxy)).href : this.config.proxy;
-
-        //     this.launchPuppeteerOptions.args.push(`--proxy-server=${proxyUrl}`);
-
-        // }
-
-        this.autoscaledPoolOptions = {
-            ...defaultAutoscaledPoolOptions,
-            isTaskReadyFunction: function isTaskReady() {
-                return true;
-            },
-            runTaskReadyFunction: function runTaskReady() {
-                return true;
-            }
-        }
+        this.autoscaledPoolOptions = extend(true, {}, pick(this.config, Object.keys(defaultAutoscaledPoolOptions)))
 
         console.verbose(`this.autoscaledPoolOptions: ${inspect(this.autoscaledPoolOptions)}`)
     }
@@ -187,7 +171,7 @@ export class Harvester extends EventEmitter {
                     let addToRequestQueueHandle;
                     setInterval(async () => {
                         if (this._addToRequestQueue) {
-                            await this._addToRequestQueue(...urls.map(url => new Link(url, tis.normalizeUrl)))
+                            await this._addToRequestQueue(...urls.map(url => new Link(url, this.normalizeUrl)))
                             clearInterval(addToRequestQueueHandle)
                             resolve()
                         }
@@ -291,11 +275,7 @@ export class Harvester extends EventEmitter {
 
         console.info('Pausing harvester...')
 
-        await Promise
-            .all(this.crawlers.map(crawler => crawler.pause(timeout)))
-            .catch(error => {
-                console.error(inspect(error))
-            })
+        await this.crawler.pause(timeout)
 
         if (this.notify) {
             this.notify.pause();
@@ -313,7 +293,7 @@ export class Harvester extends EventEmitter {
             console.info('Harvester is already running.')
             return;
         }
-        this.crawlers.forEach(crawler => crawler.resume())
+        this.crawler.resume()
         const pauseTime = Date.now() - this._pausedAt;
         this.session.startTime = this.session.startTime + pauseTime;
         this._pausedAt = 0;
@@ -330,13 +310,7 @@ export class Harvester extends EventEmitter {
         process.exit();
     }
 
-    resume() {
-        return this.run({
-            resume: true
-        })
-    }
-
-    run(runOptions) {
+    async run(runOptions) {
 
         const self = this;
         const defaultRunOptions = {
@@ -346,12 +320,6 @@ export class Harvester extends EventEmitter {
         runOptions = Object.assign({}, defaultRunOptions, runOptions);
 
         this.runOptions = runOptions;
-
-        this.queue = new RequestQueue({
-            concurrency: this.config.maxConcurrency,
-            interval: this.config.waitInterval,
-            intervalCap: 1
-        });
 
         this._isRunning = true;
         this.isPaused = false;
@@ -382,1400 +350,1103 @@ export class Harvester extends EventEmitter {
 
         }
 
-        return async function run() {
+        self.session = await sessionStore({
+            resume: runOptions.resume
+        });
 
-            self.session = await sessionStore({
-                resume: runOptions.resume
-            });
+        self.session.startTime = Date.now();
 
-            self.session.startTime = Date.now();
+        if (!runOptions.resume) {
 
-            if (!runOptions.resume) {
-
-                await Promise.all(cleanupFolderPromises)
-                    .then(() => {
-                        console.info(`Done removing ${self.config.storageDir} and ${self.config.userDataDir} folders.`);
-                    })
-                    .catch(error => {
-                        console.error(inspect(error))
-                        process.exit()
-                    })
-            }
-
-            self.assetsLinksStore = await Apify.openDataset('assets-urls');
-
-            if (self.config.fetchLinksOnce) {
-                self.linkStore = new LinkStore();
-                await self.linkStore.init();
-            }
-
-            self.recordStore = await Apify.openDataset('records');
-
-            self.session.recordCount = 0;
-            self.session.counts = {
-                success: 0,
-                fail: 0,
-                activeRequests: 0,
-                finishedRequests: 0
-            }
-
-            if (runOptions.resume) {
-                // set the right record count
-                self.session.recordCount = (await self.recordStore.getInfo()).itemCount;
-                self._handledRequests = new Set();
-
-                await self.recordStore.forEach(async (item) => {
-                    self.session.counts.finishedRequests++
-                    self._handledRequests.add(`${item.parent}#${item.url}`)
+            await Promise.all(cleanupFolderPromises)
+                .then(() => {
+                    console.info(`Done removing ${self.config.storageDir} and ${self.config.userDataDir} folders.`);
                 })
-            }
-
-            process.on('exit', function onExit() {
-                if (self.notify) {
-                    self.notify.stop();
-                }
-                const end = Date.now();
-                const duration = humanDuration(end - self.session.startTime);
-
-                self.emit('browsing-contexts', self.browsingContextStore.entries())
-
-                self.emit('end')
-
-                console.info(`Link props: ${Array.from(linkProps.values()).join(', ')}`)
-
-                console.info(`Total execution time: ${duration}`)
-
-            });
-
-            // self.screenshotsStore = await Apify.openKeyValueStore('screenshots');
-
-            const puppeteerRequestQueue = await Apify.openRequestQueue('puppeteer');
-
-            setInterval(async function () {
-                const info = await puppeteerRequestQueue.getInfo();
-                self.emit('progress', {
-                    handled: info.handledRequestCount,
-                    handledPercent: info.handledRequestCount / info.totalRequestCount,
-                    total: info.totalRequestCount,
-                    pending: info.pendingRequestCount,
-                    startedAt: self.session.startTime,
-                    elapsed: Date.now() - self.session.startTime
+                .catch(error => {
+                    console.error(inspect(error))
+                    process.exit()
                 })
-            }, self.config.notifyDelay)
+        }
 
-            const basicRequestQueue = await Apify.openRequestQueue('basic');
+        self.assetsLinksStore = await Dataset.open('assets-urls');
 
-            self.notify.addMessage(async () => {
-                const info = await puppeteerRequestQueue.getInfo();
-                return `Request queue size: ${info.totalRequestCount} Handled: ${info.handledRequestCount}`
+        if (self.config.fetchLinksOnce) {
+            self.linkStore = new LinkStore();
+            await self.linkStore.init();
+        }
+
+        self.recordStore = await Dataset.open('records');
+
+        self.session.recordCount = 0;
+        self.session.counts = {
+            success: 0,
+            fail: 0,
+            activeRequests: 0,
+            finishedRequests: 0
+        }
+
+        if (runOptions.resume) {
+            // set the right record count
+            self.session.recordCount = (await self.recordStore.getInfo()).itemCount;
+            self._handledRequests = new Set();
+
+            await self.recordStore.forEach(async (item) => {
+                self.session.counts.finishedRequests++
+                self._handledRequests.add(`${item.parent}#${item.url}`)
             })
+        }
 
-            const uniqueLinksPerPage = new Map();
+        process.on('exit', function onExit() {
+            if (self.notify) {
+                self.notify.stop();
+            }
+            const end = Date.now();
+            const duration = humanDuration(end - self.session.startTime);
 
-            async function tryAddToRequestQueue(queue, requestData) {
+            self.emit('browsing-contexts', self.browsingContextStore.entries())
 
-                function tryAgain(fn, interval) {
-                    return new Promise(async (resolve) => {
-                        const handle = setInterval(async () => {
-                            var done = await fn();
-                            if (done) {
-                                clearInterval(handle);
-                                resolve();
+            self.emit('end')
+
+            console.info(`Total execution time: ${duration}`)
+
+        });
+
+        self.screenshotsStore = await KeyValueStore.open('screenshots');
+
+        const requestQueue = await RequestQueue.open('playwright');
+
+        setInterval(async function () {
+            const info = await requestQueue.getInfo();
+            self.emit('progress', {
+                handled: info.handledRequestCount,
+                handledPercent: info.handledRequestCount / info.totalRequestCount,
+                total: info.totalRequestCount,
+                pending: info.pendingRequestCount,
+                startedAt: self.session.startTime,
+                elapsed: Date.now() - self.session.startTime
+            })
+        }, self.config.notifyDelay)
+
+        self.notify.addMessage(async () => {
+            const info = await requestQueue.getInfo();
+            return `Request queue size: ${info.totalRequestCount} Handled: ${info.handledRequestCount}`
+        })
+
+        const uniqueLinksPerPage = new Map();
+
+        async function tryAddToRequestQueue(requestData) {
+
+            function tryAgain(fn, interval) {
+                return new Promise(async (resolve) => {
+                    const handle = setInterval(async () => {
+                        var done = await fn();
+                        if (done) {
+                            clearInterval(handle);
+                            resolve();
+                        }
+                    }, interval)
+                });
+            }
+
+            return new Promise(async resolve => {
+                try {
+                    if (runOptions.resume) {
+                        // resuming previously fetched links
+                        if (self._handledRequests.has(`${requestData.url}#${requestData.userData.parent}`)) {
+                            return resolve();
+                        }
+                    }
+
+                    const reqInfo = await requestQueue.addRequest(requestData);
+
+                    if (self.config.fetchLinksOnce) {
+
+                        if (self.linkStore.has(requestData.url)) {
+
+                            const record = await self.linkStore.recordFromData(requestData.userData)
+
+                            console.verbose(`This link has already been fetched. Will skip fetching. Record: ${inspect(record)}`)
+
+                            try {
+                                await addRecord(record);
+
+                                self.session.counts.success++
+
+                            } catch (error) {
+                                console.error(inspect(error));
                             }
-                        }, interval)
-                    });
-                }
 
-                return new Promise(async resolve => {
-                    try {
-                        if (runOptions.resume) {
-                            // resuming previously fetched links
-                            if (self._handledRequests.has(`${requestData.url}#${requestData.userData.parent}`)) {
-                                return resolve();
-                            }
+                            return resolve();
+
                         }
 
-                        const reqInfo = await queue.addRequest(requestData);
+                        if (reqInfo.wasAlreadyHandled) {
 
-                        if (self.config.fetchLinksOnce) {
-
-                            if (self.linkStore.has(requestData.url)) {
-
-                                const record = await self.linkStore.recordFromData(requestData.userData)
-
-                                console.verbose(`This link has already been fetched. Will skip fetching. Record: ${inspect(record)}`)
-
-                                try {
-                                    await addRecord(record);
-
-                                    self.session.counts.success++
-
-                                    puppeteerCrawler.basicCrawler.handledRequestsCount++;
-                                } catch (error) {
-                                    console.error(inspect(error));
-                                }
-
-                                return resolve();
-
-                            }
-
-                            if (reqInfo.wasAlreadyHandled) {
-
-                                if (runOptions.resume) {
-                                    // Resuming a previous harvest job. This link has already been treated.
-                                    return resolve()
-                                }
-
-                                console.todo(`This should not happpen: record wasAlreadyHandled, but is not in the linkStore. requestData: ${inspect(requestData)}, reqInfo: ${inspect(reqInfo)}`)
-                                // process.exit()
-                                requestData.userData.trials++
-
-                                const request = new Apify.Request({
-                                    url: requestData.userData.url,
-                                    userData: requestData.userData,
-                                    retryCount: requestData.userData.trials
-                                })
-
-                                request.id = requestData.userData.id
-
-                                await queue.reclaimRequest(request)
-
+                            if (runOptions.resume) {
+                                // Resuming a previous harvest job. This link has already been treated.
                                 return resolve()
                             }
 
-                            if (reqInfo.wasAlreadyPresent) {
+                            console.todo(`This should not happpen: record wasAlreadyHandled, but is not in the linkStore. requestData: ${inspect(requestData)}, reqInfo: ${inspect(reqInfo)}`)
+                            // process.exit()
+                            requestData.userData.trials++
 
-                                // The URL is in the request queue, but it has not yet been processed
-                                let i = 0;
-                                tryAgain(async () => {
-                                    i++;
-                                    if (self.linkStore.has(requestData.url)) {
-                                        try {
-                                            const record = await self.linkStore.recordFromData(requestData.userData);
-                                            record._from = `linkStore#trial-${i}`
+                            const request = new Request({
+                                url: requestData.userData.url,
+                                userData: requestData.userData,
+                                retryCount: requestData.userData.trials
+                            })
 
-                                            await addRecord(record);
+                            request.id = requestData.userData.id
 
-                                            self.session.counts.success++
+                            await requestQueue.reclaimRequest(request)
 
-                                            puppeteerCrawler.basicCrawler.handledRequestsCount++;
-                                        } catch (error) {
-
-                                            console.error(inspect(error));
-
-                                            return true
-                                        }
-
-                                        return true;
-                                    }
-                                    return false;
-                                }, 1000)
-
-                            }
+                            return resolve()
                         }
 
-                    } catch (error) {
-                        console.error(`Request data: ${inspect(requestData)}, error: ${inspect(error)}`)
+                        if (reqInfo.wasAlreadyPresent) {
+
+                            // The URL is in the request queue, but it has not yet been processed
+                            let i = 0;
+                            tryAgain(async () => {
+                                i++;
+                                if (self.linkStore.has(requestData.url)) {
+                                    try {
+                                        const record = await self.linkStore.recordFromData(requestData.userData);
+                                        record._from = `linkStore#trial-${i}`
+
+                                        await addRecord(record);
+
+                                        self.session.counts.success++
+
+                                    } catch (error) {
+
+                                        console.error(inspect(error));
+
+                                        return true
+                                    }
+
+                                    return true;
+                                }
+                                return false;
+                            }, 1000)
+
+                        }
                     }
 
-                    resolve();
+                } catch (error) {
+                    console.error(`Request data: ${inspect(requestData)}, error: ${inspect(error)}`)
+                }
 
-                })
+                resolve();
+
+            })
+        }
+
+        async function addToRequestQueue(linkDataset) {
+
+            if (!Array.isArray(linkDataset)) {
+                linkDataset = [linkDataset]
             }
 
-            async function addToRequestQueue(which, linkDataset) {
+            if (linkDataset.length === 0) {
+                return Promise.resolve()
+            }
 
-                if (typeof linkDataset === 'undefined') {
-                    linkDataset = which;
-                    which = 'pup'
-                }
+            const addRequestPromises = [];
 
-                assert.string(which)
+            linkDataset.forEach(async data => {
 
-                if (!Array.isArray(linkDataset)) {
-                    linkDataset = [linkDataset]
-                }
+                assert.object(data)
 
-                if (linkDataset.length === 0) {
-                    return Promise.resolve()
-                }
+                const link = data.constructor.name === 'Link' ? data : new Link(data, self.normalizeUrl)
+                let uriObj;
 
-                const queue = which === 'basic' ? basicRequestQueue : puppeteerRequestQueue;
+                assert.string(link.url)
+                assert.object(link.userData)
 
-                const addRequestPromises = [];
-
-                linkDataset.forEach(async data => {
-
-                    assert.object(data)
-
-                    const link = data.constructor.name === 'Link' ? data : new Link(data, self.normalizeUrl)
-                    let uriObj;
-
-                    assert.string(link.url)
-                    assert.object(link.userData)
-
-                    if (link.userData.parent) {
-                        try {
-                            link.userData.parent = self.normalizeUrl(link.userData.parent)
-                        } catch (error) {
-                            console.error(`self.normalizeUrl error at link.userData.parent: ${link.userData.parent}. Error: ${inspect(error)}`)
-                        }
-                    }
-
+                if (link.userData.parent) {
                     try {
-                        uriObj = URI.parse(link.url);
+                        link.userData.parent = self.normalizeUrl(link.userData.parent)
                     } catch (error) {
-                        console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
-                        process.exit();
+                        console.error(`self.normalizeUrl error at link.userData.parent: ${link.userData.parent}. Error: ${inspect(error)}`)
                     }
+                }
 
-                    //
-                    // Don't collect the same link twice per page
-                    const pageUrl = link.userData.parent;
+                try {
+                    uriObj = URI.parse(link.url);
+                } catch (error) {
+                    console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
+                    process.exit();
+                }
 
-                    if (!uniqueLinksPerPage.has(pageUrl)) {
-                        uniqueLinksPerPage.set(pageUrl, new Set())
-                    }
+                //
+                // Don't collect the same link twice per page
+                //
+                const pageUrl = link.userData.parent;
 
-                    if (uniqueLinksPerPage.get(pageUrl).has(link.url)) {
-                        return;
-                    }
+                if (!uniqueLinksPerPage.has(pageUrl)) {
+                    uniqueLinksPerPage.set(pageUrl, new Set())
+                }
 
-                    uniqueLinksPerPage.get(pageUrl).add(link.url);
+                if (uniqueLinksPerPage.get(pageUrl).has(link.url)) {
+                    return;
+                }
 
-                    if (!self.config.schemes.some(scheme => minimatch(uriObj.scheme, scheme))) {
-                        console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri <${link.url}>` : ''}`)
+                uniqueLinksPerPage.get(pageUrl).add(link.url);
 
-                        return;
-                    }
+                if (!self.config.schemes.some(scheme => minimatch(uriObj.scheme, scheme))) {
+                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri <${link.url}>` : ''}`)
 
-                    const trials = link.userData.trials || 1;
-                    const extern = self.isExternLink(link.url)
+                    return;
+                }
 
-                    const requestData = extend(true, {}, link, {
-                        retryCount: trials,
-                        extern
-                    })
+                const trials = link.userData.trials || 1;
 
-                    // Don't process links in current page if it's url satisfies one of the options.noFollow[] rules
-                    const noFollowUrl = self.shouldNotFollowUrl(requestData.userData.parent)
-                    if (noFollowUrl) {
-                        console.debug(`Rejecting link ${requestData.url} in ${requestData.userData.parent} since a noFollow rule was detected: ${noFollowUrl}`)
-                        return;
-                    }
+                const requestData = extend(true, {}, link, {
+                    retryCount: trials
+                })
 
-                    // Stop processing if filtering settings meet
-                    const ignoreRule = self.shouldIgnoreUrl(requestData.url)
-                    if (ignoreRule) {
-                        console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${requestData.userData.parent} -> ${requestData.url}`);
-                        return;
-                    }
+                // Don't process links in current page if it's url satisfies one of the options.noFollow[] rules
+                const noFollowUrl = self.shouldNotFollowUrl(requestData.userData.parent)
+                if (noFollowUrl) {
+                    console.debug(`Rejecting link ${requestData.url} in ${requestData.userData.parent} since a noFollow rule was detected: ${noFollowUrl}`)
+                    return;
+                }
 
-                    // This should not occur
-                    if (self.isExternLink(requestData.userData.parent)) {
-                        console.todo(`Intercepted an URL hosted on an external page that was submitted to fetch queue: ${requestData.userData.parent} -> ${requestData.url}.`)
-                        return;
-                    }
+                // Stop processing if filtering settings meet
+                const ignoreRule = self.shouldIgnoreUrl(requestData.url)
+                if (ignoreRule) {
+                    console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${requestData.userData.parent} -> ${requestData.url}`);
+                    return;
+                }
+
+                // This should not occur
+                if (self.isExternLink(requestData.userData.parent)) {
+                    console.todo(`Intercepted an URL hosted on an external page that was submitted to fetch queue: ${requestData.userData.parent} -> ${requestData.url}.`)
+                    return;
+                }
+
+                if (link.url !== 'corvee:dummy-url') {
 
                     self.session.counts.activeRequests++
 
                     self.emit('add-link', link);
+                }
 
-                    if (uriObj.scheme === 'http' || uriObj.scheme === 'https') {
+                if (uriObj.scheme === 'http' || uriObj.scheme === 'https') {
 
-                        // Check if URL has a valid syntax
-                        if (!isValidUrl(link.url)) {
+                    // Check if URL has a valid syntax
+                    if (!isValidUrl(link.url)) {
 
-                            console.warn(`Bad URL: ${link.userData.urlData}`)
+                        console.warn(`Bad URL: ${link.userData.urlData}`)
 
-                            const urlError = new UrlInvalidUrlError(link.userData.urlData)
+                        const urlError = new UrlInvalidUrlError(link.userData.urlData)
 
-                            link.userData.reports = [urlError];
+                        link.userData.reports = [urlError];
 
-                            const record = handleFailedRequest(link, {
-                                _from: 'addToRequestQueue'
-                            })
-
-                            await addRecord(record);
-
-                            self.session.counts.fail++
-
-                            puppeteerCrawler.basicCrawler.handledRequestsCount++;
-
-                            return
-                        }
-                    }
-
-                    if (uriObj.scheme === 'mailto') {
-
-                        if (uriObj.error) {
-                            link.userData.reports = [new MailInvalidSyntaxError()]
-                            self.session.counts.fail++
-                        } else {
-                            link.userData.reports = [new MailUnverifiedAddressError()]
-                            self.session.counts.success++
-                        }
-
-                        const record = handleResponse(link)
+                        const record = await handleFailedRequest(link, {
+                            _from: 'addToRequestQueue'
+                        })
 
                         await addRecord(record);
 
-                        puppeteerCrawler.basicCrawler.handledRequestsCount++;
+                        self.session.counts.fail++
 
-                        return;
+                        return
+                    }
+                }
+
+                if (uriObj.scheme === 'mailto') {
+
+                    if (uriObj.error) {
+                        link.userData.reports = [new MailInvalidSyntaxError()]
+                        self.session.counts.fail++
+                    } else {
+                        link.userData.reports = [new MailUnverifiedAddressError()]
+                        self.session.counts.success++
                     }
 
-                    if (!self.config.fetchLinksOnce) {
-                        requestData.uniqueKey = computeUniqueKey({
-                            url: requestData.url,
-                            method: 'GET',
-                            payload: `${Date.now()}:${Math.floor(Math.random() * 1E6)}`,
-                            keepUrlFragment: false,
-                            useExtendedUniqueKey: true
-                        });
-                    }
+                    const record = await handleResponse(link)
 
-                    addRequestPromises.push(tryAddToRequestQueue(queue, requestData))
-                })
+                    await addRecord(record);
 
-                return Promise.all(addRequestPromises)
-                    .catch(e => {
-                        console.error(inspect(error))
+                    return;
+                }
+
+                if (!self.config.fetchLinksOnce) {
+                    requestData.uniqueKey = computeUniqueKey({
+                        url: requestData.url,
+                        method: 'GET',
+                        payload: `${Date.now()}:${Math.floor(Math.random() * 1E6)}`,
+                        keepUrlFragment: false,
+                        useExtendedUniqueKey: true
                     });
-            }
+                }
 
-            self._addToRequestQueue = addToRequestQueue
+                addRequestPromises.push(tryAddToRequestQueue(requestData))
+            })
 
-            if (self.config.startUrl) {
+            return Promise.all(addRequestPromises)
+                .catch(error => {
+                    console.error(inspect(error))
+                });
+        }
 
-                console.info(`Start URL: ${self.config.startUrl}`)
+        self._addToRequestQueue = addToRequestQueue
 
-                await addToRequestQueue('pup', new Link(self.config.startUrl, {
-                    parent: 'corvee:startpage',
-                    isNavigationRequest: true
-                }, self.normalizeUrl))
-            }
+        if (self.config.startUrl) {
 
-            await addToRequestQueue('pup', self.urlList)
+            console.info(`Start URL: ${self.config.startUrl}`)
 
-            await addToRequestQueue('basic', new Link('corvee:dummy-url', {
-                parent: 'corvee:startpage'
+            await addToRequestQueue(new Link(self.config.startUrl, {
+                parent: 'corvee:startpage',
+                isNavigationRequest: true
             }, self.normalizeUrl))
+        }
 
-            async function addRecord(record) {
+        await addToRequestQueue(self.urlList)
 
-                return new Promise(async (resolve, reject) => {
+        async function addRecord(record) {
 
-                    if (self.isMaxRequestExceeded()) {
-                        console.info('Maximum requests reached.')
-                        return reject('Maximum requests reached.');
-                    }
+            return new Promise(async (resolve, reject) => {
 
-                    self.session.recordCount++;
-                    self.session.counts.activeRequests--
-                    self.session.counts.finishedRequests++
-
-                    record.id = self.session.recordCount;
-                    record.extern = self.isExternLink(record.url); // ??? parfois la propriété est absente
-                    record.browsingContextStack = self.browsingContextStore.getContext(record.parent)
-
-                    try {
-                        await self.recordStore.pushData(record);
-                    } catch (error) {
-                        console.error(error)
-                    }
-
-                    if (self.config.fetchLinksOnce) {
-                        Object.keys(record).forEach(key => linkProps.add(key));
-
-                        try {
-                            if (!self.linkStore.has(record.url)) {
-                                console.verbose(`Adding link to link store: ${record.url}`);
-                                await self.linkStore.set(record);
-                            }
-                        } catch (error) {
-                            console.error(inspect(error));
-                        }
-                    }
-
-                    self.emit('record', record, self.session.recordCount)
-
-                    if (self.isExternLink(record.parent)) {
-                        console.todo(`Parent is external. This should not happen. Record: ${inspect(record)}`)
-                    }
-
-                    resolve();
-                }).catch(error => {
-                    console.error(`Error at addRecord. Error: ${inspect(error)}`)
-                })
-            }
-
-            async function parseLinksInPage(page, {
-                currentLevel
-            }) {
-                const ret = [];
-
-                if (typeof page === 'undefined') {
-                    return ret
+                if (self.isMaxRequestExceeded()) {
+                    console.info('Maximum requests reached.')
+                    return reject('Maximum requests reached.');
                 }
 
-                const nextLevel = currentLevel + 1;
+                record.id = self.session.recordCount;
+                record.extern = self.isExternLink(record.url); // ??? parfois la propriété est absente
+                record.browsingContextStack = self.browsingContextStore.getContext(record.parent)
 
-                if (nextLevel > self.config.maxDepth) {
-                    return ret
-                }
-
-                const parent = self.normalizeUrl(page.url());
-
-                const noFollowUrl = self.shouldNotFollowUrl(parent)
-                if (noFollowUrl) {
-                    console.verbose(`Stop parsing links in ${parent} since a noFollow rule was detected: ${noFollowUrl}`)
-                    return ret;
-                }
-
-                let links = []
+                self.session.recordCount++;
+                self.session.counts.activeRequests--
+                self.session.counts.finishedRequests++
 
                 try {
-                    if (self.config.linkParserDelay) {
-                        console.debug('waiting ' + self.config.linkParserDelay + 'ms before parsing links')
-                        await page.waitFor(self.config.linkParserDelay)
-                        // TODO
-                        await page.screenshot({
-                            path: 'D:/projets/corvee-bib/t.png',
-                            fullPage: true
-                        })
-                        console.debug('waiting done')
-                    }
-
-                    links = await page.evaluate(self.linkParser)
-
+                    await self.recordStore.pushData(record);
                 } catch (error) {
-                    console.todo(`Could not parse links in page ${page.url()}. Error: ${inspect(error)}`)
+                    console.error(error)
                 }
 
-                assert(isObject(links) || Array.isArray(links), 'The return value from the parser function must be an object or an array.')
+                if (self.config.fetchLinksOnce) {
 
-                if (!Array.isArray(links)) {
-                    links = [links];
+                    try {
+                        if (!self.linkStore.has(record.url)) {
+                            console.verbose(`Adding link to link store: ${record.url}`);
+                            await self.linkStore.set(record);
+                        }
+                    } catch (error) {
+                        console.error(inspect(error));
+                    }
                 }
 
-                return links
-                    .map(link => {
-                        // type validation
-                        v(link).has('url').isString().not.isEmpty()
-                        return link;
-                    })
-                    .map(({ url, ...urlData }) => {
-                        return new Link(url, {
-                            ...urlData,
-                            parent,
-                            isNavigationRequest: true,
-                            extern: self.isExternLink(url),
-                            level: nextLevel,
-                            _from: 'parseLinksInPage'
-                        }, self.normalizeUrl)
-                    })
-                    .filter(link => {
+                self.emit('record', record, self.session.recordCount)
 
-                        if (self.shouldIgnoreUrl(link.url)) {
-                            return false;
-                        }
+                if (self.isExternLink(record.parent)) {
+                    console.todo(`Parent is external. This should not happen. Record: ${inspect(record)}`)
+                }
 
-                        if (self.config.checkExtern) {
-                            return true;
-                        }
+                resolve();
+            }).catch(error => {
+                console.error(`Error at addRecord. Error: ${inspect(error)}`)
+            })
+        }
 
-                        // else, return only internal links
+        async function parseLinksInPage(page, {
+            currentLevel
+        }) {
+            const ret = [];
 
-                        return !self.isExternLink(link.url);
-                    })
-                    .filter(link => link.url !== parent) // exclude internal links (href="#some-anchor")
+            if (typeof page === 'undefined') {
+                return ret
             }
 
-            const basicCrawler = new BasicCrawler({
-                requestQueue: basicRequestQueue,
-                autoscaledPoolOptions: {
-                    ...self.autoscaledPoolOptions,
-                    loggingIntervalSecs: Infinity,
-                    isFinishedFunction: async function isFinished() {
-                        const puppeteerRequestQueueIsFinished = await puppeteerRequestQueue.isFinished();
-                        const basicRequestQueueIsFinished = await basicRequestQueue.isFinished();
+            const nextLevel = currentLevel + 1;
 
-                        if (self.isMaxRequestExceeded()) {
-                            return true;
-                        }
+            if (nextLevel > self.config.maxDepth) {
+                return ret
+            }
 
-                        if (!puppeteerRequestQueueIsFinished) {
-                            return false;
-                        }
+            const parent = self.normalizeUrl(page.url());
 
-                        return basicRequestQueueIsFinished;
-                    }
-                },
-                handleRequestFunction: async function handleBasicRequest({
-                    request,
-                    autoscaledPool
-                }) {
-                    console.verbose(`Processing [${request.retryCount}] ${request.url}`)
+            const noFollowUrl = self.shouldNotFollowUrl(parent)
+            if (noFollowUrl) {
+                console.verbose(`Stop parsing links in ${parent} since a noFollow rule was detected: ${noFollowUrl}`)
+                return ret;
+            }
 
-                    if (request.url === 'corvee:dummy-url') {
-                        return Promise.reject();
-                    }
+            let links = []
 
-                    // Stop processing if filtering settings meet
-                    const ignoreRule = self.shouldIgnoreUrl(request.url)
-                    if (ignoreRule) {
-                        console.debug(`Ignoring this url based on config.ignore rule \`${ignoreRule}\`: [${request.url}] -> ${url}`);
-                        return Promise.reject();
-                    }
-
-                    return new Promise(async function handleBasicRequestPromise(resolve, reject) {
-                        rp({
-                            url: request.url,
-                            resolveWithFullResponse: true,
-                            simple: false,
-                            followAllRedirects: true
-                        })
-                            .then(async response => {
-                                console.log('---> response from basic crawler. Status: ', response.statusCode)
-
-                                if (request.retryCount >= self.config.maxRequestRetries) {
-                                    const record = handleResponse(request, response, {
-                                        _from: 'handleBasicRequest'
-                                    })
-                                    await addRecord(record)
-
-                                    self.session.counts.success++
-
-                                    return resolve();
-                                }
-
-                                if (!(/^2/.test('' + response.statusCode))) { // Status codes other than 2xx
-                                    reject(new Error('test'));
-                                    return;
-                                }
-
-                                if (!self.isMaxRequestExceeded()) {
-                                    const record = handleResponse(request, response);
-                                    console.info(record)
-                                    await addRecord(record);
-
-                                    self.session.counts.success++
-                                }
-                                resolve(response)
-                            })
-                            .catch(error => {
-                                console.todo(inspect(error))
-                                reject(error)
-                                throw error;
-                            });
-
-                    }
-
-                    ).catch(error => {
-                        console.error(inspect(error))
+            try {
+                if (self.config.linkParserDelay) {
+                    console.debug('waiting ' + self.config.linkParserDelay + 'ms before parsing links')
+                    await page.waitFor(self.config.linkParserDelay)
+                    // TODO
+                    await page.screenshot({
+                        path: 'D:/projets/corvee-bib/t.png',
+                        fullPage: true
                     })
-                },
-                handleFailedRequestFunction: function onNavigationRequestFailed({
-                    request,
-                    error
-                }) {
+                    console.debug('waiting done')
+                }
 
-                    if (request.url.startsWith('corvee:')) {
-                        return;
+                links = await page.evaluate(self.linkParser)
+
+            } catch (error) {
+                console.todo(`Could not parse links in page ${page.url()}. Error: ${inspect(error)}`)
+            }
+
+            assert(isObject(links) || Array.isArray(links), 'The return value from the parser function must be an object or an array.')
+
+            if (!Array.isArray(links)) {
+                links = [links];
+            }
+
+            return links
+                .map(link => {
+                    // type validation
+                    v(link).has('url').isString().not.isEmpty()
+                    return link;
+                })
+                .map(({ url, ...urlData }) => {
+                    return new Link(url, {
+                        ...urlData,
+                        parent,
+                        isNavigationRequest: true,
+                        extern: self.isExternLink(url),
+                        level: nextLevel,
+                        _from: 'parseLinksInPage'
+                    }, self.normalizeUrl)
+                })
+                .filter(link => {
+
+                    if (self.shouldIgnoreUrl(link.url)) {
+                        return false;
                     }
 
-                    console.debug(inspect(request))
-                },
-                maxRequestRetries: self.config.maxRequestRetries,
-                handlePageTimeoutSecs: self.config.PageTimeout
-            });
+                    if (self.config.checkExtern) {
+                        return true;
+                    }
 
-            basicCrawler.pause = function pause(timeout) {
-                return basicCrawler.autoscaledPool.pause(timeout);
-            }
+                    // else, return only internal links
 
-            basicCrawler.resume = function resume() {
-                return basicCrawler.autoscaledPool.resume();
-            }
+                    return !link.extern;
+                })
+                // exclude internal links (href="#some-anchor")
+                .filter(link => {
+                    if (link.userData.urlData && link.userData.urlData.startsWith('#')) {
+                        return false
+                    }
 
-            self.crawlers.push(basicCrawler)
+                    return link.url !== parent
+                })
+        }
 
-            //
-            // Puppeteer crawler
-            //
+        //
+        // PLaywright crawler
+        //
 
-            const puppeteerCrawler = new PuppeteerCrawler({
-                gotoFunction: async function gotoFunction({
-                    request,
-                    page
-                }) {
+        const playwrightCrawler = new PlaywrightCrawler({
+            requestHandler: async function onNavigationResponse({
+                request,
+                response: pwResponse,
+                page
+            }) {
 
-                    return new Promise(async (resolve, reject) => {
+                //
+                // Main navigation responses handler
+                // Here we process navigation responses. 
+                // Some handling is also done on a `onNavigationResponse` handler registered on page.on()
+                //
 
-                        if (request.userData._ignore) {
-                            return resolve()
+                if (!pwResponse) {
+
+                    console.debug(`Response is ${pwResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
+
+                    if (request.loadedUrl) {
+                        if (!(request.loadedUrl.startsWith('about:') || request.loadedUrl.startsWith('chrome:') || request.loadedUrl.startsWith('chrome-error:'))) {
+                            request.userData.finalUrl = request.loadedUrl
                         }
+                    }
 
-                        self.queue.add(async () => {
+                    if (request.retryCount >= self.config.maxRequestRetries) {
 
-                            request.userData.trials = request.retryCount;
-
-                            self.emit('request', request)
-                            console.debug(inspect(request))
-
-                            if (self.config.useRandomUserAgent) {
-                                page.setUserAgent(getRandomUserAgent());
-                            } else {
-                                page.setUserAgent(self.config.userAgent)
-                            }
-
-                            page.setDefaultNavigationTimeout(self.config.requestTimeout)
-
-                            await page.setRequestInterception(true);
-
-                            const pageUrl = new URL(request.url)
-                            const authority = /(.+\.)*([a-z0-9\\u00a1-\\uffff_-]+\.[a-z\\u00a1-\\uffff]{2,})/i.exec(pageUrl.hostname)[2]
-
-                            await page.setExtraHTTPHeaders({
-                                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                                'accept-encoding': 'gzip, deflate, br',
-                                'cache-control': 'no-cache',
-                                'connection': 'keep-alive',
-                                // 'host': (new URL(request.url)).hostname
-                                // ':authority': authority,
-                                // ':method': 'GET',
-                                // ':path': pageUrl.pathname,
-                                // ':scheme': pageUrl.protocol.split(':')[0],
-                                'accept-language': 'en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7,en-US;q=0.6,la;q=0.5',
-                                'pragma': 'no-cache',
-                                'sec-ch-ua': '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
-                                'sec-ch-ua-mobile': '?0',
-                                'sec-ch-ua-platform': 'Windows',
-                                'sec-ch-dest': 'document',
-                                'sec-fetch-site': 'none',
-                                'sec-fetch-user': '?1',
-                                'upgrade-insecure-requests': '1'
-                            })
-
-                            // don't request assets if this is an external page
-                            if (self.isExternLink(request.url)) {
-                                apifyUtils.puppeteer.blockRequests(page, {
-                                    urlPatterns: self.config.blockRequestsFromUrlPatterns
-                                })
-                            }
-
-                            await page._client.send('Network.enable', {
-                                maxResourceBufferSize: 1024 * 1204 * 100,
-                                maxTotalBufferSize: 1024 * 1204 * 400,
-                            })
-
-                            page.on('error', function onError(error) {
-
-                                if (request.retryCount >= self.config.maxRequestRetries) {
-
-                                    console.todo(`Page error at [try: ${request.retryCount}] ${request.url}. Error: ${inspect(error)} Request: ${inspect(request)}`)
-
-                                    if (!request.userData.reports) {
-                                        request.userData.reports = []
-                                    }
-                                    request.userData.reports.push(error);
-                                }
-
-                                return reject(error)
-                            })
-
-                            page.on('dialog', async function onDialog(dialog) {
-                                await dialog.dismiss();
-                            });
-
-                            await apifyUtils.puppeteer.addInterceptRequestHandler(page, function onRequest(pupRequest) {
-
-                                //
-                                // Initialization of userData
-                                //
-
-                                // TODO: remove this test when it is stated that it will never be true
-                                if ('userData' in pupRequest) {
-                                    console.error('pupRequest already have a .userData property. Check why.')
-                                    process.exit(1);
-                                }
-
-                                if (!pupRequest.isNavigationRequest() && self.config.navigationOnly) {
-                                    // Don't initialize userData if this is an asset request AND settings say we are interrested only on navigation requests
-                                    return pupRequest.continue()
-                                }
-
-                                if (!pupRequest.isNavigationRequest() && self.isExternLink(pupRequest.url())) {
-                                    // Don't initialize userData if this is an asset request on an external page
-                                    return pupRequest.continue()
-                                }
-
-                                const url = pupRequest.url();
-                                const parent = page.url();
-
-                                pupRequest.userData = Object.assign({ trials: 1 }, request.userData,
-                                    {
-                                        _from: 'onRequest',
-                                        url,
-                                        parent,
-                                        id: request.id
-                                    })
-
-                                pupRequest.continue()
-                            })
-
-                            await apifyUtils.puppeteer.addInterceptRequestHandler(page, function onDocumentRequest(pupRequest) {
-                                if (pupRequest.isNavigationRequest()) {
-
-                                    // Don't request if extern setting meets
-                                    if (!self.config.checkExtern && self.isExternLink(url)) {
-
-                                        console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(url)} from settings.`);
-
-                                        return pupRequest.abort('blockedbyclient')
-                                    }
-                                }
-
-                                pupRequest.continue()
-                            })
-
-                            await apifyUtils.puppeteer.addInterceptRequestHandler(page, function onAssetRequest(pupRequest) {
-
-                                //
-                                // Main asset request handler
-                                //
-                                // Here we process pages assets only, since they are not handled natively by apifyjs.
-                                // Page requests are processesd via the puppeteerCrawler handlePageFunction
-                                //
-
-                                if (!pupRequest.isNavigationRequest() && !self.config.navigationOnly) {
-
-                                    if (self.isExternLink(pupRequest.url())) {
-                                        // This is an asset of an external page
-                                        return pupRequest.continue()
-                                    }
-
-                                    console.debug(`Request URL: ${inspect(request.url)}`)
-
-                                    const url = pupRequest.url();
-                                    const parentUrl = page.url();
-
-                                    pupRequest.userData._from = 'onAssetRequest'
-
-                                    // don't request assets if this is an external page 
-                                    // this may be unnecessary since we use puppeteer.blockRequests()
-                                    if (self.config.checkExtern && self.isExternLink(parentUrl)) {
-
-                                        console.verbose(`Skipping loading assets for an external resource: ${displayUrl(parentUrl)} -> ${displayUrl(url)}`);
-
-                                        return pupRequest.abort('blockedbyclient')
-                                    }
-
-                                    // Stop processing if filtering settings meet
-                                    const ignoreRule = self.shouldIgnoreUrl(request.url)
-                                    if (ignoreRule) {
-
-                                        console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${request.url} -> ${url}`);
-
-                                        return pupRequest.abort('blockedbyclient')
-                                    }
-                                }
-
-                                pupRequest.continue();
-                            })
-
-                            page.on('requestfailed', async function onDocumentDownload(pupRequest) {
-
-                                //
-                                // Here we process navigation downloads
-                                // pdf, zip, docx, etc. documents
-                                //
-
-                                // Catch download navigation (pdf, zip, docx, etc.) occuring on first try before puppeteer throws an net::ERR_ABORTED error
-                                if (pupRequest.isNavigationRequest() && pupRequest.failure().errorText === 'net::ERR_ABORTED') {
-
-                                    if (request.retryCount === 1) {
-                                        const pupResponse = pupRequest.response();
-                                        if (pupResponse) {
-
-                                            let record;
-                                            const meta = {
-                                                _from: 'onDocumentDownload',
-                                                trials: request.retryCount,
-                                                parent: request.userData.parent
-                                            }
-
-                                            try {
-                                                record = handleResponse(pupRequest, pupResponse, meta)
-
-                                            } catch (error) {
-                                                console.error(inspect(error))
-                                            }
-
-                                            await addRecord(record);
-
-                                            self.session.counts.success++
-                                        }
-                                    }
-
-                                    request.userData._ignore = true
-                                    pupRequest.userData._ignore = true
-
-                                    return Promise.resolve()
-
-                                }
-                            })
-
-                            page.on('requestfailed', async function onDocumentRequestFailed(pupRequest) {
-
-                                //
-                                // Main document request failed handler is located at page.goto().catch()
-                                //
-
-                                if (pupRequest.failure() && pupRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
-                                    return;
-                                }
-
-                                if (pupRequest.isNavigationRequest()) {
-
-                                    if (pupRequest.failure() && pupRequest.failure().errorText === 'net::ERR_ABORTED') {
-
-                                        //
-                                        // This is a navigation request error
-                                        // Has been handled at 'onDocumentDownload'
-                                        //
-
-                                        return;
-                                    }
-
-                                    if (request.retryCount < self.config.maxRequestRetries) {
-                                        return;
-                                    }
-
-                                    // This is not a navigation download
-                                    // Retry count maxed out.
-
-                                    if (pupRequest.failure() && !pupRequest.failure().errorText.startsWith('net::')) {
-                                        // Chromium net errors are handled by the function captureError
-                                        console.todo(`This request failure has not been handled at try [${request.retryCount}]. ${displayUrl(url)}, request: ${inspect(request)}. Failure: ${inspect(pupRequest.failure())}`)
-                                    }
-
-                                    // console.todo(`request: ${inspect(request)}
-                                    // pupRequest: ${inspect(pupRequest)}`)
-                                    // request.userData.reports.push(pupRequest.failure().errorText);
-                                }
-                            })
-
-                            page.on('requestfailed', async function onAssetRequestFailed(pupRequest) {
-
-                                //
-                                // Main asset failed request handler
-                                // Since they are not handled natively by apifyjs.
-                                // Page requests are processesd via the puppeteerCrawler handlePageFunction
-                                //
-
-                                if (pupRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
-                                    return;
-                                }
-
-                                if (pupRequest.isNavigationRequest()) {
-                                    return;
-                                }
-
-                                //
-                                // Request failed start
-                                //
-
-                                const url = pupRequest.url();
-
-                                console.verbose(`${pupRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pupRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pupRequest.failure().errorText} at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
-
-                                if (!self.homeBasePUrl.matches(page.url())) {
-                                    console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`);
-
-                                    return Promise.resolve();
-                                } else {
-                                    if (['document', 'other'].includes(pupRequest.resourceType)) {
-                                        console.warn(`This should be a page asset of the crawled website: ${displayUrl(pupRequest.url())}, resource type: ${pupRequest.resourceType()}`)
-                                    }
-                                }
-
-                                //
-                                // Asset request failed start
-                                //
-
-                                if (!self.config.navigationOnly) {
-
-                                    if (pupRequest.failure().errorText === 'net::ERR_ABORTED') {
-                                        console.verbose(`Silently ignoring failed 'net::ERR_ABORTED' request for ${displayUrl(url)}`)
-                                        return Promise.resolve();
-                                    }
-
-                                    if (request.retryCount <= self.config.maxRequestRetries) {
-                                        return Promise.reject();
-                                    }
-
-                                    if (!pupRequest.userData.reports) {
-                                        pupRequest.userData.reports = []
-                                    }
-
-                                    pupRequest.userData.reports.push(pupRequest.failure().errorText)
-
-                                    const record = handleFailedRequest(request, pupRequest, {
-                                        _from: 'onAssetRequestFailed'
-                                    });
-
-                                    await addRecord(record);
-
-                                    self.session.counts.fail++
-                                }
-                            })
-
-                            page.on('response', async function onAssetResponse(pupResponse) {
-
-                                //
-                                // Main asset responses handler
-                                //
-                                // HANDLE ONLY NON DOCUMENT RESOURCES HERE
-                                //
-
-                                // Is this an asset request? and Do config allow to record assets?
-                                if (!pupResponse.request().isNavigationRequest() && !self.config.navigationOnly && !self.isExternLink(pupResponse.request().url())) {
-
-                                    const parentUrl = page.url();
-
-                                    const meta = {
-                                        _from: 'onAssetResponse',
-                                        trials: request.retryCount,
-                                    }
-
-                                    //
-                                    // This is an asset
-                                    //
-
-                                    // Is this asset on a page that is in the domain's website?
-                                    if (self.homeBasePUrl.matches(parentUrl)) {
-
-                                        try {
-                                            meta.size = (await pupResponse.buffer()).length;
-                                        } catch (error) {
-                                            // pupResponse.buffer() is undefined
-                                            meta.size = null
-                                        }
-
-                                        meta.timing = await getTimingFor(pupResponse.url(), page);
-
-                                        if (self.config.getPerfData) {
-                                            meta.perfData = await getPerformanceData(page, pupResponse.url())
-                                        }
-
-                                        // Is the asset loaded?
-                                        if (pupResponse.ok()) {
-
-                                            try {
-
-                                                const record = handleResponse(pupResponse.request(), pupResponse, meta)
-
-                                                await addRecord(record);
-
-                                                self.session.counts.success++
-
-                                                return
-                                            } catch (error) {
-                                                console.error(inspect(error))
-                                            }
-                                        }
-
-                                        // Log other http status
-                                        if (pupResponse.status()) {
-                                            const record = handleResponse(pupResponse.request(), pupResponse, meta)
-
-                                            await addRecord(record);
-
-                                            self.session.counts.success++
-
-                                            return;
-                                        }
-
-                                        self.session.counts.fail++
-                                        self.session.counts.activeRequests--
-                                        self.session.counts.finishedRequests++
-
-                                        console.error('This response is not handled:', pupResponse.url())
-                                        console.error('Request url:', pupResponse.request().url())
-                                        console.error('Parent:', request.url)
-                                        console.error(pupResponse.headers())
-                                        process.exit()
-
-                                    }
-                                }
-
-                            })
-
-                            page.on('response', async function onNavigationResponse(pupResponse) {
-
-                                //
-                                // Here we process some navigation responses only.
-                                // The main navigation responses handler is in the puppeteerCrawler handlePageFunction
-                                //
-
-                                // Is this an navigation request?
-                                if (pupResponse.request().isNavigationRequest()) {
-
-                                    //
-                                    // This is a navigation response
-                                    //
-
-                                    if (pupResponse.status() === 0) {
-
-                                        // This is a Network error.
-                                        // Will be handled in onNavigationRequest handler
-
-                                        return;
-                                    }
-
-                                    if (!pupResponse.ok()) {
-                                        const statusCode = pupResponse.status()
-
-                                        console.debug(`[${request.retryCount}] got a status = ${statusCode} for ${pupResponse.request().url()}`)
-
-                                        if (statusCode >= 400) {
-
-                                            const httpError = new HttpError(statusCode, pupResponse.statusText())
-
-                                            if (!request.userData.reports) {
-                                                request.userData.reports = []
-                                            }
-
-                                            request.userData.reports.push(httpError);
-                                        }
-
-                                    }
-                                }
-
-                            })
-
-                            page
-                                .goto(request.url, {
-                                    waitUntil: self.config.pageWaitUntil
-                                })
-                                .then(response => {
-                                    resolve(response);
-                                })
-                                .catch(async function onDocumentRequestFailed(error) {
-                                    console.debug(`${inspect(request)}, ${inspect(error)}`)
-
-                                    if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
-
-                                        // This is handled at onDocumentDownload (pdf downloads)
-                                        console.debug('Stopping page.goto().catch()')
-                                        return resolve()
-                                    }
-
-                                    if (request.userData.trials >= self.config.maxRequestRetries) {
-
-                                        //
-                                        // Main document failed request handler
-                                        // Here we deal with network / browser errors
-                                        //
-
-                                        console.todo(`Request failed at page.goto().catch() after try [${request.retryCount}] ${request.url}. Error: ${inspect(error)}
-Request: ${inspect(request)}`)
-
-                                        if (!request.userData.reports) {
-                                            request.userData.reports = []
-                                        }
-                                        request.userData.reports.push(error)
-
-                                        const meta = {
-                                            _from: 'page.goto().catch()'
-                                        }
-
-                                        const record = handleFailedRequest(request, meta)
-
-                                        await addRecord(record);
-
-                                        self.session.counts.fail++
-                                    }
-
-                                    resolve()
-                                });
-                        })
-                    }).catch(async error => {
-
-                        if (request.retryCount >= self.config.maxRequestRetries) {
-
-                            console.todo(`Unhandled error at gotoFunction at try [${request.retryCount}]. Error: ${inspect(error)}, request: ${inspect(request)}`)
-
-                            // Function captureError handles chromium net errors, so we don't log thoses
-                            if (!(error.errorText && error.errorText.indexOf('net::') > 0)) {
-                                console.todo(`Unhandled error at gotoFunction after max request retries at ${request.url}. Error: ${inspect(error)}, request: ${inspect(request)}`)
-                            }
-
+                        if (pwResponse === null) {
                             if (!request.userData.reports) {
                                 request.userData.reports = []
                             }
-                            request.userData.reports.push(error)
-                        }
-                    })
-                },
-                autoscaledPoolOptions: self.autoscaledPoolOptions,
-                launchPuppeteerOptions: self.launchPuppeteerOptions,
-                puppeteerPoolOptions: {
-                    recycleDiskCache: self.config.useCache,
-                    puppeteerOperationTimeoutSecs: self.config.puppeteerOperationTimeoutSecs
-                },
-                launchPuppeteerFunction: (launchPuppeteerOptions) => {
-                    console.info(`launchPuppeteerOptions: ${inspect(launchPuppeteerOptions)}`)
-                    return launchPuppeteer(launchPuppeteerOptions)
-                },
-                maxRequestRetries: self.config.maxRequestRetries,
-                requestQueue: puppeteerRequestQueue,
-                handlePageTimeoutSecs: self.config.pageTimeout / 1000,
-                handlePageFunction: async function onNavigationResponse({
-                    request,
-                    response: pupResponse,
-                    page
-                }) {
-
-                    console.debug(`[${request.retryCount}] Request URL: ${inspect(request.url)}
-request: ${inspect(request)}
-response: ${inspect(pupResponse)}`)
-
-                    //
-                    // Main navigation responses handler
-                    // Here we process navigation responses. 
-                    // Some handling is also done on a `onNavigationResponse` handler registered on page.on()
-                    //
-
-                    if (!pupResponse) {
-
-                        console.debug(`Response is ${pupResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
-
-                        if (request.loadedUrl) {
-                            if (!(request.loadedUrl.startsWith('about:') || request.loadedUrl.startsWith('chrome:') || request.loadedUrl.startsWith('chrome-error:'))) {
-                                request.userData.finalUrl = request.loadedUrl
-                            }
+                            request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
                         }
 
-                        if (request.retryCount >= self.config.maxRequestRetries) {
-
-                            if (pupResponse === null) {
-                                if (!request.userData.reports) {
-                                    request.userData.reports = []
-                                }
-                                request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
-                            }
-
-                        }
-
-                        //
-                        // These cases should be all handled at page.goto().catch()
-                        //
-
-                        return Promise.reject()
                     }
 
+                    //
+                    // These cases should be all handled at page.goto().catch()
+                    //
+
+                    return Promise.reject()
+                }
+
+                self.emit('navigation-response', {
+                    request: pwResponse.request(),
+                    response: pwResponse,
+                    page,
+                    harvester: self
+                })
+
+                // if (!self.isExternLink(page.url())) {
+
+                //     try {
+
+                //         const screenshotBuffer = await page.screenshot();
+
+                //         const key = filenamifyUrl(request.url, { replacement: '_' })
+
+                //         // The "key" argument must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_.'()
+                //         if (key.length > 256) {
+                //             key = key.substring(0, 255)
+                //         }
+
+                //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
+                //             contentType: 'image/png'
+                //         })
+                //     } catch (error) {
+                //         console.todo(`Request url: ${request.url}`)
+                //         console.todo(error)
+                //     }
+                // }
+
+                try {
+                    self.normalizeUrl(request.url, true);
+
                     try {
-                        request.userData.timing = await getTimingFor(pupResponse.url(), page)
+                        request.userData.timing = await getTimingFor(pwResponse.url(), page)
                     } catch (error) {
                         request.userData.timing = null
                     }
 
-                    let data = {};
-
-                    try {
-                        data = await getResponseData(pupResponse.request()._requestId, pupResponse)
-                    } catch (error) {
-                        console.todo(`url: ${request.url}, error: ${inspect(error)}`)
+                    const meta = {
+                        _from: 'onNavigationResponse'
                     }
-
-                    data.timing = request.userData.timing
 
                     if (self.config.getPerfData) {
-                        data.perfData = await getPerformanceData(page, pupResponse.url())
+                        meta.perfData = await getPerformanceData(pwResponse.url(), page)
                     }
 
-                    self.emit('response', {
-                        type: 'navigation',
-                        data,
-                        request: pupResponse.request(),
-                        response: pupResponse
-                    })
+                    if (self.plugins.onNavigationResponse.length && pwResponse) {
+                        self.plugins.onNavigationResponse.forEach(async plugin => {
+                            try {
+                                console.verbose(`Processing plugin ${plugin.name}`)
+                                await plugin.fn.call(self, request, pwResponse, page)
+                            } catch (error) {
+                                console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
+                            }
+                        })
+                    }
 
-                    // try {
-                    //     if (!pupResponse.ok()) {
+                    const record = await handleResponse(request, pwResponse, meta)
 
-                    //         const screenshotBuffer = await page.screenshot();
+                    await addRecord(record);
 
-                    //         // The "key" of a KeyValueStore must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_
-                    //         const key = filenamifyUrl(request.url)
+                    self.session.counts.success++
 
-                    //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
-                    //             contentType: 'image/png'
-                    //         })
-                    //     }
-                    // } catch (error) {
-                    //     console.todo(`Request url: ${request.url}`)
-                    //     console.todo(error)
-                    // }
+                    //
+                    // Should we parse further links in the resulting page?
+                    //
 
-                    try {
-                        self.normalizeUrl(request.url, true);
+                    const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
 
-                        const meta = {
-                            _from: 'onNavigationResponse'
-                        }
+                    const finalNavUrl = self.normalizeUrl(page.url(), true);
+
+                    if (!self.isExternLink(finalNavUrl) && pwResponse && pwResponse.ok()) {
+
+                        const links = await parseLinksInPage(page, {
+                            currentLevel: request.userData.level,
+                        });
+
+                        await addToRequestQueue(links)
 
                         try {
-                            meta.size = (await pupResponse.buffer()).length;
-                        } catch (error) {
-                            // pupResponse.buffer() is undefined
-                            meta.size = null
-                        }
+                            for (const frame of page.mainFrame().childFrames()) {
+                                // TODO: find a better test to detect cross origin frames then !== ''
+                                // Some frames' url could be chrome-error://chromewebdata/
 
-                        if (self.config.getPerfData) {
-                            meta.perfData = await getPerformanceData(page, pupResponse.url())
-                        }
+                                const frameUrl = frame.url();
 
-                        if (self.plugins.onNavigationResponse.length && pupResponse) {
-                            self.plugins.onNavigationResponse.forEach(async plugin => {
-                                try {
-                                    console.verbose(`Processing plugin ${plugin.name}`)
-                                    await plugin.fn.call(self, request, pupResponse, page)
-                                } catch (error) {
-                                    console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
-                                }
-                            })
-                        }
+                                if (frameUrl && !frameUrl.startsWith('chrome')) {
 
-                        const record = handleResponse(request, pupResponse, meta)
-
-                        await addRecord(record);
-
-                        self.session.counts.success++
-
-                        //
-                        // Should we parse further links in the resulting page?
-                        //
-
-                        const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
-
-                        const finalNavUrl = self.normalizeUrl(page.url(), true);
-
-                        if (!self.isExternLink(finalNavUrl) && pupResponse && pupResponse.ok()) {
-
-                            const links = await parseLinksInPage(page, {
-                                currentLevel: request.userData.level,
-                            });
-
-                            await addToRequestQueue('pup', links)
-
-                            try {
-                                for (const frame of page.mainFrame().childFrames()) {
-                                    // TODO: find a better test to detect cross origin frames then !== ''
-                                    // Some frames' url could be chrome-error://chromewebdata/
-
-                                    const frameUrl = frame.url();
-
-                                    if (frameUrl && !frameUrl.startsWith('chrome')) {
-
-                                        if (!self.isExternLink(frameUrl)) {
-                                            self.browsingContextStore.addContext(frameUrl, pageFinalUrl)
-                                        }
-
-                                        const link = new Link(frameUrl, {
-                                            parent: pageFinalUrl,
-                                            level: request.userData.level,
-                                            resourceIsEmbeded: true
-                                        }, self.normalizeUrl)
-
-                                        await addToRequestQueue('pup', link)
+                                    if (!self.isExternLink(frameUrl)) {
+                                        self.browsingContextStore.addContext(frameUrl, pageFinalUrl)
                                     }
 
+                                    const link = new Link(frameUrl, {
+                                        parent: pageFinalUrl,
+                                        level: request.userData.level,
+                                        resourceIsEmbeded: true
+                                    }, self.normalizeUrl)
+
+                                    await addToRequestQueue(link)
                                 }
-                            } catch (error) {
-                                console.error(inspect(error))
+
                             }
-
-                        }
-                    } catch (error) {
-                        console.error(`Got an error while trying to get the record of the link ${request.url}
-Error: ${inspect(error)}
-Exiting now...`)
-                        process.exit();
-                    }
-                },
-                // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
-                handleFailedRequestFunction: async function onNavigationRequestFailed({
-                    request,
-                    error
-                }) {
-                    // Nothing here
-                },
-                maxRequestsPerCrawl: self.config.maxRequests,
-                maxConcurrency: self.config.maxConcurrency,
-            });
-
-            puppeteerCrawler.pause = function pause(timeout) {
-                return puppeteerCrawler.basicCrawler.autoscaledPool.pause(timeout);
-            }
-
-            puppeteerCrawler.resume = function resume() {
-                return puppeteerCrawler.basicCrawler.autoscaledPool.resume();
-            }
-
-            self.crawlers.push(puppeteerCrawler)
-
-            async function launchBasicCrawler() {
-                return new Promise((resolve, reject) => {
-                    basicCrawler
-                        .run()
-                        .then(() => {
-                            console.info('Basic crawler is done.')
-                            resolve();
-                        })
-                        .catch(error => {
-                            console.error('Basic crawler ended with error.')
-                            reject(error)
-                        })
-
-                    const statsLoggerHandle = setInterval(() => {
-                        try {
-                            basicCrawler.stats.stopLogging();
-                            clearInterval(statsLoggerHandle);
-                            console.verbose('Canceled basicCrawler stats logging.')
                         } catch (error) {
                             console.error(inspect(error))
                         }
-                    }, 100)
 
-                })
-                    .catch(error => {
-                        console.error(inspect(error))
-                    })
-            }
+                    }
+                } catch (error) {
+                    console.error(`Got an error while trying to get the record of the link ${request.url}
+Error: ${inspect(error)}`)
+                }
+            },
+            navigationTimeoutSecs: self.config.navigationTimeout / 1000,
+            // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
+            failedRequestHandler: async function onNavigationRequestFailed({
+                request,
+                error
+            }) {
 
-            await Promise.all([
-                puppeteerCrawler
-                    .run()
-                    .then(() => {
-                        console.info('Puppeteer crawler is done.')
-                        return Promise.resolve();
-                    })
-                    .catch(error => {
-                        console.error(`Puppeteer crawler ended with error: ${inspect(error)}`)
-                    }),
-                launchBasicCrawler()
-            ])
-                .catch(error => {
-                    console.error(inspect(error))
-                });
+                if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
 
-            console.log(`counts: `, self.session.counts);
+                    // This is handled at onDocumentDownload (pdf downloads)
+                    return
+                }
+
+                if (request.userData.trials >= self.config.maxRequestRetries) {
+
+                    //
+                    // Main document failed request handler
+                    // Here we deal with network / browser errors
+                    //
+
+                    console.debug(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}. \nError: ${inspect(error)}\nRequest: ${inspect(request)}`)
+
+                    if (!request.userData.reports) {
+                        request.userData.reports = []
+                    }
+                    request.userData.reports.push(error)
+
+                    const meta = {
+                        _from: 'onNavigationRequestFailed'
+                    }
+
+                    const record = await handleFailedRequest(request, meta)
+
+                    await addRecord(record);
+
+                    self.session.counts.fail++
+                }
+            },
+            preNavigationHooks: [
+                async function preNavigationHooksFunction({ crawler, request, session, page, browserController, proxyInfo }, gotoOptions) {
+
+                    const extraHTTPHeaders = {
+                        // 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                        // 'accept-encoding': 'gzip, deflate, br',
+                        // 'cache-control': 'no-cache',
+                        // 'connection': 'keep-alive',
+                        // 'accept-language': 'en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7,en-US;q=0.6,la;q=0.5',
+                        // 'pragma': 'no-cache',
+                        // 'sec-ch-ua': '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+                        // 'sec-ch-ua-mobile': '?0',
+                        // 'sec-ch-ua-platform': 'Windows',
+                        // 'sec-ch-dest': 'document',
+                        // 'sec-fetch-site': 'none',
+                        // 'sec-fetch-user': '?1',
+                        // 'upgrade-insecure-requests': '1'
+                    }
+
+                    await page.setExtraHTTPHeaders(extraHTTPHeaders)
+
+                    gotoOptions.waitUntil = self.isExternLink(request.url) ? self.config.pageWaitUntil.extern : self.config.pageWaitUntil.intern
+
+                },
+                async function pageEventsHandlers({ crawler, request, session, page, browser, proxyInfo }, gotoOptions) {
 
 
+                    if (typeof request.userData._ignore === 'undefined') {
+
+                        request.userData.trials = request.retryCount;
+
+                        self.emit('request', request)
+
+                        // await page._client.send('Network.enable', {
+                        //     maxResourceBufferSize: 1024 * 1204 * 100,
+                        //     maxTotalBufferSize: 1024 * 1204 * 400,
+                        // })
+
+                        page.on('error', function onError(error) {
+
+                            if (request.retryCount >= self.config.maxRequestRetries) {
+
+                                console.todo(`Page error at [try: ${request.retryCount}] ${request.url}. Error: ${inspect(error)} Request: ${inspect(request)}`)
+
+                                if (!request.userData.reports) {
+                                    request.userData.reports = []
+                                }
+                                request.userData.reports.push(error);
+                            }
+
+                            return reject(error)
+                        })
+
+                        page.on('dialog', async function onDialog(dialog) {
+                            await dialog.dismiss();
+                        });
+
+                        page.on('request', async function onRequest(pwRequest) {
+
+                            //
+                            // Initialization of userData
+                            //
+
+                            // TODO: remove this test when it is stated that it will never be true
+                            if ('userData' in pwRequest) {
+                                console.error('pwRequest already have a .userData property. Check why.')
+                                process.exit(1);
+                            }
+
+                            if (!pwRequest.isNavigationRequest() && self.config.navigationOnly) {
+                                // Don't initialize userData if this is an asset request AND settings say we are interrested only on navigation requests
+                                return
+                            }
+
+                            if (!pwRequest.isNavigationRequest() && self.isExternLink(pwRequest.url())) {
+                                // Don't initialize userData if this is an asset request on an external page
+                                return
+                            }
+
+                            request.userData.isNavigationRequest = pwRequest.isNavigationRequest()
+
+                            const url = pwRequest.url();
+                            const parent = page.url();
+
+                            pwRequest.userData = Object.assign({ trials: 1 }, request.userData,
+                                {
+                                    _from: 'onRequest',
+                                    url,
+                                    parent,
+                                    id: request.id
+                                })
+                        })
+
+                        page.on('request', async function onDocumentRequest(pwRequest) {
+                            if (pwRequest.isNavigationRequest()) {
+
+                                // Don't request if extern setting meets
+                                if (!self.config.checkExtern && self.isExternLink(url)) {
+
+                                    console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(url)} from settings.`);
+
+                                    return pwRequest.abort('blockedbyclient')
+                                }
+                            }
+                        })
+
+                        page.on('request', async function onAssetRequest(pwRequest) {
+
+                            //
+                            // Main asset request handler
+                            //
+                            // Here we process pages assets only, since they are not handled natively by crawlee.
+                            // Page requests are processesd via the playwrightCrawler handlePageFunction
+                            //
+
+                            if (!pwRequest.isNavigationRequest() && !self.config.navigationOnly) {
+
+                                if (self.isExternLink(pwRequest.url())) {
+                                    // This is an asset of an external page
+                                    return
+                                }
+
+                                console.debug(`Request URL: ${pwRequest.url()}`)
+
+                                pwRequest.userData._from = 'onAssetRequest'
+                            }
+                        })
+
+                        page.on('requestfailed', async function onDocumentRequestFailed(pwRequest) {
+
+                            //
+                            // Main document request failed handler is located at page.goto().catch()
+                            //
+
+                            if (pwRequest.isNavigationRequest()) {
+
+                                if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
+                                    return;
+                                }
+
+                                if (request.retryCount < self.config.maxRequestRetries) {
+                                    return;
+                                }
+
+                                if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
+
+                                    //
+                                    // This is a navigation request error
+                                    // Has been handled at 'onDocumentDownload'
+                                    //
+
+                                    return;
+                                }
+
+                                // Retry count maxed out.
+
+                            }
+                        })
+
+                        page.on('requestfailed', async function onDocumentDownload(pwRequest) {
+
+                            //
+                            // Here we process navigation downloads
+                            // pdf, zip, docx, etc. documents
+                            //
+
+                            // Catch download navigation (pdf, zip, docx, etc.) occuring on first try before puppeteer throws an net::ERR_ABORTED error
+                            if (pwRequest.isNavigationRequest() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
+
+                                if (request.retryCount === 1) {
+                                    const pwResponse = await pwRequest.response();
+                                    if (pwResponse) {
+
+                                        let record;
+                                        const meta = {
+                                            _from: 'onDocumentDownload',
+                                            trials: request.retryCount,
+                                            parent: request.userData.parent
+                                        }
+
+                                        try {
+                                            record = await handleResponse(pwRequest, pwResponse, meta)
+                                        } catch (error) {
+                                            console.error(inspect(error))
+                                        }
+
+                                        await addRecord(record);
+
+                                        self.session.counts.success++
+                                    }
+                                }
+
+                                request.userData._ignore = true
+                                pwRequest.userData._ignore = true
+
+                                return Promise.resolve()
+
+                            }
+                        })
+
+                        page.on('requestfailed', async function onAssetRequestFailed(pwRequest) {
+
+                            //
+                            // Main asset failed request handler
+                            // Since they are not handled natively by crawlee.
+                            // Page requests are processesd via the playwrightCrawler handlePageFunction
+                            //
+
+                            if (pwRequest.isNavigationRequest()) {
+                                return;
+                            }
+
+                            if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
+                                return;
+                            }
+
+                            //
+                            // Request failed start
+                            //
+
+                            const url = pwRequest.url();
+
+                            console.verbose(`${pwRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pwRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pwRequest.failure() ? `${pwRequest.failure().errorText} ` : ` `}at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
+
+                            if (!self.homeBasePUrl.matches(page.url())) {
+                                console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`);
+
+                                return Promise.resolve();
+                            } else {
+                                if (['document', 'other'].includes(pwRequest.resourceType)) {
+                                    console.warn(`This should be a page asset of the crawled website: ${displayUrl(pwRequest.url())}, resource type: ${pwRequest.resourceType()}`)
+                                }
+                            }
+
+                            //
+                            // Asset request failed start
+                            //
+
+                            if (!self.config.navigationOnly) {
+
+                                if (request.retryCount < self.config.maxRequestRetries) {
+                                    return
+                                }
+
+                                const record = await handleFailedRequest(request, pwRequest, {
+                                    _from: 'onAssetRequestFailed'
+                                });
+
+                                await addRecord(record);
+
+                                self.session.counts.fail++
+                            }
+                        })
+
+                        page.on('response', async function onResponse(pwResponse) {
+
+                            //
+                            // Here we process common navigation/asset responses.
+                            //
+
+                            if (self.config.navigationOnly && !pwResponse.request().isNavigationRequest()) {
+                                return
+                            }
+
+                            if (request.retryCount >= self.config.maxRequestRetries) {
+
+                                // Processing start
+
+                                request.userData.httpStatusCode = pwResponse.status()
+                                request.userData.httpStatusText = pwResponse.statusText()
+                            }
+
+                        })
+
+                        page.on('response', async function onNavigationResponse(pwResponse) {
+
+                            //
+                            // Here we process some navigation responses only.
+                            // The main navigation responses handler is in the playwrightCrawler handlePageFunction
+                            //
+
+                            // Is this an navigation request?
+                            if (!pwResponse.request().isNavigationRequest()) {
+                                return
+                            }
+
+                            if (request.retryCount >= self.config.maxRequestRetries) {
+
+                                //
+                                // This is a navigation response
+                                //
+
+                                // Nothing here
+                            }
+                        })
+
+                        page.on('response', async function onAssetResponse(pwResponse) {
+
+                            //
+                            // Main asset responses handler
+                            //
+                            // HANDLE ONLY NON DOCUMENT RESOURCES HERE
+                            //
+
+                            if (
+                                // Is this an asset request?
+                                !pwResponse.request().isNavigationRequest() &&
+
+                                // Do config allow to record assets?
+                                !self.config.navigationOnly &&
+
+                                // Is the asset an intern link?
+                                !self.isExternLink(pwResponse.request().url())
+                            ) {
+
+                                //
+                                // This is an asset
+                                //
+
+                                const statusCode = pwResponse.status()
+
+                                if (statusCode >= 300 && statusCode < 400) {
+                                    // This is a redirect response. 
+                                    // Wait for the last response of the redirect chain
+                                    return
+                                }
+
+                                // Is the asset loaded?
+                                if (pwResponse.ok() || statusCode >= 400) {
+
+                                    const meta = {
+                                        _from: 'onAssetResponse',
+                                    }
+
+                                    const firstResponseUrl = (
+                                        request => {
+                                            while (!isNull(request.redirectedFrom())) {
+                                                request = request.redirectedFrom()
+                                            }
+                                            return request.url()
+                                        }
+                                    )(pwResponse.request())
+
+                                    meta.timing = await getTimingFor(firstResponseUrl, page);
+
+                                    if (self.config.getPerfData) {
+                                        meta.perfData = await getPerformanceData(firstResponseUrl, page)
+                                    }
+
+                                    try {
+
+                                        const record = await handleResponse(pwResponse.request(), pwResponse, meta)
+
+                                        await addRecord(record);
+
+                                        self.session.counts.success++
+
+                                    } catch (error) {
+                                        console.error(inspect(error))
+                                    }
+
+                                    return
+                                }
+
+                                self.session.counts.fail++
+                                self.session.counts.activeRequests--
+                                self.session.counts.finishedRequests++
+
+                                console.error('This response is not handled:', pwResponse.url())
+                                console.todo('Response status: ', pwResponse.status())
+                                console.todo('Response ok?: ', pwResponse.ok())
+                                console.error('Request url:', pwResponse.request().url())
+                                console.error('Parent:', request.url)
+                                console.error(pwResponse.headers())
+                                process.exit()
+
+
+                            }
+
+                        })
+
+                    }
+                },
+            ],
+            postNavigationHooks: [],
+            requestHandlerTimeoutSecs: self.config.requestHandlerTimeout,
+            launchContext: self.launchContextOptions,
+            // browserPoolOptions: {},
+            requestQueue: requestQueue,
+            maxRequestRetries: self.config.maxRequestRetries,
+            maxRequestsPerCrawl: self.config.maxRequests,
+            autoscaledPoolOptions: self.autoscaledPoolOptions,
+            useSessionPool: true,
+        });
+
+        playwrightCrawler.pause = async function pause(timeout) {
+            return playwrightCrawler.autoscaledPool.pause(timeout);
         }
+
+        playwrightCrawler.resume = function resume() {
+            return playwrightCrawler.autoscaledPool.resume();
+        }
+
+        self.crawler = playwrightCrawler
+
+        await playwrightCrawler.run()
+
+        console.info('Crawler is done.')
+
+        self.stop()
     }
 };

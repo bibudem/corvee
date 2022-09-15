@@ -2,19 +2,21 @@
     "name": "@corvee/processor",
     "version": "1.0.3",
     "description": "",
-    "main": "index.js",
+    "type": "module",
+    "exports": "./index.js",
+    "engines": {
+        "node": ">=18.1.0"
+    },
     "scripts": {
         "test": "jest",
-        "test:bib": "node -r esm ./test"
+        "test:bib": "node ./test"
     },
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "esm": "^3.2.25",
         "eventemitter3": "^4.0.0",
         "io-validate": "^2.1.13",
         "is-plain-object": "^3.0.0",
-        "lodash": "^4.17.15",
         "progress": "^2.0.3",
         "underscore": "^1.9.1"
     }

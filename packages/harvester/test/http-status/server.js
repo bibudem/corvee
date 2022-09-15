@@ -1,29 +1,24 @@
-import path from 'path'
-import express from 'express';
-import routes from './routes';
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import express from 'express'
 import webLogger from 'web-logger'
 import hbs from 'hbs'
-import _ from 'underscore';
-import isNumber from 'is-number'
+import { isNumber } from 'underscore'
+import routes from './routes.1.js'
+import harvesterConfig, { server as config } from './config.js'
+import { console } from '../../../core/index.js'
 
-import harvesterConfig, {
-    server as config
-} from './config'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 const app = express();
 
 app.disable('x-powered-by');
-app.set('views', path.join(__dirname, 'views'))
+app.set('views', join(DIRNAME, 'views'))
 app.set('view engine', 'html');
 app.engine('html', hbs.__express)
 
 app.use(webLogger({
-    logDirectory: path.join(__dirname, 'logs')
+    logDirectory: join(DIRNAME, 'logs')
 }));
 
 // const filteredRoutes = routes.filter(route => ['200-with-2000ms-delay', '301-with-2000ms-delay'].includes(route.path));

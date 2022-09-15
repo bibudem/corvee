@@ -1,23 +1,44 @@
-import { join } from 'path'
-const pkg = require('../../package.json')
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path'
 
+const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
 const tmpDir = join(process.env.TEMP, 'corvee');
 
-//
-// Corvée options
-//
+/*
+ * Corvée options
+ */
 
 export const defaultHarvesterOptions = {
+
+    /**
+     * @typedef {'domcontentloaded' | 'load' | 'networkidle'} WaitUntilProperty
+    */
+
+    /**
+     * A string or an object.
+     * @typedef { { intern: WaitUntilProperty, extern: WaitUntilProperty } | WaitUntilProperty } WaitUntilType
+     */
 
     //
     // Intern options. Do not use
     //
 
-    // Wether to use defaultHarvesterOptions.ignoreDefaults or not
+    /*
+     * Wether to use defaultHarvesterOptions.ignoreDefaults or not
+     * @private
+     */
     useIgnoreDefaults: true,
-    // Wether to use defaultHarvesterOptions.schemesDefaults or not
+
+    /*
+     * Wether to use defaultHarvesterOptions.schemesDefaults or not
+     * @private
+     */
     useSchemesDefaults: true,
-    // Wether to use defaultHarvesterOptions.noFollowDefaults or not
+
+    /*
+     * Wether to use defaultHarvesterOptions.noFollowDefaults or not
+     * @private
+     */
     useNoFollowDefaults: true,
 
     //
@@ -26,10 +47,16 @@ export const defaultHarvesterOptions = {
 
     // URL patterns that will be blocked from external requests
     blockRequestsFromUrlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com'],
+    /*
+     * Which browser to use
+     * @type {'chromium' | 'firefox' | 'webkit'}
+    */
+    browser: 'chromium',
     // Wether to check extern links or not
     checkExtern: true,
     fetchLinksOnce: true,
     getPerfData: false,
+    requestHandlerTimeout: 30000,
     // URLs matching the given strings / regular expression will be ignored and not checked.
     ignore: [],
     ignoreDefaults: ['www.google-analytics.com', '/gtag/js', 'ga.js', 'analytics.js', 'https://www.googleadservices.com/', 'doubleclick.net'],
@@ -41,73 +68,111 @@ export const defaultHarvesterOptions = {
     maxRequestRetries: 3,
     maxRequests: Infinity,
     navigationOnly: true,
+    navigationTimeout: 30000,
     // Check but do not recurse into URLs matching the given strings / regular expressions.
     noFollow: [],
     noFollowDefaults: [],
     notify: true,
     notifyDelay: 10000,
     notifyLogLevel: 'info',
-    pageTimeout: 30000,
-    pageWaitUntil: ['load'],
+    /*
+     * Wait for the page event before consider operation succeeded.
+     * @property {WaitUntilType} pageWaitUntil
+     */
+    pageWaitUntil: {
+        intern: 'domcontentloaded',
+        extern: 'load'
+    },
     requestTimeout: 30000,
     schemes: [],
     schemesDefaults: ['corvee', 'http', 'https'],
     storageDir: join(tmpDir, '.storage'),
     normalizeUrlFunction: null,
-    useRandomUserAgent: false,
     waitInterval: 50,
 }
 
-export const defaultLaunchPuppeteerOptions = {
-    //
-    // Apify.launchPuppeteer() options
-    //
+export const defaultLaunchContextOptions = {
+    /*
+     * Launch options of Playwright
+     * @see {@link https://crawlee.dev/api/playwright-crawler/interface/PlaywrightLaunchContext}
+     */
 
-    // Apify specific options
-    // see https://sdk.apify.com/docs/typedefs/launch-puppeteer-options
-    // proxyUrl: '',
-    stealth: true,
-    // stealthOptions: {},
-    userAgent: `Mozilla/5.0 (Corvee/${pkg.version})`,
+    /*
+     * @type string
+     */
+    proxyUrl: undefined,
+
+    /*
+     * @type boolean
+     */
     useChrome: false,
 
-    // Puppeteer launch options
-    // see https://pptr.dev/api/puppeteer.puppeteerlaunchoptions
+    /*
+     * @type string
+     */
+    userAgent: undefined,
 
-    // Browser launch argument options
-    // see https://pptr.dev/api/puppeteer.browserlaunchargumentoptions/
-    args: ['--use-gl=egl'],
-    headless: true,
-    userDataDir: join(tmpDir, '.userData'),
+    /*
+     * Native Playwright options
+     * @See {@link https://playwright.dev/docs/api/class-browsertype#browser-type-launch}
+     */
+    launchOptions: {
 
-    // Browser connect options
-    // see https://pptr.dev/api/puppeteer.browserconnectoptions/
-    defaultViewport: {
-        width: 1920,
-        height: 1080
+        /*
+         * Browser launch argument options
+         * @type array
+         */
+        args: ['--use-gl=egl'],
+
+        /*
+         * Puppeteer launch options
+         * @type boolean
+         * */
+        headless: true,
+
+        // /*
+        //  * Sets the User Data Directory path
+        //  * @type string
+        //  */
+        // userDataDir: join(tmpDir, '.userData'),
+
+        /*
+         * The `User-Agent` HTTP header used by the browser
+         * @type string
+         */
+        userAgent: `Mozilla/5.0 (Corvee/${pkg.version})`,
+
+        /*
+         * Browser connect options
+         * @see {@link https://pptr.dev/api/puppeteer.browserconnectoptions/}
+         */
+        viewport: {
+            width: 1920,
+            height: 1080
+        }
     }
+
+
 }
 
-export const defaultPuppeteerPoolOptions = {
-    //
-    // Puppeteer pool options
-    // see https://sdk.apify.com/docs/typedefs/puppeteer-pool-options
-    useCache: true,
-    puppeteerOperationTimeoutSecs: 60
-}
-
+/*
+ * Autoscaled pool options
+ * @see {@link https://crawlee.dev/api/core/interface/AutoscaledPoolOptions}
+ */
 export const defaultAutoscaledPoolOptions = {
-    // Autoscaled pool options
-    // se https://sdk.apify.com/docs/typedefs/autoscaled-pool-options
     minConcurrency: 1,
     maxConcurrency: 10,
     scaleUpStepRatio: .05,
-    scaleDownStepRatio: .08,
-    maybeRunIntervalSecs: .05,
+    scaleDownStepRatio: .05,
+    maybeRunIntervalSecs: .5,
     loggingIntervalSecs: 30,
     autoscaleIntervalSecs: 10,
+    /*
+     * SystemStatus Options
+     * @see {@link https://crawlee.dev/api/core/interface/SystemStatusOptions}
+     */
     systemStatusOptions: {
         maxCpuOverloadedRatio: .3,
-        currentHistorySecs: 3
+        currentHistorySecs: 5
     }
 }

@@ -29,9 +29,7 @@
 
 // Adapted from: https://github.com/chromium/chromium/blob/master/third_party/blink/renderer/devtools/front_end/common/ResourceType.js
 
-import {
-    ParsedURL
-} from './parsed-url'
+import { ParsedURL } from './parsed-url.js'
 
 /**
  * @unrestricted

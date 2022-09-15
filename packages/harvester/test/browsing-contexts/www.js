@@ -1,5 +1,6 @@
-import http from 'http';
-import { console } from '../../../core/lib/logger'
+import http from 'node:http'
+import esMain from 'es-main'
+import { console } from '../../../core/index.js'
 
 const routes = {
     '/': {
@@ -139,6 +140,6 @@ export default starter
 //
 //
 
-if (require.main === module) {
+if (esMain(import.meta)) {
     starter();
 }

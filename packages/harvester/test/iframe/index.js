@@ -1,33 +1,24 @@
-import path from "path";
-import Apify from "apify";
-import www from "./www";
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'url'
+import www from './www.js'
+import { Harvester } from '../../lib/harvester/index.js'
+import saveRecords from '../save-records.js';
+import { logErrorCodes } from '../../lib/utils/index.js'
+import { console } from '../../../core/index.js'
+import configs from './config.js'
 
-import {
-    Harvester
-} from "../../lib/harvester";
-
-import saveRecords from "../save-records";
-
-import {
-    logErrorCodes
-} from "../../lib/utils";
-
-import {
-    console
-} from "../../../core/lib/logger";
-
-import configs from "./config";
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 const harvester = new Harvester(configs);
 
-saveRecords(__dirname, harvester, { resume: false });
+saveRecords(DIRNAME, harvester, { resume: false });
 
-logErrorCodes(harvester, path.join(__dirname, "./error-codes.json"));
+logErrorCodes(harvester, path.join(DIRNAME, './error-codes.json'))
 
 async function start() {
     try {
         await www();
-        Apify.main(harvester.run());
+        await harvester.run()
     } catch (e) {
         console.error(e);
         process.exit();

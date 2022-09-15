@@ -1,15 +1,6 @@
-import Apify from 'apify';
-
-import {
-    Harvester
-} from '../../lib/harvester'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
-
-import configs from './config'
+import { Harvester } from '../../lib/harvester/index.js'
+import { console } from '../../../core/index.js';
+import configs from './config.js'
 
 const tt = []
 
@@ -39,28 +30,8 @@ harvester.addLinkParser(function linkParserFunction() {
     }))
 })
 
-// logErrorCodes(harvester, path.join(__dirname, './error-codes.json'))
-
-// const urls = urlList
-//     //.filter(item => item.valid)
-//     //.filter(item => item.url === 'http://223.255.255.254')
-//     .map(({
-//         url,
-//         valid: isValid
-//     }) => {
-//         return new Link(url, {
-//             isValid
-//         })
-//     })
-
-// harvester.addUrl(urls)
-
 try {
-    //server.listen(3000, () => {
-    //console.log('Server running.')
-    Apify.main(harvester.run());
-    //});
-    //console.log(`Server listening: ${server.listening}`);
+    await harvester.run()
 } catch (e) {
     console.error(e)
 }

@@ -1,11 +1,14 @@
-import fs from 'fs'
-import path from 'path'
+import { readdirSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import parser from 'fast-xml-parser'
 import he from 'he'
 import { Set, Map } from 'json-set-map'
-import { makeArray } from '../../lib/utils'
+import { makeArray } from '../../lib/utils/index.js'
 
-const fileList = fs.readdirSync(path.join(__dirname, 'samples')).map(file => path.join(__dirname, 'samples', file));
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
+
+const fileList = readdirSync(join(DIRNAME, 'samples')).map(file => join(DIRNAME, 'samples', file));
 const errorDic = new Map();
 const errCodesDic = new Set();
 
@@ -94,4 +97,4 @@ sortedGroups.forEach((list, group, map) => {
 
 console.log(sortedGroups.keys())
 
-fs.writeFileSync(path.join(__dirname, 'public', 'samples.json'), JSON.stringify(sortedGroups, null, 2))
+fs.writeFileSync(join(DIRNAME, 'public', 'samples.json'), JSON.stringify(sortedGroups, null, 2))

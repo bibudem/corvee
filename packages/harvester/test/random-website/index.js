@@ -1,22 +1,12 @@
-import path from "path";
-import Apify from "apify";
-import www from "./www";
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import www from './www.js'
+import { Harvester } from '../../lib/harvester/index.js'
+import saveRecords from '../save-records.js'
+import { console } from '../../../core/index.js'
+import configs from './config.js'
 
-import {
-  Harvester
-} from "../../lib/harvester";
-
-import saveRecords from "../save-records";
-
-// import {
-//   logErrorCodes
-// } from "../../lib/utils";
-
-import {
-  console
-} from "../../../core/lib/logger";
-
-import configs from "./config";
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 const harvester = new Harvester(configs);
 
@@ -24,14 +14,12 @@ harvester.on('progress', function (info) {
   console.warn(`${info.handledPercent} completed.`)
 })
 
-saveRecords(__dirname, harvester);
-
-// logErrorCodes(harvester, path.join(__dirname, "./error-codes.json"));
+saveRecords(DIRNAME, harvester)
 
 async function start() {
   try {
     await www();
-    Apify.main(harvester.run());
+    await harvester.run()
   } catch (e) {
     console.error(e);
     process.exit();

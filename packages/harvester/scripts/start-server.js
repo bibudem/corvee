@@ -1,6 +1,6 @@
-import server from '../test/http-status/server';
+import server from '../test/http-status/server.js';
 
-import { console, inspect } from '../../core';
+import { console, inspect } from '../../core/index.js';
 
 try {
     server.listen(3000, () => {

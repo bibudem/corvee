@@ -1,12 +1,12 @@
-import { openKeyValueStore } from 'apify';
-import { console } from '../../../core'
+import { KeyValueStore } from '@crawlee/playwright';
+import { console } from '../../../core/index.js'
 
 export async function sessionStore({
     interval = 5000,
     resume = false
 } = {}) {
 
-    const store = await openKeyValueStore('session');
+    const store = await KeyValueStore.open('session');
 
     let storedData = {};
 

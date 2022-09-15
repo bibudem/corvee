@@ -1,4 +1,4 @@
-import { BaseError } from "./error"
+import { BaseError } from "./error.js"
 
 export class PuppeteerError extends BaseError {
   constructor(message) {

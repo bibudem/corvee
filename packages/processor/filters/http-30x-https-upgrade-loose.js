@@ -1,6 +1,4 @@
-import {
-    canonicalizeUrl
-} from '../../core'
+import { canonicalizeUrl } from '../../core/index.js'
 
 // import {
 //     Plugin

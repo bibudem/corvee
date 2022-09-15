@@ -1,11 +1,7 @@
-import Apify from 'apify';
-import app from './server';
+import app from './server.js';
+import { Harvester } from '../../lib/harvester/index.js'
+import configs from './config.js'
 
-import { Harvester } from '../../lib/harvester'
-
-import configs from './config'
-
-// describe('http status', async () => {
 (async () => {
 
     const harvester = new Harvester(configs);
@@ -16,10 +12,8 @@ import configs from './config'
 
     const server = app.listen(3000, async () => {
         console.log(`Server listening on port 3000`);
-        await Apify.main(await harvester.run());
+        await harvester.run()
         server.close();
+        console.log(reports)
     });
 })()
-
-
-// })

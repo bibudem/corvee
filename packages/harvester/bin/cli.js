@@ -5,10 +5,8 @@ Function = Function //;node --module "$0" "$@";exit
 'use strict';
 
 import yargs from 'yargs'
-import { Corvee as Harvester } from '../lib'
-import { console, inspect } from '../../core';
-
-import webScrapingPlugin from '../plugins/web-scraping-protection'
+import { Corvee as Harvester } from '../lib/index.js'
+import { console, inspect } from '../../core/index.js';
 
 const argv = yargs
     .usage(`Usage:
@@ -131,7 +129,7 @@ if (urls && urls.length) {
         }
 
         // process.env.APIFY_LOCAL_STORAGE_DIR = harvester.config.storageDir;
-        //     const assetsLinkStore = await Apify.openDataset('assets-urls');
+        //     const assetsLinkStore = await Dataset.open('assets-urls');
         //     const data = await assetsLinkStore.getData({
         //         format: 'csv',
         //         clean: true

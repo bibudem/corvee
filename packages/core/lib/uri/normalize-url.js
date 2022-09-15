@@ -1,6 +1,7 @@
 import * as URI from 'uri-js'
 import { isObject } from "underscore"
-import { console } from '..'
+import esMain from 'es-main'
+import { console } from '../index.js'
 
 /**
  * Returns a normalized url
@@ -29,7 +30,7 @@ import { console } from '..'
  * @return {string} A normalized url.
  */
 
-export const normalizeUrl = (url, options) => {
+export function normalizeUrl(url, options = {}) {
     if (typeof url !== "string" || !url.length) {
         return null;
     }
@@ -58,7 +59,7 @@ export const normalizeUrl = (url, options) => {
             try {
                 url = new URL(url, options.base).href;
             } catch (e) {
-                console.error(`url could not parsed. ${url}`);
+                console.error(`Could not parse base url ${url}`);
                 return e;
             }
         }
@@ -71,7 +72,7 @@ export const normalizeUrl = (url, options) => {
     }
 
     if (uriObj.path) {
-        uriObj.path = uriObj.path.replace(/(index|default)\.html?($|\?)/, '$2')
+        uriObj.path = uriObj.path.replace(/\/((?:index|default)\.(?:cshtml|[sp]html|html?|php|aspx?|do|jsp|cfm))($)/i, '/$2')
     }
 
     if (uriObj.query) {
@@ -97,13 +98,13 @@ export const normalizeUrl = (url, options) => {
         delete uriObj.fragment
     }
 
-    return URI.serialize(uriObj).toLowerCase()
+    return URI.serialize(uriObj)
 }
 
 //
 //
 //
-if (require.main === module) {
+if (esMain(import.meta)) {
     const a = normalizeUrl('https://www.bib.umontreal.ca/CS/livre-savant/imprime/index.html', true)
     console.log(a)
 }

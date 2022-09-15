@@ -1,4 +1,4 @@
-import { canonicalizeUrl } from '../../core/lib'
+import { canonicalizeUrl } from '../../core/lib/index.js'
 
 export const name = 'http-30x-https-upgrade-strict';
 

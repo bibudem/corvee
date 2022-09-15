@@ -1,4 +1,4 @@
-import { console, inspect } from '../../core'
+import { console, inspect } from '../../core/index.js'
 
 export function messageFactory(messages) {
 
@@ -16,7 +16,7 @@ export function messageFactory(messages) {
 
         const msg = messages[key];
 
-        if ('pattern' in msg && rawMsg) {
+        if (msg.pattern && rawMsg) {
             const reg = msg.pattern.exec(rawMsg);
             if (reg && reg.length > 1) {
                 let message = msg.substitution;
@@ -26,7 +26,7 @@ export function messageFactory(messages) {
 
                 return message;
 
-            } else if ('msg' in msg) {
+            } else if (msg.msg) {
                 // Use default message if it exists
                 return msg.msg;
             }

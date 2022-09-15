@@ -1,5 +1,5 @@
-import crypto from 'crypto'
-import { normalizeUrl } from "../uri"
+import crypto from 'node:crypto'
+import { normalizeUrl } from "../uri/index.js"
 
 function hashPayload(payload) {
   return crypto

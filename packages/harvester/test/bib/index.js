@@ -1,27 +1,15 @@
-import path from 'path'
-import readline from 'readline'
-import Apify from 'apify';
+import { join, dirname } from 'node:path'
+import readline from 'node:readline'
+import { fileURLToPath } from 'node:url'
 
-import {
-    Harvester
-}
-    from '../../lib/harvester'
+import { Harvester } from '../../lib/harvester/index.js'
+import saveRecords from '../save-records.js'
+import saveBrowsingContexts from '../save-browsing-contexts.js'
+import { logErrorCodes } from '../../lib/utils/log-error-codes.js'
+import { console } from '../../../core/index.js'
+import { config } from './config/index.js'
 
-import saveRecords from '../save-records'
-import saveBrowsingContexts from '../save-browsing-contexts'
-
-import {
-    logErrorCodes
-} from '../../lib/utils/log-error-codes'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
-
-import {
-    config
-} from './config'
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 const harvester = new Harvester(config);
 
@@ -54,18 +42,18 @@ process.stdin.on('keypress', (str, key) => {
     }
 });
 
-saveRecords(__dirname, harvester, (record) => {
+saveRecords(DIRNAME, harvester, (record) => {
     //return record.extern && record.url && !record.url.startsWith('mailto:');
     return true;
 })
 
-saveBrowsingContexts(__dirname, harvester);
+saveBrowsingContexts(DIRNAME, harvester);
 
-logErrorCodes(harvester, path.join(__dirname, './error-codes.json'))
+logErrorCodes(harvester, join(DIRNAME, './error-codes.json'))
 
 try {
     console.log('Starting tests.')
-    Apify.main(harvester.run())
+    await harvester.run()
 } catch (e) {
     console.error(e)
     process.exit()

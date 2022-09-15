@@ -1,9 +1,8 @@
-import { omit } from 'underscore'
-const extend = require('extend');
+import { omit, isNull, isNumber } from 'underscore'
+import extend from 'extend'
 
-import { absUrl, console, inspect } from './../../core'
-import { ResourceType } from './resource-type';
-import { captureErrors } from './errors';
+import { console, inspect } from './../../core/index.js'
+import { captureErrors, HttpError } from './errors/index.js';
 
 export const defaultOptions = {
     url: null,
@@ -21,26 +20,33 @@ export const defaultOptions = {
 
 export function getFinalStatus(report) {
     const statuses = [];
-    const sortedHttpStatuses = [308, 301, 307, 302, 303]
+    const sortedHttpStatuses = [
+        { code: 308, text: null },
+        { code: 301, text: null },
+        { code: 307, text: null },
+        { code: 302, text: null },
+        { code: 303, text: null }
+    ]
     if ('httpStatusCode' in report) {
-        statuses.push(report.httpStatusCode)
+        statuses.push({ code: report.httpStatusCode, text: report.httpStatusText })
     }
     if (report.redirectChain) {
-        statuses.push(...report.redirectChain.map(r => r.status))
+        statuses.push(...report.redirectChain.map(r => ({ code: r.status, text: r.statusText })))
     }
 
     return statuses.reduce((winner, current) => {
 
-        const currentLvl = Math.floor(current / 100),
-            newWinner = {
-                status: current,
-                lvl: currentLvl
-            };
+        const currentLvl = Math.floor(current.code / 100)
+        const newWinner = {
+            status: current,
+            lvl: currentLvl
+        };
 
 
         if (currentLvl < winner.lvl) {
             return winner;
         }
+
         // New winner!
         if (currentLvl > winner.lvl) {
             return newWinner;
@@ -53,7 +59,7 @@ export function getFinalStatus(report) {
 
         // Here, we have a status code >= 300
         // Return the heaviest code from winner vs current
-        const candidateStatus = [winner.status, newWinner.status];
+        const candidateStatus = [winner.status.code, newWinner.status.code];
 
         for (const s of sortedHttpStatuses) {
 
@@ -64,11 +70,11 @@ export function getFinalStatus(report) {
         }
 
         // Status is in the 300's, but not a redirect
-        return current;
+        return { status: current, lvl: Math.floor(current.code / 100) }
 
     }, {
         status: statuses[0],
-        lvl: Math.floor(statuses[0] / 100)
+        lvl: Math.floor(statuses[0].code / 100)
     }).status
 }
 
@@ -78,12 +84,11 @@ function getFinalUrl({
     headers
 }) {
     let finalUrl = null;
+    const redirectChain = record.redirectChain;
 
     if (httpStatusCode === null) {
         return finalUrl
     }
-
-    const redirectChain = record.redirectChain;
 
     if (httpStatusCode >= 200 && httpStatusCode <= 299) {
         finalUrl = record.url;
@@ -99,22 +104,20 @@ function getFinalUrl({
     if (redirectChain) {
         // Edge case where there is no location header with a redirect status,
         // else, get the last redirection url
-        if ([301, 302, 307, 308].includes(httpStatusCode)) {
+        if ([301, 302, 303, 307, 308].includes(httpStatusCode)) {
             finalUrl = redirectChain[redirectChain.length - 1].url;
         }
 
-        if (httpStatusCode >= 200 && httpStatusCode <= 299) {
+        if ((httpStatusCode >= 200 && httpStatusCode <= 299) || httpStatusCode >= 400) {
             // Pick the last redirect
             finalUrl = redirectChain[redirectChain.length - 1].url;
         }
     }
 
-    return {
-        finalUrl
-    };
+    return finalUrl;
 }
 
-export function handleResponse(request, response = null, meta = {}) {
+export async function handleResponse(request, response = null, meta = {}) {
 
     const reports = captureErrors(request.userData.reports);
     const userData = omit(request.userData, 'reports');
@@ -124,10 +127,10 @@ export function handleResponse(request, response = null, meta = {}) {
         created: new Date().toISOString()
     });
 
-    if (typeof request._client === 'undefined') {
+    if (typeof request.id !== 'undefined') {
 
         /*
-         * apify request class && puppeteer Response class
+         * crawlee Request class && playwright Response class
          * This is a navigation response
          */
 
@@ -137,19 +140,22 @@ export function handleResponse(request, response = null, meta = {}) {
             baseReport,
             userData,
             {
-                /** @member {string} [urlData] - Url as found when crawling */
                 url: request.url,
                 httpStatusCode: response.status(),
-                isNavigationRequest: response.request().isNavigationRequest(),
-                redirectChain: getRedirectChain(
-                    response.request().redirectChain(),
-                    request.url
-                ),
+                httpStatusText: response.statusText(),
+                redirectChain: await getRedirectChain(response.request()),
                 resourceType: response.request().resourceType(),
                 trials: request.retryCount
             },
             meta
         );
+
+        try {
+            record.size = (await response.body()).length;
+        } catch (error) {
+            // pwResponse.buffer() is undefined
+            record.size = null
+        }
 
         if ('content-type' in response.headers()) {
             record.contentType = response.headers()['content-type'].split(';')[0].trim();
@@ -159,35 +165,43 @@ export function handleResponse(request, response = null, meta = {}) {
             record.contentLength = +response.headers()['content-length']
         }
 
-        record.httpStatusCode = getFinalStatus(record);
+        const { code, text } = getFinalStatus(record)
+        record.httpStatusCode = code
+        record.httpStatusText = text
 
-        const {
-            finalUrl
-        } = getFinalUrl({
+        if (isNumber(record.httpStatusCode)) {
+
+            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+
+            if (!record.reports) {
+                record.reports = []
+            }
+
+            record.reports.push(httpError);
+        }
+
+        const finalUrl = getFinalUrl({
             record,
             httpStatusCode: response.status(),
             headers: response.headers(),
-            body: meta.body
         });
 
         record.finalUrl = finalUrl;
+
+        record.timing_ = response.request().timing()
+        record.sizes_ = await response.request().sizes()
 
         delete record.uniqueKey;
 
         return record;
     }
 
-    if ('_client' in request) {
+    if (typeof request._events !== 'undefined') {
 
         /*
-         * puppeteer Request class && puppeteer Response class
-         * This is an asset response OR a document download response (pdf, etc.)
+         * playwright Request class && playwright Response class
+         * This is a navigation response from 'onDocumentDownload' or 'onAssetResponse'
          */
-
-        const redirectChain = getRedirectChain(
-            request.redirectChain(),
-            request.url()
-        );
 
         const record = extend(
             true,
@@ -195,17 +209,23 @@ export function handleResponse(request, response = null, meta = {}) {
             baseReport,
             userData,
             {
-                url: request.url(),
+                url: getRequestUrl(request),
                 httpStatusCode: response.status(),
-                isNavigationRequest: request.isNavigationRequest(),
-                redirectChain,
-                resourceType: request.resourceType(),
-                trials: 'TODO',
+                httpStatusText: response.statusText(),
+                redirectChain: await getRedirectChain(request),
+                resourceType: request.resourceType()
             },
             meta
         );
 
-        if (response && 'content-type' in response.headers()) {
+        try {
+            record.size = (await response.body()).length;
+        } catch (error) {
+            // pwResponse.buffer() is undefined
+            record.size = null
+        }
+
+        if ('content-type' in response.headers()) {
             record.contentType = response.headers()['content-type'].split(';')[0].trim();
         }
 
@@ -213,72 +233,33 @@ export function handleResponse(request, response = null, meta = {}) {
             record.contentLength = +response.headers()['content-length']
         }
 
-        record.httpStatusCode = getFinalStatus(record);
+        const { code, text } = getFinalStatus(record)
+        record.httpStatusCode = code
+        record.httpStatusText = text
 
-        const {
-            finalUrl
-        } = getFinalUrl({
+        if (isNumber(record.httpStatusCode)) {
+
+            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+
+            if (!record.reports) {
+                record.reports = []
+            }
+
+            record.reports.push(httpError);
+        }
+
+        const finalUrl = getFinalUrl({
             record,
-            httpStatusCode: response ? response.status() : null,
-            headers: response ? response.headers() : []
+            httpStatusCode: response.status(),
+            headers: response.headers(),
         });
 
         record.finalUrl = finalUrl;
 
-        return record;
-    }
+        record.timing_ = response.request().timing()
+        record.sizes_ = await response.request().sizes()
 
-    if (response && response.constructor.name === 'IncomingMessage') {
-
-        /*
-         * apify request class && (request-promise-native) IncomingMessage class response
-         * This is a basicCrawler response
-         */
-
-        const redirectChain = getRedirectChain(
-            response.request._redirect.redirects,
-            request.url
-        );
-
-        const record = extend(
-            true,
-            {},
-            baseReport,
-            {
-                /** @member {string} [urlData] - Url as found when crawling */
-                url: request.url,
-                httpStatusCode: response.statusCode,
-                isNavigationRequest: 'TODO',
-                redirectChain,
-                resourceType_: ResourceType.fromMimeType(
-                    response.headers['content-type']
-                ).name(),
-                trials: request.retryCount
-            },
-            userData,
-            meta
-        );
-
-        if ('content-type' in response.headers) {
-            record.contentType = response.headers['content-type'].split(';')[0].trim();
-        }
-
-        if ('content-length' in response.headers) {
-            record.contentLength = response.headers['content-length'];
-        }
-
-        record.httpStatusCode = getFinalStatus(record);
-
-        const {
-            finalUrl
-        } = getFinalUrl({
-            record,
-            httpStatusCode: response.statusCode,
-            headers: response.headers,
-            body: meta.body
-        });
-
-        record.finalUrl = finalUrl;
+        delete record.uniqueKey;
 
         return record;
     }
@@ -326,11 +307,14 @@ export function handleResponse(request, response = null, meta = {}) {
     return record;
 }
 
-export function handleFailedRequest(request, error, meta) {
-    // apify Request class
+export async function handleFailedRequest(request, pwRequest, meta) {
+
+    //
+    // crawlee Request class
+    //
 
     if (arguments.length === 2) {
-        meta = error
+        meta = pwRequest
     }
 
     const reports = captureErrors(request.userData.reports);
@@ -363,23 +347,34 @@ export function handleFailedRequest(request, error, meta) {
     }
 
     if (meta._from === 'onNavigationRequestFailed') {
+
         const record = extend(
             true,
             {},
             baseReport,
-            {
-                url: request.url,
-                isNavigationRequest: true,
-            },
             userData,
             meta
         );
+
+        const { code, text } = getFinalStatus(record)
+        record.httpStatusCode = code
+        record.httpStatusText = text
+
+        if (isNumber(record.httpStatusCode)) {
+
+            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+
+            if (!record.reports) {
+                record.reports = []
+            }
+
+            record.reports.push(httpError);
+        }
 
         return record;
     }
 
     if (meta._from === 'onAssetRequestFailed') {
-        const pupRequest = error;
 
         const record = extend(
             true,
@@ -387,11 +382,9 @@ export function handleFailedRequest(request, error, meta) {
             baseReport,
             {
                 url: request.url,
-                isNavigationRequest: pupRequest.isNavigationRequest(),
-                redirectChain: pupRequest.redirectChain(),
-                resourceType: pupRequest.resourceType(),
-                status: pupRequest.failure().errorText,
-                reports_: captureErrors(pupRequest.failure().errorText)
+                redirectChain: await getRedirectChain(pwRequest),
+                resourceType: pwRequest.resourceType(),
+                status: pwRequest.failure().errorText,
             },
             userData,
             meta
@@ -401,52 +394,58 @@ export function handleFailedRequest(request, error, meta) {
     }
 }
 
-export function getRedirectChain(chain, sourceUrl) {
+function getRequestUrl(request) {
 
-    if (chain.length === 0) {
+    const previousRequest = request.redirectedFrom()
+
+    if (isNull(previousRequest)) {
+        return request.url()
+    }
+
+    return getRequestUrl(previousRequest)
+}
+
+export async function getRedirectChain(request) {
+
+    if (isNull(request.redirectedFrom())) {
         return null
     }
 
-    return chain
-        .map(request => {
-            if ('_client' in request) {
+    async function doGetRedirectChain(request, redirectChain) {
 
-                // puppeteer HTTPRequest class
-                const httpResponse = request.response();
-                let redirect = {}
+        const response = await request.response()
 
-                redirect.url = absUrl(httpResponse.headers().location, httpResponse.url())
+        let redirectedUrl;
 
-                redirect = ((props) => {
-                    return props.reduce((obj, prop) => {
-                        try {
-                            obj[prop] = httpResponse[prop]();
-                            return obj;
-                        } catch (error) {
-                            console.error(inspect(error))
-                        }
-                    }, redirect)
-                })(['status', 'statusText', 'fromCache', 'fromServiceWorker']);
+        const locationHeader = await response.headerValue('location')
 
-                return redirect
+        if (locationHeader) {
+
+            try {
+                redirectedUrl = (new URL(locationHeader, request.url())).href
+            } catch (e) {
+                console.warn(e)
+                redirectedUrl = locationHeader
             }
+        } else {
+            redirectedUrl = response.url()
+        }
 
-            // ???
-            return {
-                url: request.redirectUri,
-                status: request.statusCode
-            };
+        redirectChain.unshift({
+            url: redirectedUrl,
+            status: response.status(),
+            statusText: response.statusText(),
         })
-        .map(({
-            url,
-            ...redirectData
-        }, i, items) => {
-            const baseUrl = i === 0 ? sourceUrl : items[i - 1].url;
-            const newUrl = absUrl(url, baseUrl);
 
-            return {
-                url: newUrl,
-                ...redirectData
-            };
-        });
+        const redirectedRequest = request.redirectedFrom()
+
+        if (isNull(redirectedRequest)) {
+            return redirectChain
+        }
+
+        return doGetRedirectChain(redirectedRequest, redirectChain)
+    }
+
+    return await doGetRedirectChain(request, [])
+
 }

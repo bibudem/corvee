@@ -1,10 +1,5 @@
-import http from 'http';
-import {
-    URL
-} from 'url'
-import {
-    console
-} from '../../../core/lib/logger'
+import http from 'node:http'
+import { console } from '../../../core/index.js'
 
 function html(links) {
     return `<html>

@@ -1,9 +1,9 @@
-import Apify from 'apify';
+import { KeyValueStore } from '@crawlee/playwright';
 import LRU from 'lru'
 import v from 'io-validate'
 import extend from 'extend';
 import { omit, pick } from 'underscore'
-import { idFromUrl, normalizeUrl, console, inspect } from '../../../core'
+import { idFromUrl, normalizeUrl, console, inspect } from '../../../core/index.js'
 
 /*
 Link props:
@@ -50,9 +50,9 @@ export class LinkStore {
     }
 
     async init() {
-        this._store = await Apify.openKeyValueStore('link-store')
+        this._store = await KeyValueStore.open('link-store')
         // In case of a --resume option
-        await this._store.forEachKey(async (key) => {
+        await this._store.forEachKey((key) => {
             this._linkIdx.add(key)
         })
     }

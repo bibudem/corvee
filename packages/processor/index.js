@@ -1,2 +1,2 @@
-export * from './lib'
-export * from './filters'
+export * from './lib/index.js'
+export * from './filters/index.js'

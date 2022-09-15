@@ -1,14 +1,16 @@
-import path from 'path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 export default {
-    apifyLocalStorageDir: path.join(__dirname, './.storage'),
-    puppeteerCacheDir: path.join(__dirname, './.cache'),
+    apifyLocalStorageDir: join(DIRNAME, './.storage'),
+    puppeteerCacheDir: join(DIRNAME, './.cache'),
     //startUrl: 'http://localhost:3000/',
     checkExtern: false,
     cookies: true,
-    pageWaitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+    pageWaitUntil: 'networkidle',
     navigationOnly: true,
-    userAgent: 'Mozilla/5.0 (Corvee/1.0.0)',
     useCache: true,
     maxConcurrency: 100,
     maxRequests: 100,
@@ -27,11 +29,6 @@ export default {
         '^https?://dx\\.doi\\.org',
         '^https?://calypso\\.bib\\.umontreal\\.ca'
     ],
-    ignorewarnings: ['http-robots-denied', 'file-missing-slash', 'url-unnormed', 'url-unicode-domain', 'url-anchor-not-found', 'http-cookie-store-error', 'url-content-duplicate', 'https-certificate-error'],
-    // internLinks: [
-    //     'http://localhost:3000[.*]'
-    // ],
-    // },
 
     /**
      * Node.js URL class.

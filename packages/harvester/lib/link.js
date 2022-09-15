@@ -1,7 +1,7 @@
 import v from 'io-validate'
-const extend = require('extend')
+import extend from 'extend'
 import { isObject, isFunction } from 'underscore'
-import { normalizeUrl as n, console } from '../../core/lib'
+import { normalizeUrl as n, console } from '../../core/lib/index.js'
 
 const userDataDefaults = {
     url: null,

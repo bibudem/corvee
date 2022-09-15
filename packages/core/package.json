@@ -2,7 +2,11 @@
     "name": "@corvee/core",
     "version": "1.0.3",
     "description": "",
-    "main": "lib/index.js",
+    "type": "module",
+    "exports": "./lib/index.js",
+    "engines": {
+        "node": ">=18.1.0"
+    },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -10,19 +14,15 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "apify": "^0.17.0",
         "colors": "^1.4.0",
+        "es-main": "^1.2.0",
         "filenamify-url": "^2.1.0",
         "io-validate": "^2.1.13",
         "is-relative-url": "^3.0.0",
-        "ismobilejs": "^1.0.3",
         "tracer": "^1.0.1",
         "underscore": "^1.9.1",
         "uri-js": "^4.2.2",
         "winston": "^3.2.1",
         "yargs": "^17.5.1"
-    },
-    "devDependencies": {
-        "esm": "^3.2.25"
     }
 }

@@ -1,28 +1,14 @@
-import fs from 'fs'
-import path from 'path'
-import Apify from 'apify';
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import _ from 'underscore'
+import { Harvester } from '../../lib/harvester/index.js'
+import { logErrorCodes } from '../../lib/utils/index.js'
+import { console } from '../../../core/index.js'
+import configs from './config.js'
+import links from './url-list.js'
+import { Link } from '../../lib/link.js'
 
-import {
-    Harvester
-} from '../../lib/harvester'
-
-import {
-    logErrorCodes
-} from '../utils/log-error-codes'
-
-import {
-    console
-}
-    from '../../../core/lib/logger';
-
-import configs from './config'
-
-import links from './url-list'
-
-import {
-    Link
-} from '../../lib/link';
+const DIRNAME = dirname(fileURLToPath(import.meta.url))
 
 const urlList = [];
 // const errorCodes = new Set();
@@ -38,30 +24,13 @@ links.forEach(group => {
 
 const harvester = new Harvester(configs);
 
-logErrorCodes(harvester, path.join(__dirname, './error-codes.json'))
+logErrorCodes(harvester, join(DIRNAME, './error-codes.json'))
 
-// harvester.on('record', record => {
-//     record.reports.forEach(report => {
-//         if (report && 'normalized' in report && 'code' in report.normalized) {
-//             errorCodes.add(report.normalized.code)
-//         } else {
-//             errorCodes.add(record.status)
-//         }
-//     })
-// })
-
-// harvester.on('end', () => {
-//     fs.writeFileSync(path.join(__dirname, './error-codes.json'), JSON.stringify(Array.from(errorCodes), null, 2), 'utf8');
-// })
-
-//harvester.addUrl(urlList.filter(link => link['should-be'] !== 'good'));
 harvester.addUrl(urlList);
-
-//harvester.on('record', (record) => console.todo(record.id))
 
 try {
     console.log('Starting tests.')
-    Apify.main(harvester.run())
+    await harvester.run()
 } catch (e) {
     console.error(e)
 }

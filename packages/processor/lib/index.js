@@ -1,3 +1,3 @@
-export * from './processor'
-export * from './plugin'
-export * from './messages'
+export * from './processor/index.js'
+export * from './plugin.js'
+export * from './messages.js'
