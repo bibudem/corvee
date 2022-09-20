@@ -49,14 +49,13 @@ export const defaultHarvesterOptions = {
     blockRequestsFromUrlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com'],
     /*
      * Which browser to use
-     * @type {'chromium' | 'firefox' | 'webkit'}
+     * @type {'chromium' | 'firefox' | 'webkit'} browserType
     */
     browser: 'chromium',
     // Wether to check extern links or not
     checkExtern: true,
     fetchLinksOnce: true,
     getPerfData: false,
-    requestHandlerTimeout: 30000,
     // URLs matching the given strings / regular expression will be ignored and not checked.
     ignore: [],
     ignoreDefaults: ['www.google-analytics.com', '/gtag/js', 'ga.js', 'analytics.js', 'https://www.googleadservices.com/', 'doubleclick.net'],
@@ -65,16 +64,14 @@ export const defaultHarvesterOptions = {
     linkParserDelay: 0,
     logLevel: 'info',
     maxDepth: Infinity,
-    maxRequestRetries: 3,
-    maxRequests: Infinity,
     navigationOnly: true,
-    navigationTimeout: 30000,
     // Check but do not recurse into URLs matching the given strings / regular expressions.
     noFollow: [],
     noFollowDefaults: [],
     notify: true,
     notifyDelay: 10000,
     notifyLogLevel: 'info',
+
     /*
      * Wait for the page event before consider operation succeeded.
      * @property {WaitUntilType} pageWaitUntil
@@ -83,7 +80,12 @@ export const defaultHarvesterOptions = {
         intern: 'domcontentloaded',
         extern: 'load'
     },
-    requestTimeout: 30000,
+
+    /*
+     * Proxy server URLs to use
+     * @type {string | string[]}
+    */
+    proxyUrls: undefined,
     schemes: [],
     schemesDefaults: ['corvee', 'http', 'https'],
     storageDir: join(tmpDir, '.storage'),
@@ -91,16 +93,33 @@ export const defaultHarvesterOptions = {
     waitInterval: 50,
 }
 
+export const defaultPlaywrightCrawlerOptions = {
+    headless: true,
+    maxRequestRetries: 3,
+    maxRequestsPerCrawl: Infinity,
+    navigationTimeoutSecs: 30,
+    persistCookiesPerSession: true,
+    requestHandlerTimeoutSecs: 30,
+    useSessionPool: true
+}
+
+export const defaultBrowserPoolOptions = {
+    /*
+     * @type {boolean}
+     */
+    useFingerprints: true,
+
+    /*
+     * @see {link https://crawlee.dev/api/browser-pool/interface/FingerprintOptions}
+     */
+    fingerprintOptions: undefined
+}
+
 export const defaultLaunchContextOptions = {
     /*
      * Launch options of Playwright
      * @see {@link https://crawlee.dev/api/playwright-crawler/interface/PlaywrightLaunchContext}
      */
-
-    /*
-     * @type string
-     */
-    proxyUrl: undefined,
 
     /*
      * @type boolean
@@ -111,6 +130,11 @@ export const defaultLaunchContextOptions = {
      * @type string
      */
     userAgent: undefined,
+
+    /*
+     * @type string
+     */
+    userDataDir: undefined,
 
     /*
      * Native Playwright options

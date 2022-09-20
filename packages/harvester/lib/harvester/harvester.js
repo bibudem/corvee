@@ -5,7 +5,7 @@ import minimatch from 'minimatch'
 import { pick, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
 import filenamifyUrl from 'filenamify-url'
-import { PlaywrightCrawler, Dataset, KeyValueStore, RequestQueue, Request, BasicCrawler } from '@crawlee/playwright'
+import { Dataset, KeyValueStore, PlaywrightCrawler, ProxyConfiguration, RequestQueue, Request } from '@crawlee/playwright'
 import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
@@ -22,7 +22,7 @@ import { PseudoUrls } from '../pseudoUrls.js'
 import Notifier from '../utils/notifier.js'
 import { console, inspect, normalizeUrl, isValidUrl } from '../../../core/index.js'
 
-import { defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore, getPerformanceData, getTimingFor } from './index.js'
+import { defaultBrowserPoolOptions, defaultHarvesterOptions, defaultPlaywrightCrawlerOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore, getPerformanceData, getTimingFor } from './index.js'
 import { response } from 'express'
 
 const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
@@ -71,8 +71,6 @@ export class Harvester extends EventEmitter {
 
     constructor(config = {}) {
 
-        const defaultOptions = extend(true, {}, defaultHarvesterOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions)
-
         super();
 
         this.version = pkg.version;
@@ -80,13 +78,29 @@ export class Harvester extends EventEmitter {
         this._isRunning = false
         this._pausedAt = 0;
 
-        this.config = extend(true, {}, defaultOptions, config);
+        this.config = ((config, userConfig) => {
+            config = extend(true, {}, defaultHarvesterOptions, pick(omit(userConfig, ['proxyUrls']), Object.keys(defaultHarvesterOptions)))
+            config.autoscaledPoolOptions = extend(true, {}, defaultAutoscaledPoolOptions, pick(userConfig, Object.keys(defaultAutoscaledPoolOptions)))
+            config.browserPoolOptions = extend(true, {}, defaultBrowserPoolOptions, pick(userConfig, Object.keys(defaultBrowserPoolOptions)))
+            config.launchContextOptions = extend(true, {}, defaultLaunchContextOptions, pick(userConfig, Object.keys(defaultLaunchContextOptions)))
+            config.playwrightCrawlerOptions = extend(true, {}, defaultPlaywrightCrawlerOptions, pick(userConfig, Object.keys(defaultPlaywrightCrawlerOptions)))
+
+            return config
+        })({}, config)
+
+        this.config.launchContextOptions.launcher = playwright[this.config.browser]
 
         if (typeof config.pageWaitUntil === 'string') {
             this.config.pageWaitUntil = {
                 intern: config.pageWaitUntil,
                 extern: config.pageWaitUntil
             }
+        }
+
+        if (typeof config.proxyUrls !== 'undefined') {
+            const proxyUrls = typeof config.proxyUrls === 'string' ? [config.proxyUrls] : config.proxyUrls;
+            const proxyConfiguration = new ProxyConfiguration({ proxyUrls })
+            this.config.playwrightCrawlerOptions.proxyConfiguration = proxyConfiguration
         }
 
         console.log(`Setting log level to ${this.config.logLevel}`)
@@ -144,16 +158,6 @@ export class Harvester extends EventEmitter {
         this.homeBasePUrl = new PseudoUrls(this.config.internLinks)
 
         this.urlList = [];
-
-        this.launchContextOptions = extend(true, {}, pick(this.config, Object.keys(defaultLaunchContextOptions)))
-
-        this.launchContextOptions.launcher = playwright[this.config.browser]
-
-        console.verbose(`this.launchContextOptions: ${inspect(this.launchContextOptions)}`)
-
-        this.autoscaledPoolOptions = extend(true, {}, pick(this.config, Object.keys(defaultAutoscaledPoolOptions)))
-
-        console.verbose(`this.autoscaledPoolOptions: ${inspect(this.autoscaledPoolOptions)}`)
     }
 
     async addUrl(urls) {
@@ -262,7 +266,7 @@ export class Harvester extends EventEmitter {
     }
 
     isMaxRequestExceeded() {
-        return this.config.maxRequests !== -1 && this.session.counts.activeRequests > this.config.maxRequests && this.session.counts.finishedRequests >= this.config.maxRequests;
+        return this.config.playwrightCrawlerOptions.maxRequestsPerCrawl !== -1 && this.session.counts.activeRequests > this.config.playwrightCrawlerOptions.maxRequestsPerCrawl && this.session.counts.finishedRequests >= this.config.playwrightCrawlerOptions.maxRequestsPerCrawl;
     }
 
     async pause(timeout) {
@@ -848,159 +852,10 @@ export class Harvester extends EventEmitter {
         //
 
         const playwrightCrawler = new PlaywrightCrawler({
-            requestHandler: async function onNavigationResponse({
-                request,
-                response: pwResponse,
-                page
-            }) {
 
-                //
-                // Main navigation responses handler
-                // Here we process navigation responses. 
-                // Some handling is also done on a `onNavigationResponse` handler registered on page.on()
-                //
+            ...self.config.playwrightCrawlerOptions,
 
-                if (!pwResponse) {
-
-                    console.debug(`Response is ${pwResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
-
-                    if (request.loadedUrl) {
-                        if (!(request.loadedUrl.startsWith('about:') || request.loadedUrl.startsWith('chrome:') || request.loadedUrl.startsWith('chrome-error:'))) {
-                            request.userData.finalUrl = request.loadedUrl
-                        }
-                    }
-
-                    if (request.retryCount >= self.config.maxRequestRetries) {
-
-                        if (pwResponse === null) {
-                            if (!request.userData.reports) {
-                                request.userData.reports = []
-                            }
-                            request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
-                        }
-
-                    }
-
-                    //
-                    // These cases should be all handled at page.goto().catch()
-                    //
-
-                    return Promise.reject()
-                }
-
-                self.emit('navigation-response', {
-                    request: pwResponse.request(),
-                    response: pwResponse,
-                    page,
-                    harvester: self
-                })
-
-                // if (!self.isExternLink(page.url())) {
-
-                //     try {
-
-                //         const screenshotBuffer = await page.screenshot();
-
-                //         const key = filenamifyUrl(request.url, { replacement: '_' })
-
-                //         // The "key" argument must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_.'()
-                //         if (key.length > 256) {
-                //             key = key.substring(0, 255)
-                //         }
-
-                //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
-                //             contentType: 'image/png'
-                //         })
-                //     } catch (error) {
-                //         console.todo(`Request url: ${request.url}`)
-                //         console.todo(error)
-                //     }
-                // }
-
-                try {
-                    self.normalizeUrl(request.url, true);
-
-                    try {
-                        request.userData.timing = await getTimingFor(pwResponse.url(), page)
-                    } catch (error) {
-                        request.userData.timing = null
-                    }
-
-                    const meta = {
-                        _from: 'onNavigationResponse'
-                    }
-
-                    if (self.config.getPerfData) {
-                        meta.perfData = await getPerformanceData(pwResponse.url(), page)
-                    }
-
-                    if (self.plugins.onNavigationResponse.length && pwResponse) {
-                        self.plugins.onNavigationResponse.forEach(async plugin => {
-                            try {
-                                console.verbose(`Processing plugin ${plugin.name}`)
-                                await plugin.fn.call(self, request, pwResponse, page)
-                            } catch (error) {
-                                console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
-                            }
-                        })
-                    }
-
-                    const record = await handleResponse(request, pwResponse, meta)
-
-                    await addRecord(record);
-
-                    self.session.counts.success++
-
-                    //
-                    // Should we parse further links in the resulting page?
-                    //
-
-                    const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
-
-                    const finalNavUrl = self.normalizeUrl(page.url(), true);
-
-                    if (!self.isExternLink(finalNavUrl) && pwResponse && pwResponse.ok()) {
-
-                        const links = await parseLinksInPage(page, {
-                            currentLevel: request.userData.level,
-                        });
-
-                        await addToRequestQueue(links)
-
-                        try {
-                            for (const frame of page.mainFrame().childFrames()) {
-                                // TODO: find a better test to detect cross origin frames then !== ''
-                                // Some frames' url could be chrome-error://chromewebdata/
-
-                                const frameUrl = frame.url();
-
-                                if (frameUrl && !frameUrl.startsWith('chrome')) {
-
-                                    if (!self.isExternLink(frameUrl)) {
-                                        self.browsingContextStore.addContext(frameUrl, pageFinalUrl)
-                                    }
-
-                                    const link = new Link(frameUrl, {
-                                        parent: pageFinalUrl,
-                                        level: request.userData.level,
-                                        resourceIsEmbeded: true
-                                    }, self.normalizeUrl)
-
-                                    await addToRequestQueue(link)
-                                }
-
-                            }
-                        } catch (error) {
-                            console.error(inspect(error))
-                        }
-
-                    }
-                } catch (error) {
-                    console.error(`Got an error while trying to get the record of the link ${request.url}
-Error: ${inspect(error)}`)
-                }
-            },
-            navigationTimeoutSecs: self.config.navigationTimeout / 1000,
+            autoscaledPoolOptions: self.config.autoscaledPoolOptions,
             // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
             failedRequestHandler: async function onNavigationRequestFailed({
                 request,
@@ -1038,6 +893,7 @@ Error: ${inspect(error)}`)
                     self.session.counts.fail++
                 }
             },
+            launchContext: self.config.launchContextOptions,
             preNavigationHooks: [
                 async function preNavigationHooksFunction({ crawler, request, session, page, browserController, proxyInfo }, gotoOptions) {
 
@@ -1423,14 +1279,159 @@ Error: ${inspect(error)}`)
                 },
             ],
             postNavigationHooks: [],
-            requestHandlerTimeoutSecs: self.config.requestHandlerTimeout,
-            launchContext: self.launchContextOptions,
-            // browserPoolOptions: {},
+            requestHandler: async function onNavigationResponse({
+                request,
+                response: pwResponse,
+                page
+            }) {
+
+                //
+                // Main navigation responses handler
+                // Here we process navigation responses. 
+                // Some handling is also done on a `onNavigationResponse` handler registered on page.on()
+                //
+
+                if (!pwResponse) {
+
+                    console.debug(`Response is ${pwResponse} at trial ${request.retryCount}, ${request.url}. Request: ${inspect(request)}`)
+
+                    if (request.loadedUrl) {
+                        if (!(request.loadedUrl.startsWith('about:') || request.loadedUrl.startsWith('chrome:') || request.loadedUrl.startsWith('chrome-error:'))) {
+                            request.userData.finalUrl = request.loadedUrl
+                        }
+                    }
+
+                    if (request.retryCount >= self.config.maxRequestRetries) {
+
+                        if (pwResponse === null) {
+                            if (!request.userData.reports) {
+                                request.userData.reports = []
+                            }
+                            request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
+                        }
+
+                    }
+
+                    //
+                    // These cases should be all handled at page.goto().catch()
+                    //
+
+                    return Promise.reject()
+                }
+
+                self.emit('navigation-response', {
+                    request: pwResponse.request(),
+                    response: pwResponse,
+                    page,
+                    harvester: self
+                })
+
+                // if (!self.isExternLink(page.url())) {
+
+                //     try {
+
+                //         const screenshotBuffer = await page.screenshot();
+
+                //         const key = filenamifyUrl(request.url, { replacement: '_' })
+
+                //         // The "key" argument must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_.'()
+                //         if (key.length > 256) {
+                //             key = key.substring(0, 255)
+                //         }
+
+                //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
+                //             contentType: 'image/png'
+                //         })
+                //     } catch (error) {
+                //         console.todo(`Request url: ${request.url}`)
+                //         console.todo(error)
+                //     }
+                // }
+
+                try {
+                    self.normalizeUrl(request.url, true);
+
+                    try {
+                        request.userData.timing = await getTimingFor(pwResponse.url(), page)
+                    } catch (error) {
+                        request.userData.timing = null
+                    }
+
+                    const meta = {
+                        _from: 'onNavigationResponse'
+                    }
+
+                    if (self.config.getPerfData) {
+                        meta.perfData = await getPerformanceData(pwResponse.url(), page)
+                    }
+
+                    if (self.plugins.onNavigationResponse.length && pwResponse) {
+                        self.plugins.onNavigationResponse.forEach(async plugin => {
+                            try {
+                                console.verbose(`Processing plugin ${plugin.name}`)
+                                await plugin.fn.call(self, request, pwResponse, page)
+                            } catch (error) {
+                                console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
+                            }
+                        })
+                    }
+
+                    const record = await handleResponse(request, pwResponse, meta)
+
+                    await addRecord(record);
+
+                    self.session.counts.success++
+
+                    //
+                    // Should we parse further links in the resulting page?
+                    //
+
+                    const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
+
+                    const finalNavUrl = self.normalizeUrl(page.url(), true);
+
+                    if (!self.isExternLink(finalNavUrl) && pwResponse && pwResponse.ok()) {
+
+                        const links = await parseLinksInPage(page, {
+                            currentLevel: request.userData.level,
+                        });
+
+                        await addToRequestQueue(links)
+
+                        try {
+                            for (const frame of page.mainFrame().childFrames()) {
+                                // TODO: find a better test to detect cross origin frames then !== ''
+                                // Some frames' url could be chrome-error://chromewebdata/
+
+                                const frameUrl = frame.url();
+
+                                if (frameUrl && !frameUrl.startsWith('chrome')) {
+
+                                    if (!self.isExternLink(frameUrl)) {
+                                        self.browsingContextStore.addContext(frameUrl, pageFinalUrl)
+                                    }
+
+                                    const link = new Link(frameUrl, {
+                                        parent: pageFinalUrl,
+                                        level: request.userData.level,
+                                        resourceIsEmbeded: true
+                                    }, self.normalizeUrl)
+
+                                    await addToRequestQueue(link)
+                                }
+
+                            }
+                        } catch (error) {
+                            console.error(inspect(error))
+                        }
+
+                    }
+                } catch (error) {
+                    console.error(`Got an error while trying to get the record of the link ${request.url}
+Error: ${inspect(error)}`)
+                }
+            },
             requestQueue: requestQueue,
-            maxRequestRetries: self.config.maxRequestRetries,
-            maxRequestsPerCrawl: self.config.maxRequests,
-            autoscaledPoolOptions: self.autoscaledPoolOptions,
-            useSessionPool: true,
         });
 
         playwrightCrawler.pause = async function pause(timeout) {

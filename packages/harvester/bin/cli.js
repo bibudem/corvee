@@ -51,7 +51,7 @@ if (urls && urls.length) {
         // fetchLinksOnce: false,
         // useCache: false,
         maxConcurrency: 1,
-        maxRequests: 1,
+        maxRequestsPerCrawl: 1,
         // maxDepth: 1,
         navigationOnly: !argv.assets,
         //schemes: ['*'],
@@ -94,9 +94,9 @@ if (urls && urls.length) {
     }
 
     if (argv.requests) {
-        opts.maxRequests = argv.requests;
+        opts.maxRequestsPerCrawl = argv.requests;
     } else if (argv.depth) {
-        opts.maxRequests = Infinity;
+        opts.maxRequestsPerCrawl = Infinity;
     }
 
     if (argv.links) {
