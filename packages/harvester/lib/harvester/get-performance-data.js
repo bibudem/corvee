@@ -6,9 +6,11 @@ export async function getPerformanceData(resourceName, page) {
   }
 
   async function logConsole(msg) {
-    if (msg.type() === 'error') {
+    // Make sure that the messages we get are from our own code
+    if (msg.type() === 'error' && msg.text().startsWith('[CORVEE]')) {
       const { url, lineNumber, columnNumber } = msg.location()
-      logger[msg.type()](`[${url}] ${lineNumber}:${columnNumber} ${msg.text()}`);
+      const msg = msg.text().substring(9)
+      logger[msg.type()](`[${url}] ${lineNumber}:${columnNumber} ${msg}`);
     }
   }
 
@@ -21,7 +23,7 @@ export async function getPerformanceData(resourceName, page) {
         data = resourceName ? window.performance.getEntriesByName(resourceName) : window.performance.getEntries();
         data = JSON.stringify(data)
       } catch (error) {
-        console.error(`Failed to get ${resourceName ? `window.performance.getEntriesByName(${resourceName})` : 'window.performance.getEntries()'} from ${location.href}. Error: ${error}, ${error.stack}`)
+        console.error(`[CORVEE] Failed to get ${resourceName ? `window.performance.getEntriesByName(${resourceName})` : 'window.performance.getEntries()'} from ${location.href}. Error: ${error}, ${error.stack}`)
         return ''
       }
       return data
