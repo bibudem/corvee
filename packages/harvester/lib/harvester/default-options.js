@@ -68,6 +68,7 @@ export const defaultHarvesterOptions = {
     // Check but do not recurse into URLs matching the given strings / regular expressions.
     noFollow: [],
     noFollowDefaults: [],
+    normalizeUrlFunction: null,
     notify: true,
     notifyDelay: 10000,
     notifyLogLevel: 'info',
@@ -88,8 +89,9 @@ export const defaultHarvesterOptions = {
     proxyUrls: undefined,
     schemes: [],
     schemesDefaults: ['corvee', 'http', 'https'],
+    startUrl: null,
     storageDir: join(tmpDir, '.storage'),
-    normalizeUrlFunction: null,
+    useCache: true,
     waitInterval: 50,
 }
 

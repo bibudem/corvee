@@ -1,14 +1,9 @@
-export class BaseError extends Error {
+export class Report {
     constructor(msg = '') {
-        super(msg)
         this.name = this.constructor.name;
+        this.message = msg
         this.level = 'info'
         this.code = 'error'
-
-        Object.defineProperty(this, 'message', {
-            enumerable: true,
-            value: msg
-        })
 
         Error.captureStackTrace(this, this.constructor);
 

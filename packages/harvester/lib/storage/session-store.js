@@ -1,5 +1,5 @@
 import { KeyValueStore } from '@crawlee/playwright';
-import { console } from '../../../core/index.js'
+import { console } from '@corvee/core'
 
 export async function sessionStore({
     interval = 5000,

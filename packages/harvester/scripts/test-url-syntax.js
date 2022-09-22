@@ -97,9 +97,7 @@ testLibrary({
 //   "$", "i"
 // );
 
-import {
-    isValidUrl
-} from '../../core'
+import { isValidUrl } from '@corvee/core'
 
 testLibrary({
     name: 'https://gist.github.com/dperini/729294',

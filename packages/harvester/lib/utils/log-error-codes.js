@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { join } from 'node:path'
 
-import { console, inspect } from '../../../core/index.js'
+import { console, inspect } from '@corvee/core'
 
 export function saveErrorCodes(harvester, jobId) {
 

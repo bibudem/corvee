@@ -1,4 +1,4 @@
-import { console } from '../../../core/index.js'
+import { console } from '@corvee/core'
 
 export default class Notifier {
     constructor(messages = [], {

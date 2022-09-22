@@ -1,7 +1,7 @@
 import v from 'io-validate'
 import extend from 'extend'
 import { isObject, isFunction } from 'underscore'
-import { normalizeUrl as n, console } from '../../core/lib/index.js'
+import { normalizeUrl as n, console } from '@corvee/core'
 
 const userDataDefaults = {
     url: null,

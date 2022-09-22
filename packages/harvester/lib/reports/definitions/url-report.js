@@ -1,14 +1,14 @@
-import { BaseError } from './error.js'
+import { Report } from './report.js'
 
-export class UrlError extends BaseError {
+export class UrlReport extends Report {
     constructor(msg = 'Invalid URL') {
         super(msg)
-        this.code = 'url-error'
+        this.code = 'url-report'
         this.level = 'error'
     }
 }
 
-export class UrlInvalidUrlError extends UrlError {
+export class UrlInvalidUrlReport extends UrlReport {
     constructor(url = '') {
         var msg = 'Invalid URL'
         if (url) {

@@ -1,20 +1,20 @@
-import { BaseError } from './error.js'
+import { Report } from './report.js'
 
-export class MailError extends BaseError {
+export class MailReport extends Report {
     constructor(msg) {
         super(msg)
-        this.code = 'mail-error'
+        this.code = 'mail-report'
     }
 }
 
-export class MailUnverifiedAddressError extends MailError {
+export class MailUnverifiedAddressReport extends MailReport {
     constructor(msg = 'Email link. Checking only syntax.') {
         super(msg)
         this.code = 'mail-unverified-address'
     }
 }
 
-export class MailInvalidSyntaxError extends MailError {
+export class MailInvalidSyntaxReport extends MailReport {
     constructor(msg = 'Email has a bad syntax.') {
         super(msg)
         this.code = 'mail-invalid-syntax'

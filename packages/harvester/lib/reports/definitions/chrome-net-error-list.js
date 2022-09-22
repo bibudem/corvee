@@ -715,7 +715,7 @@ export default [{
     type: "certificate",
     message: "The value immediately past the last certificate error code."
 }, {
-    name: "InvalidUrlError",
+    name: "InvalidUrlReport",
     code: -300,
     description: "INVALID_URL",
     type: "http",

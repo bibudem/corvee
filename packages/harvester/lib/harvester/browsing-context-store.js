@@ -1,5 +1,5 @@
 import { isFunction } from 'underscore';
-import { normalizeUrl as defaultNormalizeUrlFunction, console } from '../../../core/index.js'
+import { normalizeUrl as defaultNormalizeUrlFunction, console } from '@corvee/core'
 
 export class BrowsingContextStore {
 

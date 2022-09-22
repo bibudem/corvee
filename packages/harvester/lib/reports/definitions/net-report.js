@@ -2,9 +2,9 @@ import * as chromiumNetErrors from 'chromium-net-errors'
 import paramCase from 'param-case'
 import esMain from 'es-main'
 
-import { BaseError } from './error.js'
+import { Report } from './report.js'
 
-export class NetError extends BaseError {
+export class NetReport extends Report {
     constructor(description, message) {
 
         if (/net::ERR_([^ ]+)/i.test(description)) {

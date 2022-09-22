@@ -1,0 +1,26 @@
+{
+  "name": "corvee",
+  "version": "2.0.0-beta.1",
+  "description": "",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bibudem/corvee.git"
+  },
+  "keywords": [],
+  "author": "Christian Rémillard <christian.remillard@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bibudem/corvee/issues"
+  },
+  "homepage": "https://github.com/bibudem/corvee#readme"
+}

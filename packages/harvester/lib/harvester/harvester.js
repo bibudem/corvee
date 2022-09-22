@@ -2,7 +2,7 @@ import EventEmitter from 'node:events'
 import { readFile } from 'node:fs/promises'
 
 import minimatch from 'minimatch'
-import { pick, isRegExp, isFunction, isObject, isNull } from 'underscore'
+import { pick, omit, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
 import filenamifyUrl from 'filenamify-url'
 import { Dataset, KeyValueStore, PlaywrightCrawler, ProxyConfiguration, RequestQueue, Request } from '@crawlee/playwright'
@@ -10,20 +10,19 @@ import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
 import extend from 'extend'
+import { console, inspect, normalizeUrl, isValidUrl } from '@corvee/core'
 
 import { computeUniqueKey } from '../index.js'
 import { cleanupFolderPromise } from './cleanup-folder-promise.js'
-import { PupResponseIsNullError, MailUnverifiedAddressError, MailInvalidSyntaxError, UrlInvalidUrlError, HttpError } from '../errors/index.js'
+import { PupResponseIsNullReport, MailUnverifiedAddressReport, MailInvalidSyntaxReport, UrlInvalidUrlReport, HttpReport } from '../reports/index.js'
 import { humanDuration, displayUrl } from '../utils/index.js'
 import { LinkStore, sessionStore } from '../storage/index.js'
 import { Link } from '../link.js'
 import { handleResponse, handleFailedRequest } from '../record.js'
 import { PseudoUrls } from '../pseudoUrls.js'
 import Notifier from '../utils/notifier.js'
-import { console, inspect, normalizeUrl, isValidUrl } from '../../../core/index.js'
 
 import { defaultBrowserPoolOptions, defaultHarvesterOptions, defaultPlaywrightCrawlerOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore, getPerformanceData, getTimingFor } from './index.js'
-import { response } from 'express'
 
 const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
 
@@ -343,14 +342,14 @@ export class Harvester extends EventEmitter {
 
         if (!runOptions.resume) {
 
-            console.info(`Removing ${this.config.storageDir} and ${this.config.userDataDir} folders...`)
+            console.info(`Removing ${this.config.storageDir} and ${this.config.launchContextOptions.userDataDir} folders...`)
 
             const tmpDirSuffix = `${Date.now()}`;
             const tmpStorageDir = `${this.config.storageDir}_${tmpDirSuffix}`;
-            const tmpUserDataDir = `${this.config.userDataDir}_${tmpDirSuffix}`;
+            const tmpUserDataDir = `${this.config.launchContextOptions.userDataDir}_${tmpDirSuffix}`;
 
             cleanupFolderPromises.push(cleanupFolderPromise(this.config.storageDir, tmpStorageDir));
-            cleanupFolderPromises.push(cleanupFolderPromise(this.config.userDataDir, tmpUserDataDir));
+            cleanupFolderPromises.push(cleanupFolderPromise(this.config.launchContextOptions.userDataDir, tmpUserDataDir));
 
         }
 
@@ -364,7 +363,7 @@ export class Harvester extends EventEmitter {
 
             await Promise.all(cleanupFolderPromises)
                 .then(() => {
-                    console.info(`Done removing ${self.config.storageDir} and ${self.config.userDataDir} folders.`);
+                    console.info(`Done removing ${self.config.storageDir} and ${self.config.launchContextOptions.userDataDir} folders.`);
                 })
                 .catch(error => {
                     console.error(inspect(error))
@@ -645,9 +644,9 @@ export class Harvester extends EventEmitter {
 
                         console.warn(`Bad URL: ${link.userData.urlData}`)
 
-                        const urlError = new UrlInvalidUrlError(link.userData.urlData)
+                        const urlReport = new UrlInvalidUrlReport(link.userData.urlData)
 
-                        link.userData.reports = [urlError];
+                        link.userData.reports = [urlReport];
 
                         const record = await handleFailedRequest(link, {
                             _from: 'addToRequestQueue'
@@ -664,10 +663,10 @@ export class Harvester extends EventEmitter {
                 if (uriObj.scheme === 'mailto') {
 
                     if (uriObj.error) {
-                        link.userData.reports = [new MailInvalidSyntaxError()]
+                        link.userData.reports = [new MailInvalidSyntaxReport()]
                         self.session.counts.fail++
                     } else {
-                        link.userData.reports = [new MailUnverifiedAddressError()]
+                        link.userData.reports = [new MailUnverifiedAddressReport()]
                         self.session.counts.success++
                     }
 
@@ -875,7 +874,7 @@ export class Harvester extends EventEmitter {
                     // Here we deal with network / browser errors
                     //
 
-                    console.debug(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}. \nError: ${inspect(error)}\nRequest: ${inspect(request)}`)
+                    console.debug(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}\nError: ${inspect(error)}\nRequest: ${inspect(request)}`)
 
                     if (!request.userData.reports) {
                         request.userData.reports = []
@@ -1307,7 +1306,7 @@ export class Harvester extends EventEmitter {
                             if (!request.userData.reports) {
                                 request.userData.reports = []
                             }
-                            request.userData.reports.push(new PupResponseIsNullError('Response is null', request.url))
+                            request.userData.reports.push(new PupResponseIsNullReport('Response is null', request.url))
                         }
 
                     }

@@ -1,8 +1,8 @@
 import { omit, isNull, isNumber } from 'underscore'
 import extend from 'extend'
 
-import { console, inspect } from './../../core/index.js'
-import { captureErrors, HttpError } from './errors/index.js';
+import { console, inspect } from '@corvee/core'
+import { captureErrors, HttpReport } from './reports/index.js';
 
 export const defaultOptions = {
     url: null,
@@ -171,7 +171,7 @@ export async function handleResponse(request, response = null, meta = {}) {
 
         if (isNumber(record.httpStatusCode)) {
 
-            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+            const httpError = new HttpReport(record.httpStatusCode, record.httpStatusText)
 
             if (!record.reports) {
                 record.reports = []
@@ -188,8 +188,8 @@ export async function handleResponse(request, response = null, meta = {}) {
 
         record.finalUrl = finalUrl;
 
-        record.timing_ = response.request().timing()
-        record.sizes_ = await response.request().sizes()
+        // record.timing_ = response.request().timing()
+        // record.sizes_ = await response.request().sizes()
 
         delete record.uniqueKey;
 
@@ -239,7 +239,7 @@ export async function handleResponse(request, response = null, meta = {}) {
 
         if (isNumber(record.httpStatusCode)) {
 
-            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+            const httpError = new HttpReport(record.httpStatusCode, record.httpStatusText)
 
             if (!record.reports) {
                 record.reports = []
@@ -256,8 +256,8 @@ export async function handleResponse(request, response = null, meta = {}) {
 
         record.finalUrl = finalUrl;
 
-        record.timing_ = response.request().timing()
-        record.sizes_ = await response.request().sizes()
+        // record.timing_ = response.request().timing()
+        // record.sizes_ = await response.request().sizes()
 
         delete record.uniqueKey;
 
@@ -362,7 +362,7 @@ export async function handleFailedRequest(request, pwRequest, meta) {
 
         if (isNumber(record.httpStatusCode)) {
 
-            const httpError = new HttpError(record.httpStatusCode, record.httpStatusText)
+            const httpError = new HttpReport(record.httpStatusCode, record.httpStatusText)
 
             if (!record.reports) {
                 record.reports = []

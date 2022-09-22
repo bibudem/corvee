@@ -1,4 +1,4 @@
-import { canonicalizeUrl } from '../../core/index.js'
+import { canonicalizeUrl } from '@corvee/core'
 
 // import {
 //     Plugin

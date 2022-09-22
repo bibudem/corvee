@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { normalizeUrl } from "../../../core/lib/index.js";
+import { normalizeUrl } from '@corvee/core'
 
 function hashPayload(payload) {
   return createHash('sha256').update(payload).digest('base64').replace(/(\+|\/|=)/g, '').substr(0, 8);

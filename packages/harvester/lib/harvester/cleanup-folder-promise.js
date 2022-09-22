@@ -1,7 +1,7 @@
 
 import { promises as fsPromises, existsSync, mkdir, renameSync } from 'node:fs'
 
-import { inspect, console } from '../../../core/index.js'
+import { inspect, console } from '@corvee/core'
 
 export function cleanupFolderPromise(path, tmpPath) {
   return new Promise(async (resolve, reject) => {

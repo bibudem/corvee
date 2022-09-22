@@ -1,55 +1,55 @@
-import { BaseError } from "./error.js"
+import { Report } from "./report.js"
 
-export class PuppeteerError extends BaseError {
+export class PuppeteerReport extends Report {
   constructor(message) {
     super(message);
-    this.code = 'pup-error'
+    this.code = 'pup-report'
   }
 }
 
-export class FailedToLaunchError extends PuppeteerError {
+export class FailedToLaunchReport extends PuppeteerReport {
   constructor(message) {
     super(message)
     this.code = 'pup-failed-to-launch'
   }
 }
 
-export class TimeoutError extends PuppeteerError {
+export class TimeoutReport extends PuppeteerReport {
   constructor(message) {
     super(message)
     this.code = 'pup-timeout'
   }
 }
 
-export class BrowserHasDisconnectedError extends PuppeteerError {
+export class BrowserHasDisconnectedReport extends PuppeteerReport {
   constructor(message) {
     super(message)
     this.code = 'pup-browser-has-disconnected'
   }
 }
 
-export class TargetClosedError extends PuppeteerError {
+export class TargetClosedReport extends PuppeteerReport {
   constructor(message) {
     super(message)
     this.code = 'pup-target-closed'
   }
 }
 
-export class PageCrashedError extends PuppeteerError {
+export class PageCrashedReport extends PuppeteerReport {
   constructor(message) {
     super(message)
     this.code = 'pup-page-crashed'
   }
 }
 
-export class ProtocolError extends PuppeteerError {
+export class ProtocolReport extends PuppeteerReport {
   constructor(message) {
     super(message)
     this.code = 'pup-protocol-error'
   }
 }
 
-export class PupResponseIsNullError extends PuppeteerError {
+export class PupResponseIsNullReport extends PuppeteerReport {
   constructor(message) {
     super(message)
     this.code = 'pup-response-is-null'
