@@ -169,7 +169,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        if (isNumber(record.httpStatusCode)) {
+        if (isNumber(record.httpStatusCode) && record.httpStatusCode >= 400) {
 
             const httpError = new HttpReport(record.httpStatusCode, record.httpStatusText)
 
