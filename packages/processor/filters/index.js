@@ -1,6 +1,3 @@
-import http200 from './http-200.js'
-import http201 from './http-201.js'
-import http204 from './http-204.js'
 import http307 from './http-307.js'
 import http30xAllTempRedirects from './http-30x-all-temporary-redirects.js'
 import http30xCircularRedirection from './http-30x-circular-redirection.js'
@@ -24,6 +21,7 @@ import http501 from './http-501.js'
 import http502 from './http-502.js'
 import http503 from './http-503.js'
 import http512599 from './http-512-599.js'
+import http6xx from './http-6xx.js'
 
 import mailInvalidSyntax from './mail-invalid-syntax.js'
 import mailUnverifiedAddress from './mail-unverified-address.js'
@@ -40,9 +38,6 @@ import urlShorten from './url-shorten.js'
 export * from './messages/fr-CA.js'
 
 export const filters = {
-    http200,
-    http201,
-    http204,
     http307,
     http30xAllTempRedirects,
     http30xCircularRedirection,
@@ -66,7 +61,7 @@ export const filters = {
     http502,
     http503,
     http512599,
-    // http5xx,
+    http6xx,
 
     mailInvalidSyntax,
     mailUnverifiedAddress,

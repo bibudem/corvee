@@ -117,6 +117,21 @@ function getFinalUrl({
     return finalUrl;
 }
 
+function getHttpReport(httpStatusCode, httpStatusText, reports) {
+    if (isNumber(httpStatusCode) && ([301, 308].includes(httpStatusCode) || httpStatusCode >= 400)) {
+
+        const httpError = new HttpReport(httpStatusCode, httpStatusText)
+
+        if (!reports) {
+            reports = []
+        }
+
+        reports.push(httpError);
+    }
+
+    return reports
+}
+
 export async function handleResponse(request, response = null, meta = {}) {
 
     const reports = captureErrors(request.userData.reports);
@@ -169,16 +184,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        if (isNumber(record.httpStatusCode) && record.httpStatusCode >= 400) {
-
-            const httpError = new HttpReport(record.httpStatusCode, record.httpStatusText)
-
-            if (!record.reports) {
-                record.reports = []
-            }
-
-            record.reports.push(httpError);
-        }
+        record.reports = getHttpReport(record.httpStatusCode, record, httpStatusText, record.reports)
 
         const finalUrl = getFinalUrl({
             record,
@@ -237,16 +243,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        if (isNumber(record.httpStatusCode)) {
-
-            const httpError = new HttpReport(record.httpStatusCode, record.httpStatusText)
-
-            if (!record.reports) {
-                record.reports = []
-            }
-
-            record.reports.push(httpError);
-        }
+        record.reports = getHttpReport(record.httpStatusCode, record, httpStatusText, record.reports)
 
         const finalUrl = getFinalUrl({
             record,
@@ -360,16 +357,7 @@ export async function handleFailedRequest(request, pwRequest, meta) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        if (isNumber(record.httpStatusCode)) {
-
-            const httpError = new HttpReport(record.httpStatusCode, record.httpStatusText)
-
-            if (!record.reports) {
-                record.reports = []
-            }
-
-            record.reports.push(httpError);
-        }
+        record.reports = getHttpReport(record.httpStatusCode, record, httpStatusText, record.reports)
 
         return record;
     }

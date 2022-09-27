@@ -14,7 +14,7 @@ import { console, inspect, normalizeUrl, isValidUrl } from '@corvee/core'
 
 import { computeUniqueKey } from '../index.js'
 import { cleanupFolderPromise } from './cleanup-folder-promise.js'
-import { PupResponseIsNullReport, MailUnverifiedAddressReport, MailInvalidSyntaxReport, UrlInvalidUrlReport, HttpReport } from '../reports/index.js'
+import { PupResponseIsNullReport, MailUnverifiedAddressReport, MailInvalidSyntaxReport, UrlInvalidUrlReport } from '../reports/index.js'
 import { humanDuration, displayUrl } from '../utils/index.js'
 import { LinkStore, sessionStore } from '../storage/index.js'
 import { Link } from '../link.js'
@@ -427,8 +427,8 @@ export class Harvester extends EventEmitter {
         }, self.config.notifyDelay)
 
         self.notify.addMessage(async () => {
-            const info = await requestQueue.getInfo();
-            return `Request queue size: ${info.totalRequestCount} Handled: ${info.handledRequestCount}`
+            const { totalRequestCount, handledRequestCount } = await requestQueue.getInfo();
+            return `Request queue size: ${totalRequestCount} Handled: ${handledRequestCount}`
         })
 
         const uniqueLinksPerPage = new Map();

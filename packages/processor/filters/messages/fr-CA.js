@@ -1,17 +1,5 @@
 export const messagesFrCA = {
 
-    // "bot-url-outside-domain-filter": {
-    //     msg: "La cible du lien est exclue de la vérification."
-    // },
-
-    // "http-empty-content": {
-    //     msg: "Le lien fonctionne mais il n'y a pas de contenu. Vérifiez ce lien."
-    // },
-
-    "http-204": {
-        msg: "Le serveur a retourné une page vide."
-    },
-
     "http-301": {
         msg: "Redirection permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien."
     },
@@ -102,6 +90,10 @@ export const messagesFrCA = {
 
     "http-512-599": {
         msg: "Le fichier n'a pas été trouvé. Une erreur serveur est survenue."
+    },
+
+    "http-6xx": {
+        msg: "Le fichier n'a pas été trouvé. Une erreur inconnue est survenue."
     },
 
     "mail-invalid-syntax": {

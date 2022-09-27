@@ -1,4 +1,3 @@
-import { isObject, isString } from 'underscore';
 import { FailedToLaunchReport, HttpReport, BrowserHasDisconnectedReport, MailReport, MozillaReport, MOZILLA_ERROR_REGEX, NetReport, CorveeReport, PageCrashedReport, TimeoutReport, TargetClosedReport, UrlReport } from './definitions/index.js'
 import { console, inspect } from '@corvee/core'
 
