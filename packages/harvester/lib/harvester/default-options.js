@@ -187,7 +187,7 @@ export const defaultLaunchContextOptions = {
  */
 export const defaultAutoscaledPoolOptions = {
     minConcurrency: 1,
-    maxConcurrency: 10,
+    maxConcurrency: 5,
     scaleUpStepRatio: .05,
     scaleDownStepRatio: .05,
     maybeRunIntervalSecs: .5,

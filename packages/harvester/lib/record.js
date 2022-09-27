@@ -184,7 +184,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        record.reports = getHttpReport(record.httpStatusCode, record, httpStatusText, record.reports)
+        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         const finalUrl = getFinalUrl({
             record,
@@ -243,7 +243,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        record.reports = getHttpReport(record.httpStatusCode, record, httpStatusText, record.reports)
+        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         const finalUrl = getFinalUrl({
             record,
@@ -357,7 +357,7 @@ export async function handleFailedRequest(request, pwRequest, meta) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        record.reports = getHttpReport(record.httpStatusCode, record, httpStatusText, record.reports)
+        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         return record;
     }
