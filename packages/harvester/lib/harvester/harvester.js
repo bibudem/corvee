@@ -52,28 +52,24 @@ process.on('uncaughtException', function onUnhandledRejection(error, origin) {
 /**
  * Creates a new Harvester
  * @extends EventEmitter
+ * @class
+ * @param {object} config 
+ * @param {boolean|number} config.notifyDelay - Notifies at `notify` interval
+ * @param {function} config.plugins - TODO
+ * @param {array<string>} config.schemes - What schemes to follow
+ * @param {array<string|regex>} config.noFollow - TODO
+ * @param {array<string|regex>} config.ignore - TODO
+ * @param {array<string|regex>} internLinks
  */
 
 export class Harvester extends EventEmitter {
-
-    /**
-     * Creates a new Harvester
-     * @class
-     * @param {object} config 
-     * @param {boolean|number} config.notifyDelay - Notifies at `notify` interval
-     * @param {function} config.plugins - TODO
-     * @param {array<string>} config.schemes - What schemes to follow
-     * @param {array<string|regex>} config.noFollow - TODO
-     * @param {array<string|regex>} config.ignore - TODO
-     * @param {array<string|regex>} internLinks
-     */
 
     constructor(config = {}) {
 
         super();
 
         this.version = pkg.version;
-        this.isPaused = null;
+        this.isPaused = false;
         this._isRunning = false
         this._pausedAt = 0;
 
@@ -292,7 +288,7 @@ export class Harvester extends EventEmitter {
     }
 
     resume() {
-        if (!this.isPaused) {
+        if (this.isPaused) {
             console.info('Harvester is already running.')
             return;
         }
