@@ -1,6 +1,6 @@
 export * from './compute-unique-key.js'
 export * from './display-url.js'
 export * from './human-duration.js'
-export * from './log-error-codes.js'
+export * from './save-report-codes.js'
 export * from './make-array.js'
 export * from './wait.js'
