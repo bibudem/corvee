@@ -27,7 +27,6 @@
         "test:samples:misc": "node test/samples/misc",
         "test:samples:samples": "node test/samples/samples",
         "test:url": "node test/url",
-        "test": "jest --runInBand --no-cache --config jest.config.js",
         "serve:http-status": "nodemon --watch ./test/htttp-status/server.js --watch ./test/http-status/routes.js --exec node ./scripts/start-server.js"
     },
     "author": "",
@@ -54,21 +53,6 @@
         "yargs": "^17.5.1"
     },
     "devDependencies": {
-        "@babel/preset-env": "^7.18.10",
-        "babel-jest": "^28.1.3",
-        "es-main": "^1.2.0",
-        "express": "^4.17.1",
-        "faker": "^4.1.0",
-        "fast-xml-parser": "^3.14.0",
-        "hbs": "^4.0.6",
-        "he": "^1.2.0",
-        "jest": "^28.1.3",
-        "jest-cli": "^28.1.3",
-        "json-set-map": "^1.0.2",
-        "random-uri": "^1.0.3",
-        "toxy": "^0.3.16",
-        "ts-jest": "^28.0.8",
-        "url-slug": "^2.2.0",
-        "web-logger": "github:remillc/web-logger"
+        "es-main": "^1.2.0"
     }
 }
