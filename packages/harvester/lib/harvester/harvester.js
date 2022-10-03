@@ -851,6 +851,7 @@ export class Harvester extends EventEmitter {
             ...self.config.playwrightCrawlerOptions,
 
             autoscaledPoolOptions: self.config.autoscaledPoolOptions,
+            browserPoolOptions: self.config.browserPoolOptions,
             // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
             failedRequestHandler: async function onNavigationRequestFailed({
                 request,

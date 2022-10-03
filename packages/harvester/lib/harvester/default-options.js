@@ -107,6 +107,16 @@ export const defaultPlaywrightCrawlerOptions = {
 
 export const defaultBrowserPoolOptions = {
     /*
+     * @type {number}
+     */
+    maxOpenPagesPerBrowser: 10,
+
+    /*
+     * @type {number}
+     */
+    retireBrowserAfterPageCount: 30,
+
+    /*
      * @type {boolean}
      */
     useFingerprints: true,
@@ -187,6 +197,9 @@ export const defaultLaunchContextOptions = {
  */
 export const defaultAutoscaledPoolOptions = {
     minConcurrency: 1,
+    /*
+     * The maximum number of tasks running in parallel.
+     */
     maxConcurrency: 5,
     scaleUpStepRatio: .05,
     scaleDownStepRatio: .05,
