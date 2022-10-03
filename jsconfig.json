@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "module": "NodeNext",
+    "target": "ESNext",
+    "strict": true,
+    "alwaysStrict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "NodeNext",
+    "checkJs": true,
+    "allowJs": true,
+    "resolveJsonModule": false,
+    "baseUrl": ".",
+    "paths": {
+      "@corvee/core":["packages/core"],
+      "@corvee/harvester": ["packages/harvester/"],
+      "@corvee/processor":["packages/processor/"],
+    }
+  },
+  "exclude": [
+    "node_modules",
+    ".vscode",
+  ],
+}

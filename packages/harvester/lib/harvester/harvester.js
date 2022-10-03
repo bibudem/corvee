@@ -19,12 +19,12 @@ import { humanDuration, displayUrl } from '../utils/index.js'
 import { LinkStore, sessionStore } from '../storage/index.js'
 import { Link } from '../link.js'
 import { handleResponse, handleFailedRequest } from '../record.js'
-import { PseudoUrls } from '../pseudoUrls.js'
+import { PseudoUrls } from '../PseudoUrls.js'
 import Notifier from '../utils/notifier.js'
 
 import { defaultBrowserPoolOptions, defaultHarvesterOptions, defaultPlaywrightCrawlerOptions, defaultLaunchContextOptions, defaultAutoscaledPoolOptions, defaultLinkParser, BrowsingContextStore, getPerformanceData, getTimingFor } from './index.js'
 
-const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url)))
+const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf-8'))
 
 process.on('unhandledRejection', function onUnhandledRejection(reason, promise) {
 
@@ -50,38 +50,52 @@ process.on('uncaughtException', function onUnhandledRejection(error, origin) {
 });
 
 /**
+ * @typedef {defaultHarvesterOptions} userConfigType
+ * @extends {defaultPlaywrightCrawlerOptions}
+ * @extends {defaultBrowserPoolOptions}
+ * @extends {defaultLaunchContextOptions}
+ * @extends {defaultAutoscaledPoolOptions}
+ */
+
+/**
+ * @typedef {defaultHarvesterOptions} configType
+ * @property {defaultAutoscaledPoolOptions} autoscaledPoolOptions
+ * @property {defaultLaunchContextOptions} launchContextOptions
+ * 
+ */
+
+/**
  * Creates a new Harvester
  * @extends EventEmitter
  * @class
- * @param {object} config 
- * @param {boolean|number} config.notifyDelay - Notifies at `notify` interval
- * @param {function} config.plugins - TODO
- * @param {array<string>} config.schemes - What schemes to follow
- * @param {array<string|regex>} config.noFollow - TODO
- * @param {array<string|regex>} config.ignore - TODO
- * @param {array<string|regex>} internLinks
  */
-
 export class Harvester extends EventEmitter {
 
-    constructor(config = {}) {
+    /**
+     * 
+     * @param {userConfigType | string} config 
+     */
+    constructor(config) {
 
         super();
 
+        /**
+         * @type {string}
+         */
         this.version = pkg.version;
         this.isPaused = false;
         this._isRunning = false
         this._pausedAt = 0;
 
-        this.config = ((config, userConfig) => {
-            config = extend(true, {}, defaultHarvesterOptions, pick(omit(userConfig, ['proxyUrls']), Object.keys(defaultHarvesterOptions)))
-            config.autoscaledPoolOptions = extend(true, {}, defaultAutoscaledPoolOptions, pick(userConfig, Object.keys(defaultAutoscaledPoolOptions)))
-            config.browserPoolOptions = extend(true, {}, defaultBrowserPoolOptions, pick(userConfig, Object.keys(defaultBrowserPoolOptions)))
-            config.launchContextOptions = extend(true, {}, defaultLaunchContextOptions, pick(userConfig, Object.keys(defaultLaunchContextOptions)))
-            config.playwrightCrawlerOptions = extend(true, {}, defaultPlaywrightCrawlerOptions, pick(userConfig, Object.keys(defaultPlaywrightCrawlerOptions)))
-
-            return config
-        })({}, config)
+        /**
+         * @type { configType } config
+         */
+        this.config = extend(true, {}, defaultHarvesterOptions, pick(omit(config, ['proxyUrls']), Object.keys(defaultHarvesterOptions)))
+        this.config.autoscaledPoolOptions = extend(true, {}, defaultAutoscaledPoolOptions, pick(config, Object.keys(defaultAutoscaledPoolOptions)))
+        this.config.browserPoolOptions = extend(true, {}, defaultBrowserPoolOptions, pick(config, Object.keys(defaultBrowserPoolOptions)))
+        this.config.launchContextOptions = extend(true, {}, defaultLaunchContextOptions, pick(config, Object.keys(defaultLaunchContextOptions)))
+        this.config.launchContextOptions = extend(true, {}, defaultLaunchContextOptions, pick(config, Object.keys(defaultLaunchContextOptions)))
+        this.config.playwrightCrawlerOptions = extend(true, {}, defaultPlaywrightCrawlerOptions, pick(config, Object.keys(defaultPlaywrightCrawlerOptions)))
 
         this.config.launchContextOptions.launcher = playwright[this.config.browser]
 
@@ -152,11 +166,19 @@ export class Harvester extends EventEmitter {
 
         this.homeBasePUrl = new PseudoUrls(this.config.internLinks)
 
+        /**
+         * @type {Array<string>}
+         */
         this.urlList = [];
     }
 
+    /**
+     * 
+     * @param { string | Link | Array<string|Link>} urls 
+     * @returns 
+     */
     async addUrl(urls) {
-        return new Promise(async (resolve, reject) => {
+        return /** @type {Promise<void>} */(new Promise(async (resolve, reject) => {
             v(urls, 'urls').is('string', 'array', 'object')
 
             if (!Array.isArray(urls)) {
@@ -167,8 +189,7 @@ export class Harvester extends EventEmitter {
                     await this._addToRequestQueue(...urls.map(url => new Link(url, this.normalizeUrl)))
                     resolve()
                 } else {
-                    let addToRequestQueueHandle;
-                    setInterval(async () => {
+                    const addToRequestQueueHandle = setInterval(async () => {
                         if (this._addToRequestQueue) {
                             await this._addToRequestQueue(...urls.map(url => new Link(url, this.normalizeUrl)))
                             clearInterval(addToRequestQueueHandle)
@@ -181,13 +202,19 @@ export class Harvester extends EventEmitter {
                 resolve()
             }
 
-        })
+        }))
     }
 
+    /**
+     * @param {() => { url: string; text: string; urlData: object; isNavigationRequest: boolean; }[]} fn
+     */
     setLinkParser(fn) {
         this.linkParser = fn;
     }
 
+    /**
+     * @param {any[]} plugins
+     */
     setPlugins(plugins) {
         if (!Array.isArray(plugins)) {
             plugins = [plugins];
@@ -987,9 +1014,9 @@ export class Harvester extends EventEmitter {
                             if (pwRequest.isNavigationRequest()) {
 
                                 // Don't request if extern setting meets
-                                if (!self.config.checkExtern && self.isExternLink(url)) {
+                                if (!self.config.checkExtern && self.isExternLink(URL)) {
 
-                                    console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(url)} from settings.`);
+                                    console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(URL)} from settings.`);
 
                                     return pwRequest.abort('blockedbyclient')
                                 }
