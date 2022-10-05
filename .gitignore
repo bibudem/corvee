@@ -32,3 +32,4 @@ tmp
 .storage
 /packages/processor/filters/messages.xml
 * - Copie.*
+.vscode
