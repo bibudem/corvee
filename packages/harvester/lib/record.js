@@ -2,7 +2,7 @@ import { omit, isNull, isNumber } from 'underscore'
 import extend from 'extend'
 
 import { console, inspect } from '@corvee/core'
-import { captureErrors, HttpReport } from './reports/index.js';
+import { captureErrors, HttpReport, Report } from './reports/index.js';
 
 export const defaultOptions = {
     url: null,
@@ -117,6 +117,11 @@ function getFinalUrl({
     return finalUrl;
 }
 
+/**
+ * @param {number} httpStatusCode
+ * @param {string} httpStatusText
+ * @param {Array<Report>} reports
+ */
 function getHttpReport(httpStatusCode, httpStatusText, reports) {
     if (isNumber(httpStatusCode) && ([301, 308].includes(httpStatusCode) || httpStatusCode >= 400)) {
 
@@ -132,6 +137,10 @@ function getHttpReport(httpStatusCode, httpStatusText, reports) {
     return reports
 }
 
+/**
+ * @param {import("@crawlee/core").Request | import("playwright-core").Request} request
+ * @param {import("playwright-core").Response} response
+ */
 export async function handleResponse(request, response = null, meta = {}) {
 
     const reports = captureErrors(request.userData.reports);
@@ -304,6 +313,11 @@ export async function handleResponse(request, response = null, meta = {}) {
     return record;
 }
 
+/**
+ * @param {import("@crawlee/core").Request} request
+ * @param {import("playwright-core").Request} pwRequest
+ * @param {{ _from: string; }} [meta]
+ */
 export async function handleFailedRequest(request, pwRequest, meta) {
 
     //
@@ -382,6 +396,10 @@ export async function handleFailedRequest(request, pwRequest, meta) {
     }
 }
 
+/**
+ * @param {import("@crawlee/core").Request | import("playwright-core").Request} request
+ * @returns {string}
+ */
 function getRequestUrl(request) {
 
     const previousRequest = request.redirectedFrom()
@@ -393,12 +411,25 @@ function getRequestUrl(request) {
     return getRequestUrl(previousRequest)
 }
 
+/**
+ * @typedef { Array <{ url: string; status: number; statusText: string; }>} RedirectChainType
+ */
+
+/**
+ * @param {import("playwright-core").Request} request
+ * @returns {Promise<RedirectChainType>}
+ */
 export async function getRedirectChain(request) {
 
     if (isNull(request.redirectedFrom())) {
         return null
     }
 
+    /**
+     * @param {import("playwright-core").Request} request
+     * @param { RedirectChainType } redirectChain
+     * @returns {Promise<RedirectChainType>}
+     */
     async function doGetRedirectChain(request, redirectChain) {
 
         const response = await request.response()
@@ -434,6 +465,6 @@ export async function getRedirectChain(request) {
         return doGetRedirectChain(redirectedRequest, redirectChain)
     }
 
-    return await doGetRedirectChain(request, [])
+    return doGetRedirectChain(request, [])
 
 }

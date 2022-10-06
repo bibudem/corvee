@@ -118,6 +118,13 @@ const consoleLogger = tracer.colorConsole({
 
 consoleLogger.setLevel = tracer.setLevel;
 
+/**
+ * @typedef {Object<string, any>} LoggerType
+ */
+
+/**
+ * @type LoggerType
+ */
 const logger = {
     setLevel(level) {
         fileLogger.setLevel(level)

@@ -19,18 +19,21 @@ export const defaultHarvesterOptions = {
     /**
      * Wether to use defaultHarvesterOptions.ignoreDefaults or not
      * @private
+     * @default
      */
     useIgnoreDefaults: true,
 
     /**
      * Wether to use defaultHarvesterOptions.schemesDefaults or not
      * @private
+     * @default
      */
     useSchemesDefaults: true,
 
     /**
      * Wether to use defaultHarvesterOptions.noFollowDefaults or not
      * @private
+     * @default
      */
     useNoFollowDefaults: true,
 
@@ -40,7 +43,7 @@ export const defaultHarvesterOptions = {
 
     /**
      * URL patterns that will be blocked from external requests
-     * @type {Array.<string>}
+     * @type {Array<string>}
      */
     blockRequestsFromUrlPatterns: ['.bmp', '.css', '.cur', '.gif', '.gzip', '.jpeg', '.jpg', '.mp4', '.png', '.svg', '.ttf', '.webp', '.woff', '.woff2', '.zip', 'googleadservices.com'],
 
@@ -94,7 +97,7 @@ export const defaultHarvesterOptions = {
      */
     normalizeUrlFunction: null,
     notify: true,
-    notifyDelay: 10000,
+    notifyDelay: 10_000,
     notifyLogLevel: 'info',
 
     /**
@@ -117,7 +120,7 @@ export const defaultHarvesterOptions = {
 
     /**
      * Proxy server URLs to use
-     * @type {string | string[] | undefined}
+     * @type {string | string[]}
      */
     proxyUrls: undefined,
 
@@ -130,23 +133,37 @@ export const defaultHarvesterOptions = {
      * @type {Array<string>}
      */
     schemesDefaults: ['corvee', 'http', 'https'],
-    startUrl: null,
+
+    /**
+     * @type {string | Array<string> }
+     */
+    startUrl: undefined,
     storageDir: join(tmpDir, '.storage'),
     useCache: true,
     waitInterval: 50,
 }
 
 /**
+ * Autoscaled pool options
  * @typedef
+ * @see {@link https://crawlee.dev/api/core/interface/AutoscaledPoolOptions}
  */
-export const defaultPlaywrightCrawlerOptions = {
-    headless: true,
-    maxRequestRetries: 3,
-    maxRequestsPerCrawl: Infinity,
-    navigationTimeoutSecs: 30,
-    persistCookiesPerSession: true,
-    requestHandlerTimeoutSecs: 30,
-    useSessionPool: true
+export const defaultAutoscaledPoolOptions = {
+    minConcurrency: 1,
+    maxConcurrency: 5,
+    scaleUpStepRatio: .05,
+    scaleDownStepRatio: .05,
+    maybeRunIntervalSecs: .5,
+    loggingIntervalSecs: 10,
+    autoscaleIntervalSecs: 10,
+    /**
+     * SystemStatus Options
+     * @see {@link https://crawlee.dev/api/core/interface/SystemStatusOptions}
+     */
+    systemStatusOptions: {
+        maxCpuOverloadedRatio: .3,
+        currentHistorySecs: 5
+    }
 }
 
 /**
@@ -226,30 +243,26 @@ export const defaultLaunchContextOptions = {
             width: 1920,
             height: 1080
         }
-    }
+    },
+
+    /**
+     * @private
+     * @type {import('playwright').BrowserType} BrowserType
+     */
+    launcher: undefined
 
 
 }
 
 /**
- * Autoscaled pool options
  * @typedef
- * @see {@link https://crawlee.dev/api/core/interface/AutoscaledPoolOptions}
  */
-export const defaultAutoscaledPoolOptions = {
-    minConcurrency: 1,
-    maxConcurrency: 5,
-    scaleUpStepRatio: .05,
-    scaleDownStepRatio: .05,
-    maybeRunIntervalSecs: .5,
-    loggingIntervalSecs: 30,
-    autoscaleIntervalSecs: 10,
-    /**
-     * SystemStatus Options
-     * @see {@link https://crawlee.dev/api/core/interface/SystemStatusOptions}
-     */
-    systemStatusOptions: {
-        maxCpuOverloadedRatio: .3,
-        currentHistorySecs: 5
-    }
+export const defaultPlaywrightCrawlerOptions = {
+    headless: true,
+    maxRequestRetries: 3,
+    maxRequestsPerCrawl: Infinity,
+    navigationTimeoutSecs: 30,
+    persistCookiesPerSession: true,
+    requestHandlerTimeoutSecs: 30,
+    useSessionPool: true
 }

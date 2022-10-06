@@ -1,11 +1,11 @@
 import EventEmitter from 'node:events'
 import { readFile } from 'node:fs/promises'
-
+import os from 'node:os'
 import minimatch from 'minimatch'
-import { pick, omit, isRegExp, isFunction, isObject, isNull } from 'underscore'
+import { pick, omit, isRegExp, isFunction, isObject, isNull, isArray } from 'underscore'
 import * as URI from 'uri-js'
 import filenamifyUrl from 'filenamify-url'
-import { Dataset, KeyValueStore, PlaywrightCrawler, ProxyConfiguration, RequestQueue, Request } from '@crawlee/playwright'
+import { Dataset, KeyValueStore, PlaywrightCrawler, ProxyConfiguration, RequestQueue, Request, Snapshotter, Configuration, StorageManager } from '@crawlee/playwright'
 import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
@@ -58,10 +58,8 @@ process.on('uncaughtException', function onUnhandledRejection(error, origin) {
  */
 
 /**
- * @typedef {defaultHarvesterOptions} configType
- * @property {defaultAutoscaledPoolOptions} autoscaledPoolOptions
- * @property {defaultLaunchContextOptions} launchContextOptions
- * 
+ * @typedef configType
+ * @type defaultHarvesterOptions
  */
 
 /**
@@ -73,7 +71,7 @@ export class Harvester extends EventEmitter {
 
     /**
      * 
-     * @param {userConfigType | string} config 
+     * @param {defaultHarvesterOptions | string | Array<string>} config 
      */
     constructor(config) {
 
@@ -87,17 +85,58 @@ export class Harvester extends EventEmitter {
         this._isRunning = false
         this._pausedAt = 0;
 
+        let startUrl;
+
+        if (typeof config === 'string') {
+            startUrl = config
+        }
+
+        if (Array.isArray(config)) {
+            startUrl = config
+        }
+
+        if (startUrl) {
+            config = {
+                startUrl
+            }
+        }
+
         /**
          * @type { configType } config
          */
         this.config = extend(true, {}, defaultHarvesterOptions, pick(omit(config, ['proxyUrls']), Object.keys(defaultHarvesterOptions)))
-        this.config.autoscaledPoolOptions = extend(true, {}, defaultAutoscaledPoolOptions, pick(config, Object.keys(defaultAutoscaledPoolOptions)))
-        this.config.browserPoolOptions = extend(true, {}, defaultBrowserPoolOptions, pick(config, Object.keys(defaultBrowserPoolOptions)))
-        this.config.launchContextOptions = extend(true, {}, defaultLaunchContextOptions, pick(config, Object.keys(defaultLaunchContextOptions)))
-        this.config.launchContextOptions = extend(true, {}, defaultLaunchContextOptions, pick(config, Object.keys(defaultLaunchContextOptions)))
-        this.config.playwrightCrawlerOptions = extend(true, {}, defaultPlaywrightCrawlerOptions, pick(config, Object.keys(defaultPlaywrightCrawlerOptions)))
 
-        this.config.launchContextOptions.launcher = playwright[this.config.browser]
+        this.autoscaledPoolOptions = extend(true, {}, defaultAutoscaledPoolOptions, pick(config, Object.keys(defaultAutoscaledPoolOptions)))
+        this.browserPoolOptions = extend(true, {}, defaultBrowserPoolOptions, pick(config, Object.keys(defaultBrowserPoolOptions)))
+
+        this.launchContextOptions = extend(true, {}, defaultLaunchContextOptions, pick(config, Object.keys(defaultLaunchContextOptions)))
+        this.playwrightCrawlerOptions = extend(true, {}, defaultPlaywrightCrawlerOptions, pick(config, Object.keys(defaultPlaywrightCrawlerOptions)))
+
+        this.launchContextOptions.launcher = playwright[this.config.browser]
+
+        const crawleeConfig = Configuration.getGlobalConfig()
+        crawleeConfig.set('systemInfoIntervalMillis', this.config.notifyDelay)
+
+        // Fixing Crawlee not using our settings
+
+        this.snapshotter = new Snapshotter()
+
+        const totalmem = os.totalmem()
+
+        this.snapshotter.events.on('systemInfo', ev => {
+            this.emit('systemInfo', {
+                createdAt: (new Date()).toISOString(),
+                currentRunTime: Date.now() - this.session.startTime,
+                cpuCurrentUsage: ev.cpuCurrentUsage,
+                memCurrentBytes: ev.memCurrentBytes,
+                memCurrentUsage: ev.memCurrentBytes / totalmem * 100,
+                memTotalUsage: os.freemem() / totalmem * 100,
+                activePagesCount: this.crawler?.browserPool.pages.size,
+                activeBrowsersCount: this.crawler?.browserPool.activeBrowserControllers.size
+            })
+        })
+
+        this.autoscaledPoolOptions.systemStatusOptions.snapshotter = this.snapshotter
 
         if (typeof config.pageWaitUntil === 'string') {
             this.config.pageWaitUntil = {
@@ -109,7 +148,7 @@ export class Harvester extends EventEmitter {
         if (typeof config.proxyUrls !== 'undefined') {
             const proxyUrls = typeof config.proxyUrls === 'string' ? [config.proxyUrls] : config.proxyUrls;
             const proxyConfiguration = new ProxyConfiguration({ proxyUrls })
-            this.config.playwrightCrawlerOptions.proxyConfiguration = proxyConfiguration
+            this.playwrightCrawlerOptions.proxyConfiguration = proxyConfiguration
         }
 
         console.log(`Setting log level to ${this.config.logLevel}`)
@@ -143,7 +182,19 @@ export class Harvester extends EventEmitter {
             onNavigationResponse: []
         }
 
-        this.session = null; // will be initialized in the run() method
+        /**
+         * @type {{
+         *  startTime?: number,
+         *  recordCount?: number,
+         *  counts?: {
+         *      success: number,
+         *      fail: number,
+         *      activeRequests: number,
+         *      finishedRequests: number
+         *  }
+         * }} sessionType
+         */
+        this.session = {}; // will be initialized in the run() method
 
         if ('plugins' in this.config) {
             this.setPlugins(this.config.plugins)
@@ -167,15 +218,20 @@ export class Harvester extends EventEmitter {
         this.homeBasePUrl = new PseudoUrls(this.config.internLinks)
 
         /**
-         * @type {Array<string>}
+         * @type {Array<string | Link>}
          */
         this.urlList = [];
+
+        /**
+         * @type {LinkStore}
+         */
+        this.linkStore
+        this._handledRequests = undefined
     }
 
     /**
      * 
      * @param { string | Link | Array<string|Link>} urls 
-     * @returns 
      */
     async addUrl(urls) {
         return /** @type {Promise<void>} */(new Promise(async (resolve, reject) => {
@@ -185,13 +241,13 @@ export class Harvester extends EventEmitter {
                 urls = [urls]
             }
             if (this._isRunning) {
-                if (this._addToRequestQueue) {
-                    await this._addToRequestQueue(...urls.map(url => new Link(url, this.normalizeUrl)))
+                if (this.addToRequestQueue) {
+                    await this.addToRequestQueue(urls.map(url => new Link(url, this.normalizeUrl)))
                     resolve()
                 } else {
                     const addToRequestQueueHandle = setInterval(async () => {
-                        if (this._addToRequestQueue) {
-                            await this._addToRequestQueue(...urls.map(url => new Link(url, this.normalizeUrl)))
+                        if (this.addToRequestQueue) {
+                            await this.addToRequestQueue(urls.map(url => new Link(url, this.normalizeUrl)))
                             clearInterval(addToRequestQueueHandle)
                             resolve()
                         }
@@ -233,6 +289,11 @@ export class Harvester extends EventEmitter {
         })
     }
 
+    /**
+     * 
+     * @param {string} url 
+     * @returns {boolean}
+     */
     shouldNotFollowUrl(url) {
         if (this.config.noFollow.length === 0) {
             return false;
@@ -241,6 +302,10 @@ export class Harvester extends EventEmitter {
         return this.config.noFollow.find(testUrl => typeof testUrl === 'string' ? url.includes(testUrl) : testUrl.test(url))
     }
 
+    /**
+     * @param {string} url
+     * @returns {boolean}
+     */
     shouldIgnoreUrl(url) {
         const self = this;
 
@@ -271,6 +336,10 @@ export class Harvester extends EventEmitter {
         return shouldIgnore;
     }
 
+    /**
+     * @param {string} url
+     * @returns {boolean}
+     */
     isExternLink(url) {
         const isExtern = (() => {
             if (url) {
@@ -288,9 +357,12 @@ export class Harvester extends EventEmitter {
     }
 
     isMaxRequestExceeded() {
-        return this.config.playwrightCrawlerOptions.maxRequestsPerCrawl !== -1 && this.session.counts.activeRequests > this.config.playwrightCrawlerOptions.maxRequestsPerCrawl && this.session.counts.finishedRequests >= this.config.playwrightCrawlerOptions.maxRequestsPerCrawl;
+        return this.playwrightCrawlerOptions.maxRequestsPerCrawl !== -1 && this.session.counts.activeRequests > this.playwrightCrawlerOptions.maxRequestsPerCrawl && this.session.counts.finishedRequests >= this.playwrightCrawlerOptions.maxRequestsPerCrawl;
     }
 
+    /**
+     * @param {number} [timeout]
+     */
     async pause(timeout) {
         if (this.isPaused) {
             console.info('Harvester is already paused.')
@@ -301,7 +373,7 @@ export class Harvester extends EventEmitter {
 
         console.info('Pausing harvester...')
 
-        await this.crawler.pause(timeout)
+        await this.crawler.autoscaledPool.pause(timeout)
 
         if (this.notify) {
             this.notify.pause();
@@ -319,7 +391,7 @@ export class Harvester extends EventEmitter {
             console.info('Harvester is already running.')
             return;
         }
-        this.crawler.resume()
+        this.crawler.autoscaledPool.resume()
         const pauseTime = Date.now() - this._pausedAt;
         this.session.startTime = this.session.startTime + pauseTime;
         this._pausedAt = 0;
@@ -332,10 +404,15 @@ export class Harvester extends EventEmitter {
         console.info(`Harvester resumed crawling.`)
     }
 
-    stop() {
+    async stop() {
+        await this.crawler.autoscaledPool.abort()
         process.exit();
     }
 
+    /**
+     * @param {object} [runOptions]
+     * @param {boolean} [runOptions.resume=false]
+     */
     async run(runOptions) {
 
         const self = this;
@@ -358,21 +435,18 @@ export class Harvester extends EventEmitter {
             })
         }
 
-        console.info(`Running with config: ${inspect(this.config)}`);
-        console.info(`Running with run options: ${inspect(this.runOptions)}`)
-
         const cleanupFolderPromises = [];
 
         if (!runOptions.resume) {
 
-            console.info(`Removing ${this.config.storageDir} and ${this.config.launchContextOptions.userDataDir} folders...`)
+            console.info(`Removing ${this.config.storageDir} and ${this.launchContextOptions.userDataDir} folders...`)
 
             const tmpDirSuffix = `${Date.now()}`;
             const tmpStorageDir = `${this.config.storageDir}_${tmpDirSuffix}`;
-            const tmpUserDataDir = `${this.config.launchContextOptions.userDataDir}_${tmpDirSuffix}`;
+            const tmpUserDataDir = `${this.launchContextOptions.userDataDir}_${tmpDirSuffix}`;
 
             cleanupFolderPromises.push(cleanupFolderPromise(this.config.storageDir, tmpStorageDir));
-            cleanupFolderPromises.push(cleanupFolderPromise(this.config.launchContextOptions.userDataDir, tmpUserDataDir));
+            cleanupFolderPromises.push(cleanupFolderPromise(this.launchContextOptions.userDataDir, tmpUserDataDir));
 
         }
 
@@ -386,7 +460,7 @@ export class Harvester extends EventEmitter {
 
             await Promise.all(cleanupFolderPromises)
                 .then(() => {
-                    console.info(`Done removing ${self.config.storageDir} and ${self.config.launchContextOptions.userDataDir} folders.`);
+                    console.info(`Done removing ${self.config.storageDir} and ${self.launchContextOptions.userDataDir} folders.`);
                 })
                 .catch(error => {
                     console.error(inspect(error))
@@ -437,11 +511,14 @@ export class Harvester extends EventEmitter {
 
         });
 
-        self.screenshotsStore = await KeyValueStore.open('screenshots');
+        // self.screenshotsStore = await KeyValueStore.open('screenshots');
 
         const requestQueue = await RequestQueue.open('playwright');
 
         setInterval(async function () {
+            /**
+             * @type {import('@crawlee/types').RequestQueueInfo}
+             */
             const info = await requestQueue.getInfo();
             self.emit('progress', {
                 handled: info.handledRequestCount,
@@ -453,15 +530,22 @@ export class Harvester extends EventEmitter {
             })
         }, self.config.notifyDelay)
 
-        self.notify.addMessage(async () => {
+        self.notify?.addMessage(async () => {
             const { totalRequestCount, handledRequestCount } = await requestQueue.getInfo();
             return `Request queue size: ${totalRequestCount} Handled: ${handledRequestCount}`
         })
 
         const uniqueLinksPerPage = new Map();
 
+        /**
+         * @param {import("@crawlee/playwright").RequestOptions} requestData
+         */
         async function tryAddToRequestQueue(requestData) {
 
+            /**
+             * @param {{ (): Promise<boolean>; (): any; }} fn
+             * @param {number} interval
+             */
             function tryAgain(fn, interval) {
                 return new Promise(async (resolve) => {
                     const handle = setInterval(async () => {
@@ -474,7 +558,7 @@ export class Harvester extends EventEmitter {
                 });
             }
 
-            return new Promise(async resolve => {
+            return /** @type {Promise<void>} */(new Promise(async resolve => {
                 try {
                     if (runOptions.resume) {
                         // resuming previously fetched links
@@ -519,11 +603,11 @@ export class Harvester extends EventEmitter {
 
                             const request = new Request({
                                 url: requestData.userData.url,
-                                userData: requestData.userData,
-                                retryCount: requestData.userData.trials
+                                userData: requestData.userData
                             })
 
-                            request.id = requestData.userData.id
+                            request.retryCount = requestData.userData.trials
+                            request.id = reqInfo.requestId
 
                             await requestQueue.reclaimRequest(request)
 
@@ -566,9 +650,12 @@ export class Harvester extends EventEmitter {
 
                 resolve();
 
-            })
+            }))
         }
 
+        /**
+         * @param {*|Array<*|Link>} linkDataset
+         */
         async function addToRequestQueue(linkDataset) {
 
             if (!Array.isArray(linkDataset)) {
@@ -579,6 +666,9 @@ export class Harvester extends EventEmitter {
                 return Promise.resolve()
             }
 
+            /**
+             * @type {Array<Link>}
+             */
             const addRequestPromises = [];
 
             linkDataset.forEach(async data => {
@@ -586,6 +676,10 @@ export class Harvester extends EventEmitter {
                 assert.object(data)
 
                 const link = data.constructor.name === 'Link' ? data : new Link(data, self.normalizeUrl)
+
+                /**
+                 * @type {URI.URIComponents}
+                 */
                 let uriObj;
 
                 assert.string(link.url)
@@ -621,8 +715,8 @@ export class Harvester extends EventEmitter {
 
                 uniqueLinksPerPage.get(pageUrl).add(link.url);
 
-                if (!self.config.schemes.some(scheme => minimatch(uriObj.scheme, scheme))) {
-                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri <${link.url}>` : ''}`)
+                if (!self.config.schemes.some((/** @type {string} */ scheme) => minimatch(uriObj.scheme, scheme))) {
+                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${pageUrl} -> ${link.url}` : ''}`)
 
                     return;
                 }
@@ -719,20 +813,32 @@ export class Harvester extends EventEmitter {
                 });
         }
 
-        self._addToRequestQueue = addToRequestQueue
+        self.addToRequestQueue = addToRequestQueue
 
         if (self.config.startUrl) {
+            let startUrl = self.config.startUrl
+            if (!Array.isArray(startUrl)) {
+                console.info(`Start URL: ${startUrl}`)
+                startUrl = [startUrl]
+            } else {
+                console.info(`Start URLs: ${self.config.startUrl.join(', ')}`)
+            }
 
-            console.info(`Start URL: ${self.config.startUrl}`)
+            startUrl.forEach(async url => {
 
-            await addToRequestQueue(new Link(self.config.startUrl, {
-                parent: 'corvee:startpage',
-                isNavigationRequest: true
-            }, self.normalizeUrl))
+                await addToRequestQueue(new Link(url, {
+                    parent: 'corvee:startpage',
+                    isNavigationRequest: true
+                }, self.normalizeUrl))
+
+            })
         }
 
         await addToRequestQueue(self.urlList)
 
+        /**
+         * @param {import("@crawlee/playwright").Dictionary<any> | import("@crawlee/playwright").Dictionary<any>[]} record
+         */
         async function addRecord(record) {
 
             return new Promise(async (resolve, reject) => {
@@ -780,6 +886,9 @@ export class Harvester extends EventEmitter {
             })
         }
 
+        /**
+         * @param {playwright.Page} page
+         */
         async function parseLinksInPage(page, {
             currentLevel
         }) {
@@ -823,7 +932,7 @@ export class Harvester extends EventEmitter {
                 console.todo(`Could not parse links in page ${page.url()}. Error: ${inspect(error)}`)
             }
 
-            assert(isObject(links) || Array.isArray(links), 'The return value from the parser function must be an object or an array.')
+            assert.ok(isObject(links) || Array.isArray(links), 'The return value from the parser function must be an object or an array.')
 
             if (!Array.isArray(links)) {
                 links = [links];
@@ -875,10 +984,10 @@ export class Harvester extends EventEmitter {
 
         const playwrightCrawler = new PlaywrightCrawler({
 
-            ...self.config.playwrightCrawlerOptions,
+            ...self.playwrightCrawlerOptions,
 
-            autoscaledPoolOptions: self.config.autoscaledPoolOptions,
-            browserPoolOptions: self.config.browserPoolOptions,
+            autoscaledPoolOptions: self.autoscaledPoolOptions,
+            browserPoolOptions: self.browserPoolOptions,
             // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
             failedRequestHandler: async function onNavigationRequestFailed({
                 request,
@@ -916,7 +1025,7 @@ export class Harvester extends EventEmitter {
                     self.session.counts.fail++
                 }
             },
-            launchContext: self.config.launchContextOptions,
+            launchContext: self.launchContextOptions,
             preNavigationHooks: [
                 async function preNavigationHooksFunction({ crawler, request, session, page, browserController, proxyInfo }, gotoOptions) {
 
@@ -936,7 +1045,7 @@ export class Harvester extends EventEmitter {
                         // 'upgrade-insecure-requests': '1'
                     }
 
-                    await page.setExtraHTTPHeaders(extraHTTPHeaders)
+                    // await page.setExtraHTTPHeaders(extraHTTPHeaders)
 
                     gotoOptions.waitUntil = self.isExternLink(request.url) ? self.config.pageWaitUntil.extern : self.config.pageWaitUntil.intern
 
@@ -1001,6 +1110,7 @@ export class Harvester extends EventEmitter {
                             const url = pwRequest.url();
                             const parent = page.url();
 
+                            // @ts-ignore
                             pwRequest.userData = Object.assign({ trials: 1 }, request.userData,
                                 {
                                     _from: 'onRequest',
@@ -1457,20 +1567,14 @@ Error: ${inspect(error)}`)
             requestQueue: requestQueue,
         });
 
-        playwrightCrawler.pause = async function pause(timeout) {
-            return playwrightCrawler.autoscaledPool.pause(timeout);
-        }
-
-        playwrightCrawler.resume = function resume() {
-            return playwrightCrawler.autoscaledPool.resume();
-        }
-
         self.crawler = playwrightCrawler
 
+        self.emit('start')
+        console.log('Starting...')
         await playwrightCrawler.run()
 
         console.info('Crawler is done.')
 
-        self.stop()
+        await self.stop()
     }
 };

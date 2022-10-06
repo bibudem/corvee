@@ -4,6 +4,7 @@
     "module": "NodeNext",
     "target": "ESNext",
     "strict": true,
+    "strictNullChecks": false,
     "alwaysStrict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
