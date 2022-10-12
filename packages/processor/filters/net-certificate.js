@@ -1,13 +1,13 @@
 export default {
   code: 'net-certificate',
-  description: 'Matches any report of the NetError class or MozillaError class that has a property `type` === `certificate`.',
+  description: 'Matches any report of the NetReport class or MozillaReport class that has a property `type` === `certificate`.',
   test: record => {
     if (record.reports.some(report => {
       return typeof report.name !== 'undefined'
         &&
         (
-          report.name === 'NetError'
-          || report.name === 'MozillaError'
+          report.name === 'NetReport'
+          || report.name === 'MozillaReport'
         )
         && typeof report.type !== 'undefined'
         && report.type === 'certificate'
@@ -17,8 +17,8 @@ export default {
           report.name
           &&
           (
-            report.name === 'NetError'
-            || report.name === 'MozillaError'
+            report.name === 'NetReport'
+            || report.name === 'MozillaReport'
           )
           && report.type && report.type === 'certificate'
         ) {

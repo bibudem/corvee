@@ -4,13 +4,25 @@ import esMain from 'es-main'
 import { console } from '../index.js'
 
 /**
+ * @typedef {object} NormalizeUrlOptionsType    normaliseUrl function options
+ * @param {BaseOptionType} [options.base]              URL to serve as base to resolve the url.
+ * @param {KeepFragmentOptionType} [options.keepFragment=true] Wether to keep the URL fragment.
+ * @param {boolean} [options.sortParams=false]  Sort parameters
+ */
+
+/**
+ * @typedef {?string} BaseOptionType URL to serve as base to resolve the url.
+ */
+
+/**
+ * @typedef {boolean} KeepFragmentOptionType=true Wether to keep the URL fragment.
+ */
+
+/**
  * Returns a normalized url
  *
- * @param {string} url                     URL to normalize.
- * @param {object} [opts]                  Options.
- * @param {string} opts.base               URL to serve as base to resolve the url.
- * @param {boolean=true} opts.keepFragment Wether to keep the URL fragment.
- * @param {boolean=false} opts.sortParams  Sort parameters
+ * @param {string} url URL to normalize.
+ * @param {NormalizeUrlOptionsType|KeepFragmentOptionType|BaseOptionType} [options]   Options.
  * @example
  * // returns 'http://www.flickr.com/photos/37996646802@N01/8139757998?a=bar&b=foo'
  * normalizeUrl('HTTP://www.flickr.com:80/photos/37996646802@N01/8139757998?b=foo&a=bar#allo')
@@ -35,7 +47,10 @@ export function normalizeUrl(url, options = {}) {
         return null;
     }
 
-    // default values
+    /**
+     * @type NormalizeUrlOptionsType
+     * @default
+     */
     const defaultOpts = {
         base: null,
         keepFragment: false,

@@ -13,6 +13,15 @@ const defaultOptions = {
 }
 
 export default class Http30xHttpsUpgrade {
+    /**
+     * Creates an instance of Http30xHttpsUpgrade.
+     * @param {object} options
+     * @param {string} [options.level=warning]
+     * @param {boolean} [options.exclude=false]
+     * @param {boolean} [options.ignoreWww=true] Wether to ignore `www` subdomain or not.
+     * @param {number} [options.limit] Limit the number of detections from this filter.
+     * @memberof Http30xHttpsUpgrade
+     */
     constructor({
         level,
         exclude = false,

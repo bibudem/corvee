@@ -4,20 +4,20 @@ export const messagesFrCA = {
         msg: "Redirection permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien."
     },
 
-    "http-30x-https-upgrade": {
-        pattern: "(.+)",
-        substitution: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
-        msg: "Redirection vers une version sécurisée (<code>https</code>) du même site."
-    },
-
     "http-30x-https-upgrade-any": {
         pattern: "(.+)",
-        substitution: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>.",
-        msg: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>)."
+        substitution: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>. Vous devez mettre à jour ce lien.",
+        msg: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>). Vous devez mettre à jour ce lien."
     },
 
     "http-30x-https-upgrade-loose": {
-        msg: "Redirige vers une version sécurisée (<code>https</code>) du site. L'URL a aussi possiblement changé. Vérifiez ce lien."
+        msg: "Redirige vers une version sécurisée (<code>https</code>) du site. La page a aussi possiblement changé d'emplacement. Vérifiez ce lien."
+    },
+
+    "http-30x-https-upgrade-strict": {
+        pattern: "(.+)",
+        substitution: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
+        msg: "Redirection vers une version sécurisée (<code>https</code>) de la même page."
     },
 
     "http-30x-permanent-redirect-failure": {
@@ -30,6 +30,10 @@ export const messagesFrCA = {
 
     "http-30x-recursive-redirection": {
         msg: "Redirections circulaires rencontrées. Vérifiez le lien."
+    },
+
+    "http-307-HSTS-redirect": {
+        msg: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>). Vous devez mettre à jour ce lien."
     },
 
     "http-400": {
@@ -53,7 +57,7 @@ export const messagesFrCA = {
     },
 
     "http-408": {
-        msg: "Le délai de réponse a expiré."
+        msg: "Le délai de réponse a expiré. La page n'a pas été trouvée."
     },
 
     "http-410": {
@@ -65,7 +69,7 @@ export const messagesFrCA = {
     },
 
     "http-429": {
-        msg: "Trop de requêtes ont été émises."
+        msg: "Trop de requêtes ont été émises. Vérifiez le lien."
     },
 
     "http-500": {
@@ -73,7 +77,7 @@ export const messagesFrCA = {
     },
 
     "http-501": {
-        msg: "Le serveur ne comprend pas la requête."
+        msg: "Le serveur ne comprend pas la requête. Vérifiez le lien."
     },
 
     "http-502": {

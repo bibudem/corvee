@@ -1,6 +1,9 @@
-import { FailedToLaunchReport, HttpReport, BrowserHasDisconnectedReport, MailReport, MozillaReport, MOZILLA_ERROR_REGEX, NetReport, CorveeReport, PageCrashedReport, TimeoutReport, TargetClosedReport, UrlReport } from './definitions/index.js'
+import { FailedToLaunchReport, HttpReport, BrowserHasDisconnectedReport, MailReport, MozillaReport, MOZILLA_ERROR_REGEX, NetReport, CorveeReport, PageCrashedReport, TimeoutReport, TargetClosedReport, UrlReport, Report } from './definitions/index.js'
 import { console, inspect } from '@corvee/core'
 
+/**
+ * @param {object[] | Error} data
+ */
 export function captureErrors(data) {
     if (data === null) {
         return data
@@ -12,6 +15,9 @@ export function captureErrors(data) {
     return data.map(captureError).filter(err => err !== null);
 }
 
+/**
+ * @param {Report | Error} error
+ */
 export function captureError(error) {
 
     //

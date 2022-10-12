@@ -2,24 +2,82 @@ import { omit, isNull, isNumber } from 'underscore'
 import extend from 'extend'
 
 import { console, inspect } from '@corvee/core'
-import { captureErrors, HttpReport, Report } from './reports/index.js';
+import { captureErrors, HttpReport, Report } from './reports/index.js'
 
-export const defaultOptions = {
-    url: null,
+/**
+ * @typedef {object} RedirectType
+ * @property {import('@corvee/core').UrlType} url
+ * @property {number} status
+ * @property {string} statusText
+ */
+
+/**
+ * @typedef { Array<RedirectType>} RedirectChainType
+ */
+
+/**
+ * Documents a link record
+ * @typedef {object} RecordType
+ * @property {boolean} [_filtered]
+ * @property {string} [_from]
+ * @property {?Array<Array<string>>} browsingContextStack
+ * @property {?number} contentLength
+ * @property {?string} contentType
+ * @property {?string} created
+ * @property {boolean} extern=true
+ * @property {?import('@corvee/core').UrlType} finalUrl
+ * @property {?number} httpStatusCode
+ * @property {?string} [httpStatusText]
+ * @property {number} [id]
+ * @property {?boolean} isNavigationRequest
+ * @property {import('@corvee/core').UrlType} parent=corvee:url-list
+ * @property {?Array<RedirectChainType>} redirectChain
+ * @property {?Array<Report>} reports
+ * @property {boolean} [resourceIsEmbeded]
+ * @property {?string} resourceType
+ * @property {number} [size]
+ * @property {string} [text]
+ * @property {number} [timing]
+ * @property {?number} trials
+ * @property {import('@corvee/core').UrlType} url
+ * @property {string} [urlData]
+ */
+
+/**
+ * @type RecordType
+ * @default
+ */
+export const defaultRecordOptions = {
+    browsingContextStack: null,
+    contentLength: null,
+    contentType: null,
+    created: null,
+    extern: true,
     finalUrl: null,
     httpStatusCode: null,
-    contentType: null,
     isNavigationRequest: null,
+    parent: 'corvee:url-list',
     redirectChain: null,
+    reports: null,
     resourceType: null,
     trials: null,
-    reports: null,
-    created: null,
-    contentLength: null
+    url: null,
 };
 
-export function getFinalStatus(report) {
+/**
+ * @param {RecordType} record
+ * @return { { code: number, text: string } } status
+ */
+export function getFinalStatus(record) {
+
+    /**
+     * @type {Array<{code: number, text: ?string}>}
+     */
     const statuses = [];
+
+    /**
+     * @type {Array<{code: number, text: ?string}>}
+     */
     const sortedHttpStatuses = [
         { code: 308, text: null },
         { code: 301, text: null },
@@ -27,11 +85,11 @@ export function getFinalStatus(report) {
         { code: 302, text: null },
         { code: 303, text: null }
     ]
-    if ('httpStatusCode' in report) {
-        statuses.push({ code: report.httpStatusCode, text: report.httpStatusText })
+    if ('httpStatusCode' in record) {
+        statuses.push({ code: record.httpStatusCode, text: record.httpStatusText })
     }
-    if (report.redirectChain) {
-        statuses.push(...report.redirectChain.map(r => ({ code: r.status, text: r.statusText })))
+    if (record.redirectChain) {
+        statuses.push(...record.redirectChain.map(r => ({ code: r.status, text: r.statusText })))
     }
 
     return statuses.reduce((winner, current) => {
@@ -140,18 +198,19 @@ function getHttpReport(httpStatusCode, httpStatusText, reports) {
 /**
  * @param {import("@crawlee/core").Request | import("playwright-core").Request} request
  * @param {import("playwright-core").Response} response
+ * @param {object} meta
  */
 export async function handleResponse(request, response = null, meta = {}) {
 
     const reports = captureErrors(request.userData.reports);
     const userData = omit(request.userData, 'reports');
 
-    const baseReport = extend(true, {}, defaultOptions, {
+    const baseReport = extend(true, {}, defaultRecordOptions, {
         reports,
         created: new Date().toISOString()
     });
 
-    if (typeof request.id !== 'undefined') {
+    if (Reflect.has(request, 'id')) {
 
         /*
          * crawlee Request class && playwright Response class
@@ -211,7 +270,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         return record;
     }
 
-    if (typeof request._events !== 'undefined') {
+    if (Reflect.has(request, '_events')) {
 
         /*
          * playwright Request class && playwright Response class
@@ -315,7 +374,44 @@ export async function handleResponse(request, response = null, meta = {}) {
 
 /**
  * @param {import("@crawlee/core").Request} request
- * @param {import("playwright-core").Request} pwRequest
+ * @param {Error} error
+ * @param {{ _from: string; }} [meta]
+ */
+export async function handleFailedNavigationRequest(request, error, meta) {
+
+    const reports = captureErrors(error);
+    const userData = omit(request.userData, 'reports')
+
+    const baseReport = extend(
+        true,
+        {},
+        defaultRecordOptions,
+        {
+            reports,
+            trials: request.retryCount,
+            created: new Date().toISOString()
+        });
+
+    const record = extend(
+        true,
+        {},
+        baseReport,
+        userData,
+        meta
+    );
+
+    const { code, text } = getFinalStatus(record)
+    record.httpStatusCode = code
+    record.httpStatusText = text
+
+    record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
+
+    return record;
+}
+
+/**
+ * @param {import("@crawlee/core").Request} request
+ * @param {import("playwright-core").Request | null} pwRequest
  * @param {{ _from: string; }} [meta]
  */
 export async function handleFailedRequest(request, pwRequest, meta) {
@@ -324,17 +420,13 @@ export async function handleFailedRequest(request, pwRequest, meta) {
     // crawlee Request class
     //
 
-    if (arguments.length === 2) {
-        meta = pwRequest
-    }
-
     const reports = captureErrors(request.userData.reports);
     const userData = omit(request.userData, 'reports')
 
     const baseReport = extend(
         true,
         {},
-        defaultOptions,
+        defaultRecordOptions,
         {
             reports,
             trials: request.retryCount,
@@ -353,25 +445,6 @@ export async function handleFailedRequest(request, pwRequest, meta) {
             userData,
             meta
         );
-
-        return record;
-    }
-
-    if (meta._from === 'onNavigationRequestFailed') {
-
-        const record = extend(
-            true,
-            {},
-            baseReport,
-            userData,
-            meta
-        );
-
-        const { code, text } = getFinalStatus(record)
-        record.httpStatusCode = code
-        record.httpStatusText = text
-
-        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         return record;
     }
@@ -397,7 +470,7 @@ export async function handleFailedRequest(request, pwRequest, meta) {
 }
 
 /**
- * @param {import("@crawlee/core").Request | import("playwright-core").Request} request
+ * @param {import("@crawlee/core").Request} request
  * @returns {string}
  */
 function getRequestUrl(request) {
@@ -410,10 +483,6 @@ function getRequestUrl(request) {
 
     return getRequestUrl(previousRequest)
 }
-
-/**
- * @typedef { Array <{ url: string; status: number; statusText: string; }>} RedirectChainType
- */
 
 /**
  * @param {import("playwright-core").Request} request

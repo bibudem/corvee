@@ -2,7 +2,7 @@ import EventEmitter from 'node:events'
 import { readFile } from 'node:fs/promises'
 import os from 'node:os'
 import minimatch from 'minimatch'
-import { pick, omit, isRegExp, isFunction, isObject, isNull, isArray } from 'underscore'
+import { pick, omit, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
 import filenamifyUrl from 'filenamify-url'
 import { Dataset, KeyValueStore, PlaywrightCrawler, ProxyConfiguration, RequestQueue, Request, Snapshotter, Configuration, StorageManager } from '@crawlee/playwright'
@@ -18,7 +18,7 @@ import { PupResponseIsNullReport, MailUnverifiedAddressReport, MailInvalidSyntax
 import { humanDuration, displayUrl } from '../utils/index.js'
 import { LinkStore, sessionStore } from '../storage/index.js'
 import { Link } from '../link.js'
-import { handleResponse, handleFailedRequest } from '../record.js'
+import { handleResponse, handleFailedRequest, handleFailedNavigationRequest } from '../record.js'
 import { PseudoUrls } from '../PseudoUrls.js'
 import Notifier from '../utils/notifier.js'
 
@@ -124,7 +124,13 @@ export class Harvester extends EventEmitter {
         const totalmem = os.totalmem()
 
         this.snapshotter.events.on('systemInfo', ev => {
-            this.emit('systemInfo', {
+
+            /**
+             * Emits system-info
+             * @event Harvester#system-info
+             * @type {object}
+             */
+            this.emit('system-info', {
                 createdAt: (new Date()).toISOString(),
                 currentRunTime: Date.now() - this.session.startTime,
                 cpuCurrentUsage: ev.cpuCurrentUsage,
@@ -231,7 +237,7 @@ export class Harvester extends EventEmitter {
 
     /**
      * 
-     * @param { string | Link | Array<string|Link>} urls 
+     * @param { string | object | Link | Array<string|Link|object>} urls 
      */
     async addUrl(urls) {
         return /** @type {Promise<void>} */(new Promise(async (resolve, reject) => {
@@ -262,7 +268,7 @@ export class Harvester extends EventEmitter {
     }
 
     /**
-     * @param {() => { url: string; text: string; urlData: object; isNavigationRequest: boolean; }[]} fn
+     * @param {() => Array<{ url: string; text: string | null; urlData: string | null; isNavigationRequest: boolean; }>} fn
      */
     setLinkParser(fn) {
         this.linkParser = fn;
@@ -503,9 +509,19 @@ export class Harvester extends EventEmitter {
             const end = Date.now();
             const duration = humanDuration(end - self.session.startTime);
 
+            /**
+             * Emits browsing-contexts
+             * @event Harvester#browsing-contexts
+             * @type {object}
+             */
             self.emit('browsing-contexts', self.browsingContextStore.entries())
 
-            self.emit('end')
+            /**
+             * Emits end
+             * @event Harvester#end
+             * @type {number} Duration of the Harvester#run process in ms.
+             */
+            self.emit('end', duration)
 
             console.info(`Total execution time: ${duration}`)
 
@@ -520,6 +536,12 @@ export class Harvester extends EventEmitter {
              * @type {import('@crawlee/types').RequestQueueInfo}
              */
             const info = await requestQueue.getInfo();
+
+            /**
+             * Emits progress
+             * @event Harvester#progress
+             * @type {object}
+             */
             self.emit('progress', {
                 handled: info.handledRequestCount,
                 handledPercent: info.handledRequestCount / info.totalRequestCount,
@@ -751,6 +773,11 @@ export class Harvester extends EventEmitter {
 
                     self.session.counts.activeRequests++
 
+                    /**
+                     * Emits add-link
+                     * @event Harvester#add-link
+                     * @type {Link}
+                     */
                     self.emit('add-link', link);
                 }
 
@@ -765,7 +792,7 @@ export class Harvester extends EventEmitter {
 
                         link.userData.reports = [urlReport];
 
-                        const record = await handleFailedRequest(link, {
+                        const record = await handleFailedRequest(link, null, {
                             _from: 'addToRequestQueue'
                         })
 
@@ -837,7 +864,7 @@ export class Harvester extends EventEmitter {
         await addToRequestQueue(self.urlList)
 
         /**
-         * @param {import("@crawlee/playwright").Dictionary<any> | import("@crawlee/playwright").Dictionary<any>[]} record
+         * @param {import('../record.js').RecordType} record
          */
         async function addRecord(record) {
 
@@ -851,6 +878,9 @@ export class Harvester extends EventEmitter {
                 record.id = self.session.recordCount;
                 record.extern = self.isExternLink(record.url); // ??? parfois la propriété est absente
                 record.browsingContextStack = self.browsingContextStore.getContext(record.parent)
+
+                // @ts-ignore
+                delete record._ignore
 
                 self.session.recordCount++;
                 self.session.counts.activeRequests--
@@ -874,6 +904,11 @@ export class Harvester extends EventEmitter {
                     }
                 }
 
+                /**
+                 * Emits record
+                 * @event Harvester#record
+                 * @type {import('../record.js').RecordType}
+                 */
                 self.emit('record', record, self.session.recordCount)
 
                 if (self.isExternLink(record.parent)) {
@@ -991,8 +1026,9 @@ export class Harvester extends EventEmitter {
             // This function is called if the page processing failed more than (maxRequestRetries + 1) times.
             failedRequestHandler: async function onNavigationRequestFailed({
                 request,
-                error
-            }) {
+                response: pwResponse
+            },
+                error) {
 
                 if (request.userData._ignore || error.message.indexOf('net::ERR_ABORTED') > -1) {
 
@@ -1000,30 +1036,33 @@ export class Harvester extends EventEmitter {
                     return
                 }
 
-                if (request.userData.trials >= self.config.maxRequestRetries) {
+                //
+                // Main document failed request handler
+                // Here we deal with network / browser errors
+                //
 
-                    //
-                    // Main document failed request handler
-                    // Here we deal with network / browser errors
-                    //
+                console.debug(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}\nError: ${inspect(error)}`)
 
-                    console.debug(`Request failed at onNavigationRequestFailed after try [${request.retryCount}] ${request.url}\nError: ${inspect(error)}\nRequest: ${inspect(request)}`)
-
-                    if (!request.userData.reports) {
-                        request.userData.reports = []
-                    }
-                    request.userData.reports.push(error)
-
-                    const meta = {
-                        _from: 'onNavigationRequestFailed'
-                    }
-
-                    const record = await handleFailedRequest(request, meta)
-
-                    await addRecord(record);
-
-                    self.session.counts.fail++
+                if (!request.userData.reports) {
+                    request.userData.reports = []
                 }
+                request.userData.reports.push(error)
+
+                const meta = {
+                    _from: 'onNavigationRequestFailed'
+                }
+
+                let record;
+
+                if (pwResponse) {
+                    record = await handleResponse(request, pwResponse, meta)
+                } else {
+                    record = await handleFailedNavigationRequest(request, error, meta)
+                }
+
+                await addRecord(record);
+
+                self.session.counts.fail++
             },
             launchContext: self.launchContextOptions,
             preNavigationHooks: [
@@ -1057,6 +1096,11 @@ export class Harvester extends EventEmitter {
 
                         request.userData.trials = request.retryCount;
 
+                        /**
+                         * Emits request
+                         * @event Harvester#request
+                         * @type {object}
+                         */
                         self.emit('request', request)
 
                         // await page._client.send('Network.enable', {
@@ -1256,7 +1300,7 @@ export class Harvester extends EventEmitter {
 
                                 return Promise.resolve();
                             } else {
-                                if (['document', 'other'].includes(pwRequest.resourceType)) {
+                                if (['document', 'other'].includes(pwRequest.resourceType())) {
                                     console.warn(`This should be a page asset of the crawled website: ${displayUrl(pwRequest.url())}, resource type: ${pwRequest.resourceType()}`)
                                 }
                             }
@@ -1452,7 +1496,12 @@ export class Harvester extends EventEmitter {
                     return Promise.reject()
                 }
 
-                self.emit('navigation-response', {
+                /**
+                 * Emits response
+                 * @event Harvester#response
+                 * @type {object}
+                 */
+                self.emit('response', {
                     request: pwResponse.request(),
                     response: pwResponse,
                     page,
@@ -1569,8 +1618,14 @@ Error: ${inspect(error)}`)
 
         self.crawler = playwrightCrawler
 
+        /**
+         * Emits start
+         * @event Harvester#start
+         */
         self.emit('start')
+
         console.log('Starting...')
+
         await playwrightCrawler.run()
 
         console.info('Crawler is done.')
