@@ -1,19 +1,66 @@
 import v from 'io-validate'
 import extend from 'extend'
 import { isObject, isFunction } from 'underscore'
-import { normalizeUrl as n, console } from '@corvee/core'
+import { normalizeUrl as n, console, inspect } from '@corvee/core'
 
+/**
+ * @typedef 
+ */
 const userDataDefaults = {
+
+    /**
+     * @type {import("@corvee/core").UrlType} 
+     */
     url: null,
+
+    /**
+     * @type {import("@corvee/core").UrlType} 
+     */
     finalUrl: null,
+
+    /**
+     * @type {number} 
+     */
     level: 0,
+
+    /**
+     * @type {import("@corvee/core").UrlType} 
+     */
     parent: 'corvee:url-list',
+
+    /**
+     * @type {string} 
+     */
     text: null,
+
+    /**
+     * @type {number} 
+     */
     trials: 1,
+
+    /**
+     * @type {string} 
+     */
     urlData: null,
+
+    /**
+     * @type {number}
+     */
     size: null,
+
+    /**
+     * @type {?import('./record.js').RedirectChainType}
+     */
     redirectChain: null,
+
+    /**
+     * @type {?import('./reports/definitions/report.js').Report[]} 
+     */
     reports: null,
+
+    /**
+     * @type {?Array<Array<string>>}
+     */
     browsingContextStack: null
 }
 
@@ -47,6 +94,10 @@ const userDataDefaults = {
  */
 
 export class Link {
+    /**
+     * @param {import('@corvee/core').UrlType | Link} uri
+     * @param {userDataDefaults} data
+     */
     constructor(uri, data = {}, normalizeUrl = n) {
 
         if (arguments.length === 2) {
