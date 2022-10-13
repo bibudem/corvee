@@ -96,7 +96,12 @@ export const defaultHarvesterOptions = {
      * @type {null | Function}
      */
     normalizeUrlFunction: null,
+
+    /**
+     * Sets the notifications `on` or `off`
+     */
     notify: true,
+
     notifyDelay: 10_000,
     notifyLogLevel: 'info',
 
@@ -261,8 +266,8 @@ export const defaultPlaywrightCrawlerOptions = {
     headless: true,
     maxRequestRetries: 3,
     maxRequestsPerCrawl: Infinity,
-    navigationTimeoutSecs: 30,
+    navigationTimeoutSecs: 60,
     persistCookiesPerSession: true,
-    requestHandlerTimeoutSecs: 30,
+    requestHandlerTimeoutSecs: 60,
     useSessionPool: true
 }
