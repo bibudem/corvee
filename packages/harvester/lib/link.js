@@ -61,7 +61,12 @@ const userDataDefaults = {
     /**
      * @type {?Array<Array<string>>}
      */
-    browsingContextStack: null
+    browsingContextStack: null,
+
+    /**
+     * @type {?boolean}
+     */
+    extern: null
 }
 
 /*
