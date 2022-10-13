@@ -503,6 +503,10 @@ export async function getRedirectChain(request) {
 
         const response = await request.response()
 
+        if (!response) {
+            return redirectChain
+        }
+
         let redirectedUrl;
 
         const locationHeader = await response.headerValue('location')
