@@ -925,11 +925,21 @@ export class Harvester extends EventEmitter {
 
         /**
          * @param {playwright.Page} page
+         * @param {object} options
+         * @param {number} options.currentLevel
          */
         async function parseLinksInPage(page, {
             currentLevel
         }) {
-            const ret = [];
+            /**
+             * @type {any[]}
+             */
+            const ret = []
+
+            /**
+             * @type {Link[]}
+             */
+            let links = []
 
             if (typeof page === 'undefined') {
                 return ret
@@ -949,7 +959,6 @@ export class Harvester extends EventEmitter {
                 return ret;
             }
 
-            let links = []
 
             try {
                 if (self.config.linkParserDelay) {
