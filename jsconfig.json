@@ -1,27 +1,44 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
-    "module": "NodeNext",
-    "target": "ESNext",
-    "strict": true,
-    "strictNullChecks": false,
-    "alwaysStrict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "NodeNext",
-    "checkJs": true,
     "allowJs": true,
-    "resolveJsonModule": false,
+    "alwaysStrict": true,
     "baseUrl": ".",
+    "checkJs": true,
+    // Generate d.ts files
+    "declaration": true,
+    // go to js file when using IDE functions like
+    // "Go to Definition" in VSCode
+    "declarationMap": true,
+    // This compiler run should
+    // only output d.ts files
+    "emitDeclarationOnly": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ESNext", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    // Types should go into this directory.
+    // Removing this would place the .d.ts files
+    // next to the .js files
+    "outDir": "types",
     "paths": {
       "@corvee/core":["packages/core"],
       "@corvee/harvester": ["packages/harvester/"],
       "@corvee/processor":["packages/processor/"],
-    }
+    },
+    "resolveJsonModule": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": false,
+    "target": "ESNext",
   },
+  "include": [
+    "packages/**/*"
+  ],
   "exclude": [
-    "node_modules",
-    ".vscode",
+    "**/node_modules",
+    "**/.vscode",
+    "**/test.OLD"
   ],
 }

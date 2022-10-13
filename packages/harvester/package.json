@@ -54,6 +54,14 @@
         "yargs": "^17.5.1"
     },
     "devDependencies": {
+        "@types/assert-plus": "^1.0.4",
+        "@types/extend": "^3.0.1",
+        "@types/filenamify-url": "^1.0.1",
+        "@types/minimatch": "^5.1.2",
+        "@types/moment": "^2.13.0",
+        "@types/param-case": "^1.1.2",
+        "@types/underscore": "^1.11.4",
+        "@types/yargs": "^17.0.13",
         "es-main": "^1.2.0"
     }
 }

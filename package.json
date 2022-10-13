@@ -11,7 +11,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prerelease": "npm version prerelease --workspaces --include-workspace-root --force --message \"Bump v%s\""
+    "prerelease": "npm version prerelease --workspaces --include-workspace-root --force --message \"Bump v%s\"",
+    "tsc": "rimraf types && npx tsc --project jsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,12 @@
   "bugs": {
     "url": "https://github.com/bibudem/corvee/issues"
   },
-  "homepage": "https://github.com/bibudem/corvee#readme"
+  "homepage": "https://github.com/bibudem/corvee#readme",
+  "devDependencies": {
+    "@types/typescript": "^2.0.0",
+    "@types/rimraf": "^3.0.2",
+    "@types/yargs": "^17.0.13",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.8.4"
+  }
 }
