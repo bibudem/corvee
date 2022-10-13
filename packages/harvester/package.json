@@ -35,6 +35,7 @@
         "cv": "./bin/cli.js"
     },
     "dependencies": {
+        "@apify/timeout": "^0.3.0",
         "@corvee/core": "^2.0.0-beta.1",
         "@crawlee/playwright": "^3.0.4",
         "assert-plus": "^1.0.0",

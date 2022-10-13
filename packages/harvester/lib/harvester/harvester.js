@@ -1063,39 +1063,26 @@ export class Harvester extends EventEmitter {
                     _from: 'onNavigationRequestFailed'
                 }
 
-                let record;
+                try {
 
-                if (pwResponse) {
-                    record = await handleResponse(request, pwResponse, meta)
-                } else {
-                    record = await handleFailedNavigationRequest(request, error, meta)
+                    let record;
+
+                    if (pwResponse) {
+                        record = await handleResponse(request, pwResponse, meta)
+                    } else {
+                        record = await handleFailedNavigationRequest(request, error, meta)
+                    }
+
+                    await addRecord(record);
+
+                    self.session.counts.fail++
+                } catch (error) {
+                    console.todo(`onNavigationRequestFailed function failed at request ${request.url}.\nError: ${inspect(error)}`)
                 }
-
-                await addRecord(record);
-
-                self.session.counts.fail++
             },
             launchContext: self.launchContextOptions,
             preNavigationHooks: [
                 async function preNavigationHooksFunction({ crawler, request, session, page, browserController, proxyInfo }, gotoOptions) {
-
-                    const extraHTTPHeaders = {
-                        // 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                        // 'accept-encoding': 'gzip, deflate, br',
-                        // 'cache-control': 'no-cache',
-                        // 'connection': 'keep-alive',
-                        // 'accept-language': 'en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7,en-US;q=0.6,la;q=0.5',
-                        // 'pragma': 'no-cache',
-                        // 'sec-ch-ua': '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
-                        // 'sec-ch-ua-mobile': '?0',
-                        // 'sec-ch-ua-platform': 'Windows',
-                        // 'sec-ch-dest': 'document',
-                        // 'sec-fetch-site': 'none',
-                        // 'sec-fetch-user': '?1',
-                        // 'upgrade-insecure-requests': '1'
-                    }
-
-                    // await page.setExtraHTTPHeaders(extraHTTPHeaders)
 
                     gotoOptions.waitUntil = self.isExternLink(request.url) ? self.config.pageWaitUntil.extern : self.config.pageWaitUntil.intern
 
@@ -1629,6 +1616,8 @@ Error: ${inspect(error)}`)
             },
             requestQueue: requestQueue,
         });
+
+        playwrightCrawler.requestHandlerTimeoutMillis = self.playwrightCrawlerOptions.requestHandlerTimeoutSecs * 1000
 
         self.crawler = playwrightCrawler
 

@@ -3,6 +3,7 @@ import extend from 'extend'
 
 import { console, inspect } from '@corvee/core'
 import { captureErrors, HttpReport, Report } from './reports/index.js'
+import { addTimeoutToPromise } from '@apify/timeout';
 
 /**
  * @typedef {object} RedirectType
@@ -60,6 +61,7 @@ export const defaultRecordOptions = {
     redirectChain: null,
     reports: null,
     resourceType: null,
+    size: null,
     trials: null,
     url: null,
 };
@@ -234,11 +236,12 @@ export async function handleResponse(request, response = null, meta = {}) {
         );
 
         try {
-            record.size = (await response.body()).length;
-        } catch (error) {
-            // pwResponse.buffer() is undefined
-            record.size = null
-        }
+            const responseBody = await addTimeoutToPromise(response.body, 1000, '')
+
+            if (responseBody) {
+                record.size = responseBody.length
+            }
+        } catch (error) { }
 
         if ('content-type' in response.headers()) {
             record.contentType = response.headers()['content-type'].split(';')[0].trim();
@@ -293,11 +296,12 @@ export async function handleResponse(request, response = null, meta = {}) {
         );
 
         try {
-            record.size = (await response.body()).length;
-        } catch (error) {
-            // pwResponse.buffer() is undefined
-            record.size = null
-        }
+            const responseBody = await addTimeoutToPromise(response.body, 1000, '')
+
+            if (responseBody) {
+                record.size = responseBody.length
+            }
+        } catch (error) { }
 
         if ('content-type' in response.headers()) {
             record.contentType = response.headers()['content-type'].split(';')[0].trim();
