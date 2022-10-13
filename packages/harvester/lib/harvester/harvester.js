@@ -1,4 +1,5 @@
 import EventEmitter from 'node:events'
+import process from 'node:process'
 import { readFile } from 'node:fs/promises'
 import os from 'node:os'
 import minimatch from 'minimatch'
@@ -42,11 +43,11 @@ process.on('unhandledRejection', function onUnhandledRejection(reason, promise) 
         return
     }
 
-    console.todo(`Unhandled Rejection. Reason: ${inspect(reason)}. Promise: ${inspect(promise)}`);
+    console.todo(`Unhandled Rejection. Reason: ${inspect(reason)}\nPromise: ${inspect(promise)}`);
 });
 
 process.on('uncaughtException', function onUnhandledRejection(error, origin) {
-    console.todo(`Uncaught Exception. Error: ${inspect(error)}. Origin: ${inspect(origin)}`);
+    console.todo(`Uncaught Exception. Error: ${inspect(error)}\nOrigin: ${inspect(origin)}`);
 });
 
 /**
@@ -157,15 +158,16 @@ export class Harvester extends EventEmitter {
             this.playwrightCrawlerOptions.proxyConfiguration = proxyConfiguration
         }
 
+        // if (!process.env.CRAWLEE_STORAGE_DIR) {
+        process.env.CRAWLEE_STORAGE_DIR = this.config.storageDir
+        // This to prevent a WARN message from crawlee
+        process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir
+        // }
+
         console.log(`Setting log level to ${this.config.logLevel}`)
+        crawleeConfig.set('logLevel', 6)
         console.setLevel(this.config.logLevel)
         console.verbose('### THIS IS VERBOSE ###')
-
-        if (!process.env.CRAWLEE_STORAGE_DIR) {
-            process.env.CRAWLEE_STORAGE_DIR = this.config.storageDir
-            // This to prevent a WARN message from crawlee
-            process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir
-        }
 
         this.linkParser = defaultLinkParser;
 
@@ -173,14 +175,13 @@ export class Harvester extends EventEmitter {
 
         this.browsingContextStore = new BrowsingContextStore(this.normalizeUrl);
 
-        if (this.config.notify) {
-            this.notify = new Notifier([], {
-                logger: console,
-                logLevel: this.config.notifyLogLevel,
-                delay: this.config.notifyDelay,
-                autoStart: true
-            })
-        }
+        this.notify = new Notifier([], {
+            enable: this.config.notify,
+            logger: console,
+            logLevel: this.config.notifyLogLevel,
+            delay: this.config.notifyDelay,
+            autoStart: true
+        })
 
         this.crawler = null;
 
@@ -381,9 +382,7 @@ export class Harvester extends EventEmitter {
 
         await this.crawler.autoscaledPool.pause(timeout)
 
-        if (this.notify) {
-            this.notify.pause();
-        }
+        this.notify.pause();
 
         this.isPaused = true;
 
@@ -403,9 +402,7 @@ export class Harvester extends EventEmitter {
         this._pausedAt = 0;
         this.isPaused = false;
 
-        if (this.notify) {
-            this.notify.resume();
-        }
+        this.notify.resume();
 
         console.info(`Harvester resumed crawling.`)
     }
@@ -433,7 +430,7 @@ export class Harvester extends EventEmitter {
         this._isRunning = true;
         this.isPaused = false;
 
-        if (this.notify) {
+        if (this.config.notify) {
             this.notify.addMessage(() => {
                 const end = Date.now();
                 const duration = humanDuration(end - this.session.startTime)
@@ -474,8 +471,6 @@ export class Harvester extends EventEmitter {
                 })
         }
 
-        self.assetsLinksStore = await Dataset.open('assets-urls');
-
         if (self.config.fetchLinksOnce) {
             self.linkStore = new LinkStore();
             await self.linkStore.init();
@@ -503,9 +498,7 @@ export class Harvester extends EventEmitter {
         }
 
         process.on('exit', function onExit() {
-            if (self.notify) {
-                self.notify.stop();
-            }
+            self.notify.stop();
             const end = Date.now();
             const duration = humanDuration(end - self.session.startTime);
 
@@ -530,6 +523,13 @@ export class Harvester extends EventEmitter {
         // self.screenshotsStore = await KeyValueStore.open('screenshots');
 
         const requestQueue = await RequestQueue.open('playwright');
+        // const requestQueue = new RequestQueue({
+        //     name: 'playwright',
+        //     id: 'playwright',
+        //     client: new StorageManager()
+        // })
+
+        console.log(requestQueue)
 
         setInterval(async function () {
             /**
@@ -552,10 +552,12 @@ export class Harvester extends EventEmitter {
             })
         }, self.config.notifyDelay)
 
-        self.notify?.addMessage(async () => {
-            const { totalRequestCount, handledRequestCount } = await requestQueue.getInfo();
-            return `Request queue size: ${totalRequestCount} Handled: ${handledRequestCount}`
-        })
+        if (self.config.notify) {
+            self.notify?.addMessage(async () => {
+                const { totalRequestCount, handledRequestCount } = await requestQueue.getInfo();
+                return `Request queue size: ${totalRequestCount} Handled: ${handledRequestCount}`
+            })
+        }
 
         const uniqueLinksPerPage = new Map();
 
@@ -1253,11 +1255,10 @@ export class Harvester extends EventEmitter {
 
                                         try {
                                             record = await handleResponse(pwRequest, pwResponse, meta)
+                                            await addRecord(record);
                                         } catch (error) {
                                             console.error(inspect(error))
                                         }
-
-                                        await addRecord(record);
 
                                         self.session.counts.success++
                                     }
@@ -1423,7 +1424,6 @@ export class Harvester extends EventEmitter {
                                     try {
 
                                         const record = await handleResponse(pwResponse.request(), pwResponse, meta)
-
                                         await addRecord(record);
 
                                         self.session.counts.success++
@@ -1499,7 +1499,12 @@ export class Harvester extends EventEmitter {
                 /**
                  * Emits response
                  * @event Harvester#response
-                 * @type {object}
+                 * @type {{
+                 *  request: import("playwright-core").Request,
+                 *  response: import("playwright-core").Response,
+                 *  page: import("playwright-core").Page,
+                 *  harvester: Harvester
+                 * }} responseData
                  */
                 self.emit('response', {
                     request: pwResponse.request(),

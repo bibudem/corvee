@@ -1,13 +1,18 @@
 import { console } from '@corvee/core'
 
 export default class Notifier {
+    /**
+     * @param {Array<() => string> | Array<() => Promise<string> >} messages
+     */
     constructor(messages = [], {
+        enable = true,
         autoStart = false,
         logLevel = 'info',
         logger = console,
         delay = 10000
     }) {
         this.opts = {
+            enable,
             autoStart,
             logLevel,
             delay
@@ -24,7 +29,9 @@ export default class Notifier {
     start() {
         if (!this._notifyHandle) {
             this._notifyHandle = setInterval(() => {
-                this.messages.forEach(async msg => this.logger[this.opts.logLevel](await msg()))
+                if (this.opts.enable) {
+                    this.messages.forEach(async msg => this.logger[this.opts.logLevel](await msg()))
+                }
             }, this.opts.delay)
         }
     }
@@ -44,6 +51,17 @@ export default class Notifier {
         this.start();
     }
 
+    enable() {
+        this.opts.enable = true
+    }
+
+    disable() {
+        this.opts.enable = false
+    }
+
+    /**
+     * @param {{ (): string; (): Promise<string>; }} msg
+     */
     addMessage(msg) {
         this.messages.push(msg)
     }
