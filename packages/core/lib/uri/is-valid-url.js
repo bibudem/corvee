@@ -4,6 +4,9 @@ import { console, inspect } from '../index.js'
 
 const re = process.env.NODE_ENV === 'production' ? re_weburl : re_weburl_dev
 
+/**
+ * @param {string} url
+ */
 export function isValidUrl(url) {
 
     v(url, 'url').is('string')

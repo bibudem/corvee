@@ -2,7 +2,7 @@ import { omit, isNull, isNumber } from 'underscore'
 import extend from 'extend'
 
 import { console, inspect } from '@corvee/core'
-import { captureErrors, HttpReport, Report } from './reports/index.js'
+import { captureReports, HttpReport, Report } from './reports/index.js'
 import { addTimeoutToPromise } from '@apify/timeout';
 
 /**
@@ -204,7 +204,7 @@ function getHttpReport(httpStatusCode, httpStatusText, reports) {
  */
 export async function handleResponse(request, response = null, meta = {}) {
 
-    const reports = captureErrors(request.userData.reports);
+    const reports = captureReports(request.userData.reports);
     const userData = omit(request.userData, 'reports');
 
     const baseReport = extend(true, {}, defaultRecordOptions, {
@@ -383,7 +383,7 @@ export async function handleResponse(request, response = null, meta = {}) {
  */
 export async function handleFailedNavigationRequest(request, error, meta) {
 
-    const reports = captureErrors(error);
+    const reports = captureReports(error);
     const userData = omit(request.userData, 'reports')
 
     const baseReport = extend(
@@ -424,7 +424,7 @@ export async function handleFailedRequest(request, pwRequest, meta) {
     // crawlee Request class
     //
 
-    const reports = captureErrors(request.userData.reports);
+    const reports = captureReports(request.userData.reports);
     const userData = omit(request.userData, 'reports')
 
     const baseReport = extend(

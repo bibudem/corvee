@@ -39,7 +39,7 @@ import { console } from '../index.js'
  *  sortParams: false
  * })
  *
- * @return {string} A normalized url.
+ * @return {import('./abs-url.js').UrlType} A normalized url.
  */
 
 export function normalizeUrl(url, options = {}) {
@@ -73,9 +73,9 @@ export function normalizeUrl(url, options = {}) {
         if (options.base) {
             try {
                 url = new URL(url, options.base).href;
-            } catch (e) {
+            } catch (error) {
                 console.error(`Could not parse base url ${url}`);
-                return e;
+                return error;
             }
         }
     }

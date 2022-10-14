@@ -12,12 +12,25 @@ class FilterPriorities extends Map {
         super();
     }
 
+    /**
+     * @param {any} key
+     */
     get(key) {
         return super.has(key) ? super.get(key) : -Infinity;
     }
 }
 
 export class CorveeProcessor extends EventEmitter {
+
+    /**
+     *Creates an instance of CorveeProcessor.
+     * @param {object} [options]
+     * @param {object[]} [options.filters]
+     * @param {object[]} [options.errors]
+     * @param {Object<string, object>} [options.messages]
+     * @param {...*} options.config
+     * @memberof CorveeProcessor
+     */
     constructor({
         filters = [],
         errors = [],
@@ -25,8 +38,20 @@ export class CorveeProcessor extends EventEmitter {
         ...config
     } = {}) {
         super()
+
+        /**
+         * @type {object[]}
+         */
         this.records = []
+
+        /**
+         * @type {object[]}
+         */
         this.unfilteredRecords = []
+
+        /**
+         * @type {object[]}
+         */
         this.filters = []
         this.messages = messages
         this.filterPriorities = new FilterPriorities()
@@ -57,6 +82,9 @@ export class CorveeProcessor extends EventEmitter {
         return this;
     }
 
+    /**
+     * @param {import('../../filters/index.js').FilterType[]} filters
+     */
     addFilters(...filters) {
 
         this.filters = this.filters.concat(...filters.flat(Infinity).map(filter => {
@@ -79,6 +107,9 @@ export class CorveeProcessor extends EventEmitter {
         return this;
     }
 
+    /**
+     * @param {import('packages/harvester/index.js').RecordType[]} records
+     */
     async process(records) {
         if (!Array.isArray(records)) {
             records = [records];
@@ -110,7 +141,14 @@ export class CorveeProcessor extends EventEmitter {
             excludedCount = 0,
             self = this;
 
+        /**
+         * @param {import('packages/harvester/index.js').RecordType[]} records
+         * @param {import('../../filters/index.js').FilterType} filter
+         */
         function doFilter(records, filter) {
+            /**
+             * @type {import("packages/harvester/index.js").RecordType[]}
+             */
             const result = [];
 
             records.forEach((record, i) => {

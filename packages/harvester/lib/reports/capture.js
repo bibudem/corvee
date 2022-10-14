@@ -4,7 +4,7 @@ import { console, inspect } from '@corvee/core'
 /**
  * @param {object[] | Error} data
  */
-export function captureErrors(data) {
+export function captureReports(data) {
     if (data === null) {
         return data
     }
@@ -12,23 +12,24 @@ export function captureErrors(data) {
     if (!Array.isArray(data)) {
         data = [data];
     }
-    return data.map(captureError).filter(err => err !== null);
+
+    return data.map(captureReport).filter(err => err !== null);
 }
 
 /**
  * @param {Report | Error} error
  */
-export function captureError(error) {
+export function captureReport(error) {
 
     //
     // Chromium Net error
     //
     if ('message' in error && /net::ERR_([^ ]+)/i.test(error.message)) {
 
-        const netError = new NetReport(error.message);
-        netError._from = "/net::ERR_([^ ]+)/i.test(error) (OBJECT)"
+        const netReport = new NetReport(error.message);
+        netReport._from = "/net::ERR_([^ ]+)/i.test(error) (OBJECT)"
 
-        return netError
+        return netReport
     }
 
     //
@@ -61,10 +62,10 @@ export function captureError(error) {
     //
     if ('message' in error && MOZILLA_ERROR_REGEX.test(error.message)) {
 
-        const mozillaError = new MozillaReport(error.message);
-        mozillaError._from = "'message' in error && MOZILLA_ERROR_REGEX.test(error.message) (OBJECT)"
+        const mozillaReport = new MozillaReport(error.message);
+        mozillaReport._from = "'message' in error && MOZILLA_ERROR_REGEX.test(error.message) (OBJECT)"
 
-        return mozillaError
+        return mozillaReport
     }
 
     //
@@ -75,6 +76,13 @@ export function captureError(error) {
             // Ignore this
             return null
         }
+
+        if (/^requestHandler timed out after \d+ seconds/.test(error.message)) {
+            const timeoutReport = new TimeoutReport(error.message)
+            timeoutReport._from = '/^requestHandler timed out after \d+ seconds/.test(error.message)'
+
+            return timeoutReport
+        }
     }
 
     //
@@ -82,11 +90,11 @@ export function captureError(error) {
     //
     if (error.constructor.name === 'TimeoutReport') {
 
-        error = new TimeoutReport(error.message)
+        const timeoutReport = new TimeoutReport(error.message)
 
-        error._from = 'error.constructor.name === \'TimeoutReport\''
+        timeoutReport._from = 'error.constructor.name === \'TimeoutReport\''
 
-        return error
+        return timeoutReport
     }
 
     //
@@ -95,36 +103,37 @@ export function captureError(error) {
     if (error.constructor.name === 'Error') {
         if (error.message === 'Page crashed!') {
 
-            const pageCrashedError = new PageCrashedReport(error.message)
+            const pageCrashedReport = new PageCrashedReport(error.message)
 
-            pageCrashedError._from = 'Puppeteer / crawler errors (OBJECT)'
+            pageCrashedReport._from = 'Puppeteer / crawler errors (OBJECT)'
 
-            return pageCrashedError
+            return pageCrashedReport
         }
 
         if (error.message.startsWith('PuppeteerCrawler: handlePageFunction timed out after')
             || error.message.indexOf('Navigation Timeout Exceeded:') > -1) {
-            const timeoutError = new TimeoutReport(error.message)
 
-            timeoutError._from = 'Puppeteer / crawler errors (OBJECT)'
+            const timeoutReport = new TimeoutReport(error.message)
 
-            return timeoutError
+            timeoutReport._from = 'Puppeteer / crawler errors (OBJECT)'
+
+            return timeoutReport
         }
 
         if (error.message === 'Navigation failed because browser has disconnected!') {
-            const browserHasDisconnectedError = new BrowserHasDisconnectedReport(error.message)
+            const browserHasDisconnectedReport = new BrowserHasDisconnectedReport(error.message)
 
-            browserHasDisconnectedError._from = 'Puppeteer / crawler errors (OBJECT)'
+            browserHasDisconnectedReport._from = 'Puppeteer / crawler errors (OBJECT)'
 
-            return browserHasDisconnectedError
+            return browserHasDisconnectedReport
         }
 
         if (error.message === 'Protocol error (Runtime.addBinding): Target closed.') {
-            const targetClosedError = new TargetClosedReport(error.message)
+            const targetClosedReport = new TargetClosedReport(error.message)
 
-            targetClosedError._from = 'Puppeteer / crawler errors (OBJECT)'
+            targetClosedReport._from = 'Puppeteer / crawler errors (OBJECT)'
 
-            return targetClosedError
+            return targetClosedReport
         }
     }
 
@@ -139,14 +148,14 @@ export function captureError(error) {
     }
 
     //
-    // Unhandled errors
+    // Unhandled reports
     //
     return {
         level: 'info',
-        code: 'unhandled-error',
+        code: 'unhandled-report',
         stack: error.stack,
         message: error.message,
-        _from: 'unhandledError',
+        _from: 'unhandledReport',
         _fixme: true,
         _original: error,
     }

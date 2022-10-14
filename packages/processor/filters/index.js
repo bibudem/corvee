@@ -10,16 +10,28 @@ import http30xWelcomePage from './http-30x-redirect-to-welcome-page.js'
 import http307HSTSRedirect from './http-307-HSTS-redirect.js'
 import http404ByUrl from './http-404-by-url.js'
 
-import mailInvalidSyntax from './mail-invalid-syntax.js'
-
 import netSystem from './net-system.js'
 import netConnection from './net-connection.js'
 import netCertificate from './net-certificate.js'
 import netHttp from './net-http.js'
 
 import urlIgnoreThese from './url-ignore-these.js'
-import urlInvalidUrl from './url-invalid-url.js'
 import urlShorten from './url-shorten.js'
+
+/**
+ * @typedef {'info' | 'warning' | 'error'} FilterLevelType
+ */
+
+/**
+ * @typedef {object} FilterType
+ * @property {string} code
+ * @property {string} description
+ * @property {FilterLevelType} [level='error']
+ * @property {boolean} [exclude=false]
+ * @property {number} [priority=0]
+ * @property {number} [matches=0]
+ * @property {(report: import('@corvee/harvester').Report, filter?: FilterType) => string} test
+ */
 
 export * from './messages/fr-CA.js'
 
@@ -36,14 +48,11 @@ export const filters = {
     http307HSTSRedirect,
     http404ByUrl,
 
-    // mailInvalidSyntax,
-
     netSystem,
     netConnection,
     netCertificate,
     netHttp,
 
     urlIgnoreThese,
-    // urlInvalidUrl,
     urlShorten,
 }

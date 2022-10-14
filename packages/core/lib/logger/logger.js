@@ -1,4 +1,4 @@
-import { join, basename, relative, dirname } from 'node:path'
+import { join, basename, relative } from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -38,6 +38,7 @@ const argv = yargs(hideBin(process.argv))
     .help()
     .argv;
 
+// @ts-ignore
 const job = argv.job;
 
 const { combine, timestamp, printf } = format;
@@ -66,6 +67,7 @@ const tracerLevelColors = {
 const DEFAULT_LEVEL = 'debug'
 
 const basePath = process.cwd();
+// @ts-ignore
 const logFilePath = join(basePath, 'logs', `console-${argv.$0.split('.')[0]}-${job}.log`)
 
 Error.stackTraceLimit = 20
@@ -126,6 +128,9 @@ consoleLogger.setLevel = tracer.setLevel;
  * @type LoggerType
  */
 const logger = {
+    /**
+     * @param {any} level
+     */
     setLevel(level) {
         fileLogger.setLevel(level)
         consoleLogger.setLevel(level)
@@ -148,6 +153,7 @@ logger.log = logger.info;
 
 /**
  * Parses and returns info about the call stack at the given index.
+ * @param {number} stackIndex
  */
 function getStackInfo(stackIndex) {
     // get call stack, and analyze it

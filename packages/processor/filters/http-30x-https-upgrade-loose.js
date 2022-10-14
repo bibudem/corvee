@@ -1,9 +1,5 @@
 import { canonicalizeUrl } from '@corvee/core'
 
-// import {
-//     Plugin
-// } from '../lib/plugin'
-
 export const name = 'http-30x-https-upgrade-loose';
 
 const defaultLevel = 'error';

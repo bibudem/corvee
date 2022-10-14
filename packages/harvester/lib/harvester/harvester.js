@@ -809,7 +809,7 @@ export class Harvester extends EventEmitter {
                 if (uriObj.scheme === 'mailto') {
 
                     if (uriObj.error) {
-                        link.userData.reports = [new MailInvalidSyntaxReport()]
+                        link.userData.reports = [new MailInvalidSyntaxReport(link.userData.urlData)]
                         self.session.counts.fail++
                     } else {
                         link.userData.reports = [new MailUnverifiedAddressReport()]

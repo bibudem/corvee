@@ -5,6 +5,10 @@ import esMain from 'es-main'
 import { Report } from './report.js'
 
 export class NetReport extends Report {
+    /**
+     * @param {string} description
+     * @param {string} [message]
+     */
     constructor(description, message) {
 
         if (/net::ERR_([^ ]+)/i.test(description)) {
@@ -29,8 +33,6 @@ export class NetReport extends Report {
                 // net-alpn-negotiation-failed
                 // net-bad-ssl-client-auth-cert
                 // net-client-auth-cert-type-unsupported
-                // net-connection-timed-out
-                // net-internet-disconnected
                 // net-cert-error-in-ssl-renogotiation
                 // net-connection-aborted
                 // net-connection-closed
@@ -48,6 +50,7 @@ export class NetReport extends Report {
                 // net-host-resolver-queue-too-large
                 // net-https-proxy-tunnel-response-redirect
                 // net-icann-name-collision
+                // net-internet-disconnected
                 // net-invalid-ech-config-list
                 // net-mandatory-proxy-configuration-failed
                 // net-msg-too-big
@@ -203,7 +206,7 @@ export class NetReport extends Report {
 //
 
 if (esMain(import.meta)) {
-    const e = new NetError('net::ERR_IO_PENDING')
+    const e = new NetReport('net::ERR_IO_PENDING')
     console.log(JSON.stringify(e, null, 2))
     // console.log(`${e.stack}`)
 }

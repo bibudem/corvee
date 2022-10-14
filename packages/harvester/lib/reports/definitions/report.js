@@ -5,6 +5,7 @@ export class Report {
         this.level = 'info'
         this.code = 'error'
         this.stack = undefined
+        this._from = undefined
 
         Error.captureStackTrace(this, this.constructor);
 

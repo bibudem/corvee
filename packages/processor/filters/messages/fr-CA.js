@@ -102,7 +102,7 @@ export const messagesFrCA = {
 
     "mail-invalid-syntax": {
         msg: "L'adresse de courriel n'a pas une syntaxe valide.",
-        pattern: "(.+)",
+        pattern: "Invalid email syntax: (.+)",
         substitution: "L'adresse de courriel n'a pas une syntaxe valide: $1"
     },
 
@@ -124,7 +124,7 @@ export const messagesFrCA = {
 
     "url-invalid-url": {
         msg: "L'URL n'a pas une syntaxe valide.",
-        pattern: "(.+)",
+        pattern: "Invalid URL: (.+)",
         substitution: "L'URL n'a pas une syntaxe valide: $1"
     },
 
