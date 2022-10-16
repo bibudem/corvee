@@ -26,7 +26,6 @@
   },
   "homepage": "https://github.com/bibudem/corvee#readme",
   "devDependencies": {
-    "@types/typescript": "^2.0.0",
     "@types/rimraf": "^3.0.2",
     "@types/yargs": "^17.0.13",
     "rimraf": "^3.0.2",

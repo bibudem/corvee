@@ -21,8 +21,6 @@
         "underscore": "^1.9.1"
     },
     "devDependencies": {
-        "@types/eventemitter3": "^2.0.2",
-        "@types/is-plain-object": "^2.0.4",
         "@types/progress": "^2.0.5",
         "@types/underscore": "^1.11.4"
     }
