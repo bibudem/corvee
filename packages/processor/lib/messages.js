@@ -1,4 +1,4 @@
-import { console, inspect } from '@corvee/core'
+import { console, inspect } from 'corvee-core'
 
 export function messageFactory(messages) {
 

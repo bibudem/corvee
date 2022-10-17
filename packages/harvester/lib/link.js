@@ -1,7 +1,7 @@
 import v from 'io-validate'
 import extend from 'extend'
 import { isObject, isFunction } from 'underscore'
-import { normalizeUrl as n, console, inspect } from '@corvee/core'
+import { normalizeUrl as n, console, inspect } from 'corvee-core'
 
 /**
  * @typedef 
@@ -9,12 +9,12 @@ import { normalizeUrl as n, console, inspect } from '@corvee/core'
 const userDataDefaults = {
 
     /**
-     * @type {import("@corvee/core").UrlType} 
+     * @type {import("corvee-core").UrlType} 
      */
     url: null,
 
     /**
-     * @type {import("@corvee/core").UrlType} 
+     * @type {import("corvee-core").UrlType} 
      */
     finalUrl: null,
 
@@ -24,7 +24,7 @@ const userDataDefaults = {
     level: 0,
 
     /**
-     * @type {import("@corvee/core").UrlType} 
+     * @type {import("corvee-core").UrlType} 
      */
     parent: 'corvee:url-list',
 
@@ -100,7 +100,7 @@ const userDataDefaults = {
 
 export class Link {
     /**
-     * @param {import('@corvee/core').UrlType | Link} uri
+     * @param {import('corvee-core').UrlType | Link} uri
      * @param {userDataDefaults} data
      */
     constructor(uri, data = {}, normalizeUrl = n) {

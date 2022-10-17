@@ -1,4 +1,4 @@
-import { canonicalizeUrl } from '@corvee/core'
+import { canonicalizeUrl } from 'corvee-core'
 
 export const name = 'http-30x-https-upgrade-strict';
 

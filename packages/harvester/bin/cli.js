@@ -6,7 +6,7 @@ Function = Function //;node --module "$0" "$@";exit
 
 import yargs from 'yargs'
 import { Corvee as Harvester } from '../lib/index.js'
-import { console, inspect } from '@corvee/core';
+import { console, inspect } from 'corvee-core';
 
 const argv = yargs
     .usage(`Usage:

@@ -1,13 +1,13 @@
 import { omit, isNull, isNumber } from 'underscore'
 import extend from 'extend'
 
-import { console, inspect } from '@corvee/core'
+import { console, inspect } from 'corvee-core'
 import { captureReports, HttpReport, Report } from './reports/index.js'
 import { addTimeoutToPromise } from '@apify/timeout';
 
 /**
  * @typedef {object} RedirectType
- * @property {import('@corvee/core').UrlType} url
+ * @property {import('corvee-core').UrlType} url
  * @property {number} status
  * @property {string} statusText
  */
@@ -26,12 +26,12 @@ import { addTimeoutToPromise } from '@apify/timeout';
  * @property {?string} contentType
  * @property {?string} created
  * @property {boolean} extern=true
- * @property {?import('@corvee/core').UrlType} finalUrl
+ * @property {?import('corvee-core').UrlType} finalUrl
  * @property {?number} httpStatusCode
  * @property {?string} [httpStatusText]
  * @property {number} [id]
  * @property {?boolean} isNavigationRequest
- * @property {import('@corvee/core').UrlType} parent=corvee:url-list
+ * @property {import('corvee-core').UrlType} parent=corvee:url-list
  * @property {?Array<RedirectChainType>} redirectChain
  * @property {?Array<Report>} reports
  * @property {boolean} [resourceIsEmbeded]
@@ -40,7 +40,7 @@ import { addTimeoutToPromise } from '@apify/timeout';
  * @property {string} [text]
  * @property {number} [timing]
  * @property {?number} trials
- * @property {import('@corvee/core').UrlType} url
+ * @property {import('corvee-core').UrlType} url
  * @property {string} [urlData]
  */
 

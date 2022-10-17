@@ -11,7 +11,7 @@ import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
 import extend from 'extend'
-import { console, inspect, normalizeUrl, isValidUrl } from '@corvee/core'
+import { console, inspect, normalizeUrl, isValidUrl } from 'corvee-core'
 
 import { computeUniqueKey } from '../index.js'
 import { cleanupFolderPromise } from './cleanup-folder-promise.js'

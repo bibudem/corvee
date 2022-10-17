@@ -1,4 +1,4 @@
-import { console } from '@corvee/core'
+import { console } from 'corvee-core'
 
 export default class Notifier {
     /**

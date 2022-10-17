@@ -1,6 +1,6 @@
 import server from '../test/http-status/server.js';
 
-import { console, inspect } from '@corvee/core';
+import { console, inspect } from 'corvee-core';
 
 try {
     server.listen(3000, () => {

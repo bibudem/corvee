@@ -1,5 +1,5 @@
 import { FailedToLaunchReport, HttpReport, BrowserHasDisconnectedReport, MailReport, MozillaReport, MOZILLA_ERROR_REGEX, NetReport, CorveeReport, PageCrashedReport, TimeoutReport, TargetClosedReport, UrlReport, Report } from './definitions/index.js'
-import { console, inspect } from '@corvee/core'
+import { console, inspect } from 'corvee-core'
 
 /**
  * @param {object[] | Error} data

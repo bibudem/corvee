@@ -23,9 +23,9 @@
     // next to the .js files
     "outDir": "types",
     "paths": {
-      "@corvee/core":["packages/core"],
-      "@corvee/harvester": ["packages/harvester/"],
-      "@corvee/processor":["packages/processor/"],
+      "corvee-core":["packages/core"],
+      "corvee-harvester": ["packages/harvester/"],
+      "corvee-processor":["packages/processor/"],
     },
     "resolveJsonModule": false,
     "skipLibCheck": true,

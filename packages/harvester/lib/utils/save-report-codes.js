@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { join } from 'node:path'
 
-import { console, inspect } from '@corvee/core'
+import { console, inspect } from 'corvee-core'
 
 export function saveReportCodes(harvester, jobId) {
 

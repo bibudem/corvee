@@ -30,7 +30,7 @@ import urlShorten from './url-shorten.js'
  * @property {boolean} [exclude=false]
  * @property {number} [priority=0]
  * @property {number} [matches=0]
- * @property {(report: import('@corvee/harvester').Report, filter?: FilterType) => string} test
+ * @property {(report: import('corvee-harvester').Report, filter?: FilterType) => string} test
  */
 
 export * from './messages/fr-CA.js'

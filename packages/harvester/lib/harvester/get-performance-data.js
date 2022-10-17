@@ -1,4 +1,4 @@
-import { console as logger, inspect } from '@corvee/core'
+import { console as logger, inspect } from 'corvee-core'
 
 export async function getPerformanceData(resourceName, page) {
   if (typeof page === 'undefined') {

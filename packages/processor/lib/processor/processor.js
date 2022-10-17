@@ -4,7 +4,7 @@ import ProgressBar from 'progress'
 import { LEVELS } from './levels.js'
 
 import { messageFactory } from '../messages.js'
-import { console, inspect } from '@corvee/core'
+import { console, inspect } from 'corvee-core'
 
 class FilterPriorities extends Map {
 
