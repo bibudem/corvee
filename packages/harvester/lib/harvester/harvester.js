@@ -6,7 +6,7 @@ import minimatch from 'minimatch'
 import { pick, omit, isRegExp, isFunction, isObject, isNull } from 'underscore'
 import * as URI from 'uri-js'
 import filenamifyUrl from 'filenamify-url'
-import { Dataset, KeyValueStore, PlaywrightCrawler, ProxyConfiguration, RequestQueue, Request, Snapshotter, Configuration, StorageManager } from '@crawlee/playwright'
+import { Dataset, KeyValueStore, PlaywrightCrawler, ProxyConfiguration, RequestQueue, Request, Snapshotter, Configuration } from '@crawlee/playwright'
 import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
@@ -105,7 +105,11 @@ export class Harvester extends EventEmitter {
         /**
          * @type { configType } config
          */
-        this.config = extend(true, {}, defaultHarvesterOptions, pick(omit(config, ['proxyUrls']), Object.keys(defaultHarvesterOptions)))
+        this.config = extend(true, {}, defaultHarvesterOptions, pick(omit(config, ['internLinks', 'proxyUrls']), Object.keys(defaultHarvesterOptions)))
+
+        if (typeof config.internLinks !== 'undefined') {
+            this.config.internLinks = config.internLinks
+        }
 
         this.autoscaledPoolOptions = extend(true, {}, defaultAutoscaledPoolOptions, pick(config, Object.keys(defaultAutoscaledPoolOptions)))
         this.browserPoolOptions = extend(true, {}, defaultBrowserPoolOptions, pick(config, Object.keys(defaultBrowserPoolOptions)))
@@ -444,12 +448,8 @@ export class Harvester extends EventEmitter {
 
             console.info(`Removing ${this.config.storageDir} and ${this.launchContextOptions.userDataDir} folders...`)
 
-            const tmpDirSuffix = `${Date.now()}`;
-            const tmpStorageDir = `${this.config.storageDir}_${tmpDirSuffix}`;
-            const tmpUserDataDir = `${this.launchContextOptions.userDataDir}_${tmpDirSuffix}`;
-
-            cleanupFolderPromises.push(cleanupFolderPromise(this.config.storageDir, tmpStorageDir));
-            cleanupFolderPromises.push(cleanupFolderPromise(this.launchContextOptions.userDataDir, tmpUserDataDir));
+            cleanupFolderPromises.push(cleanupFolderPromise(this.config.storageDir));
+            cleanupFolderPromises.push(cleanupFolderPromise(this.launchContextOptions.userDataDir));
 
         }
 
@@ -520,7 +520,7 @@ export class Harvester extends EventEmitter {
 
         });
 
-        // self.screenshotsStore = await KeyValueStore.open('screenshots');
+        self.screenshotsStore = await KeyValueStore.open('screenshots');
 
         const requestQueue = await RequestQueue.open('playwright');
         // const requestQueue = new RequestQueue({
@@ -678,7 +678,7 @@ export class Harvester extends EventEmitter {
         }
 
         /**
-         * @param {*|Array<*|Link>} linkDataset
+         * @param {object|Array<object|Link>} linkDataset
          */
         async function addToRequestQueue(linkDataset) {
 
@@ -771,17 +771,14 @@ export class Harvester extends EventEmitter {
                     return;
                 }
 
-                if (link.url !== 'corvee:dummy-url') {
+                self.session.counts.activeRequests++
 
-                    self.session.counts.activeRequests++
-
-                    /**
-                     * Emits add-link
-                     * @event Harvester#add-link
-                     * @type {Link}
-                     */
-                    self.emit('add-link', link);
-                }
+                /**
+                 * Emits add-link
+                 * @event Harvester#add-link
+                 * @type {Link}
+                 */
+                self.emit('add-link', link);
 
                 if (uriObj.scheme === 'http' || uriObj.scheme === 'https') {
 
@@ -1025,10 +1022,10 @@ export class Harvester extends EventEmitter {
         }
 
         //
-        // PLaywright crawler
+        // crawler
         //
 
-        const playwrightCrawler = new PlaywrightCrawler({
+        const crawler = new PlaywrightCrawler({
 
             ...self.playwrightCrawlerOptions,
 
@@ -1509,26 +1506,23 @@ export class Harvester extends EventEmitter {
                     harvester: self
                 })
 
-                // if (!self.isExternLink(page.url())) {
+                // try {
 
-                //     try {
+                //     const screenshotBuffer = await page.screenshot();
 
-                //         const screenshotBuffer = await page.screenshot();
+                //     const key = filenamifyUrl(request.url, { replacement: '_' })
 
-                //         const key = filenamifyUrl(request.url, { replacement: '_' })
-
-                //         // The "key" argument must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_.'()
-                //         if (key.length > 256) {
-                //             key = key.substring(0, 255)
-                //         }
-
-                //         await self.screenshotsStore.setValue(key, screenshotBuffer, {
-                //             contentType: 'image/png'
-                //         })
-                //     } catch (error) {
-                //         console.todo(`Request url: ${request.url}`)
-                //         console.todo(error)
+                //     // The "key" argument must be at most 256 characters long and only contain the following characters: a-zA-Z0-9!-_.'()
+                //     if (key.length > 256) {
+                //         key = key.substring(0, 255)
                 //     }
+
+                //     await self.screenshotsStore.setValue(key, screenshotBuffer, {
+                //         contentType: 'image/png'
+                //     })
+                // } catch (error) {
+                //     console.todo(`Request url: ${request.url}`)
+                //     console.todo(error)
                 // }
 
                 try {
@@ -1617,9 +1611,9 @@ Error: ${inspect(error)}`)
             requestQueue: requestQueue,
         });
 
-        playwrightCrawler.requestHandlerTimeoutMillis = self.playwrightCrawlerOptions.requestHandlerTimeoutSecs * 1000
+        crawler.requestHandlerTimeoutMillis = self.playwrightCrawlerOptions.requestHandlerTimeoutSecs * 1000
 
-        self.crawler = playwrightCrawler
+        self.crawler = crawler
 
         /**
          * Emits start
@@ -1629,7 +1623,7 @@ Error: ${inspect(error)}`)
 
         console.log('Starting...')
 
-        await playwrightCrawler.run()
+        await crawler.run()
 
         console.info('Crawler is done.')
 

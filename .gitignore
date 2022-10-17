@@ -33,3 +33,4 @@ tmp
 /packages/processor/filters/messages.xml
 * - Copie.*
 .vscode
+.npmrc
