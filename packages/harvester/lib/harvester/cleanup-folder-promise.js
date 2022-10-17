@@ -1,10 +1,15 @@
-
 import { promises as fsPromises, existsSync, mkdir, renameSync } from 'node:fs'
 
 import { inspect, console } from 'corvee-core'
 
-export function cleanupFolderPromise(path, tmpPath) {
+/**
+ * @param {import("fs").PathLike} path
+ */
+export function cleanupFolderPromise(path) {
   return new Promise(async (resolve, reject) => {
+
+    const tmpPath = `${path}_${Date.now()}`
+
     if (existsSync(path)) {
       try {
         renameSync(path, tmpPath);
@@ -29,7 +34,4 @@ export function cleanupFolderPromise(path, tmpPath) {
       })
     })
   })
-  // .catch(error => {
-  //   console.error(error)
-  // })
 }

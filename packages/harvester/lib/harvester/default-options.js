@@ -75,7 +75,7 @@ export const defaultHarvesterOptions = {
      * Array of URLs matching the given strings / regular expressions. These URLs define the scope of the crawling ("intern" links)
      * @type {Array.<string|RegExp>}
      */
-    internLinks: [],
+    internLinks: [/^$/],
     linkParserDelay: 0,
     logLevel: 'info',
     maxDepth: Infinity,
@@ -119,7 +119,7 @@ export const defaultHarvesterOptions = {
      * @type {WaitUntilType} pageWaitUntil
      */
     pageWaitUntil: {
-        intern: 'domcontentloaded',
+        intern: 'networkidle',
         extern: 'load'
     },
 
@@ -208,7 +208,7 @@ export const defaultLaunchContextOptions = {
     /**
      * @type { string | undefined }
      */
-    userDataDir: undefined,
+    userDataDir: join(tmpDir, '.userDataDir'),
 
     /**
      * Native Playwright options
@@ -224,7 +224,7 @@ export const defaultLaunchContextOptions = {
 
         /**
          * Puppeteer launch options
-         * @type boolean
+         * @type {boolean}
          * */
         headless: true,
 
@@ -236,7 +236,7 @@ export const defaultLaunchContextOptions = {
 
         /**
          * The `User-Agent` HTTP header used by the browser
-         * @type string
+         * @type {string}
          */
         userAgent: `Mozilla/5.0 (Corvee/${pkg.version})`,
 

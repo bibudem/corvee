@@ -1,4 +1,5 @@
 import { PseudoUrl } from '@crawlee/playwright'
+import { omit } from 'underscore'
 
 const MAX_ENQUEUE_LINKS_CACHE_SIZE = 1000;
 
@@ -23,7 +24,7 @@ export class PseudoUrls {
             // If it's a string or RegExp, construct a PURL from it directly.
             else if (typeof item === 'string' || item instanceof RegExp) pUrl = new PseudoUrl(item);
             // If it's an object, look for a purl property and use it and the rest to construct a PURL with a Request template.
-            else pUrl = new PseudoUrl(item.purl, _.omit(item, 'purl'));
+            else pUrl = new PseudoUrl(item.purl, omit(item, 'purl'));
 
             // Manage cache
             enqueueLinksPseudoUrlCache.set(item, pUrl);
@@ -35,6 +36,9 @@ export class PseudoUrls {
         });
     }
 
+    /**
+     * @param {import('@corvee/core').UrlType} url
+     */
     matches(url) {
         return this.purls.length > 0 ? this.purls.some(purl => purl.matches(url)) || url.startsWith('corvee:') || url.startsWith('about:') : true;
     }
