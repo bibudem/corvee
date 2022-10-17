@@ -119,6 +119,12 @@ export class Harvester extends EventEmitter {
 
         this.launchContextOptions.launcher = playwright[this.config.browser]
 
+        // if (!process.env.CRAWLEE_STORAGE_DIR) {
+        process.env.CRAWLEE_STORAGE_DIR = this.config.storageDir
+        // This to prevent a WARN message from crawlee
+        process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir
+        // }
+
         const crawleeConfig = Configuration.getGlobalConfig()
         crawleeConfig.set('systemInfoIntervalMillis', this.config.notifyDelay)
 
@@ -161,12 +167,6 @@ export class Harvester extends EventEmitter {
             const proxyConfiguration = new ProxyConfiguration({ proxyUrls })
             this.playwrightCrawlerOptions.proxyConfiguration = proxyConfiguration
         }
-
-        // if (!process.env.CRAWLEE_STORAGE_DIR) {
-        process.env.CRAWLEE_STORAGE_DIR = this.config.storageDir
-        // This to prevent a WARN message from crawlee
-        process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir
-        // }
 
         console.log(`Setting log level to ${this.config.logLevel}`)
         crawleeConfig.set('logLevel', 6)
