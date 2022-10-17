@@ -16,9 +16,9 @@
     "dependencies": {
         "colors": "^1.4.0",
         "es-main": "^1.2.0",
-        "filenamify-url": "^2.1.0",
+        "filenamify-url": "^3.0.0",
         "io-validate": "^2.1.13",
-        "is-relative-url": "^3.0.0",
+        "is-relative-url": "^4.0.0",
         "tracer": "^1.0.1",
         "underscore": "^1.9.1",
         "uri-js": "^4.2.2",
