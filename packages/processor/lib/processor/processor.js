@@ -1,5 +1,5 @@
-import EventEmitter from 'eventemitter3';
-import isPlainObject from 'is-plain-object'
+import EventEmitter from 'eventemitter3'
+import { isObject } from 'underscore'
 import ProgressBar from 'progress'
 import { LEVELS } from './levels.js'
 
@@ -20,15 +20,25 @@ class FilterPriorities extends Map {
     }
 }
 
+/**
+ * @typedef {object} CorveeProcessorConfigType
+ * @property {import('corvee-processor').FilterLevelType} errorLevel
+ */
+
+/**
+ * @typedef {object} CorveeProcessorOptionsType
+ * @property {import('corvee-processor').FilterType[]} [filters]
+ * @property {object[]} [errors]
+ * @property {Object<string, object>} [messages]
+ * @property {CorveeProcessorConfigType} [config]
+ * @memberof CorveeProcessor
+ */
+
 export class CorveeProcessor extends EventEmitter {
 
     /**
-     *Creates an instance of CorveeProcessor.
-     * @param {object} [options]
-     * @param {object[]} [options.filters]
-     * @param {object[]} [options.errors]
-     * @param {Object<string, object>} [options.messages]
-     * @param {...*} options.config
+     * Creates an instance of CorveeProcessor.
+     * @param {CorveeProcessorOptionsType} options
      * @memberof CorveeProcessor
      */
     constructor({
@@ -39,22 +49,29 @@ export class CorveeProcessor extends EventEmitter {
     } = {}) {
         super()
 
+        if (typeof config === 'undefined') {
+            config = {}
+        }
+
         /**
-         * @type {object[]}
+         * @type {import('corvee-harvester').RecordType[]}
          */
         this.records = []
 
         /**
-         * @type {object[]}
+         * @type {import('corvee-harvester').RecordType[]}
          */
         this.unfilteredRecords = []
 
         /**
-         * @type {object[]}
+         * @type { Partial<import('corvee-processor').FilterType>[] }
          */
         this.filters = []
         this.messages = messages
         this.filterPriorities = new FilterPriorities()
+        /**
+         * @type {{}[]}
+         */
         this._errors = []
         this.config = config
         this.config.errorLevel = this.config.errorLevel || LEVELS.WARNING
@@ -66,12 +83,18 @@ export class CorveeProcessor extends EventEmitter {
         this.addErrors(errors)
     }
 
+    /**
+     * @param {import('corvee-harvester').RecordType} record
+     */
     isMuted(record) {
 
         return record.reports.every(report => LEVELS[report.level] < this.config.errorLevel)
     }
 
-    addErrors(...errors) {
+    /**
+     * @param {any[]} errors
+     */
+    addErrors(errors) {
 
         this._errors = this._errors.concat(...errors.flat(Infinity).map(error => {
             error.matches = 0;
@@ -83,9 +106,9 @@ export class CorveeProcessor extends EventEmitter {
     }
 
     /**
-     * @param {import('../../filters/index.js').FilterType[]} filters
+     * @param {import('corvee-processor').FilterType[]} filters
      */
-    addFilters(...filters) {
+    addFilters(filters) {
 
         this.filters = this.filters.concat(...filters.flat(Infinity).map(filter => {
 
@@ -108,7 +131,7 @@ export class CorveeProcessor extends EventEmitter {
     }
 
     /**
-     * @param {import('packages/harvester/index.js').RecordType[]} records
+     * @param {import('corvee-harvester').RecordType[]} records
      */
     async process(records) {
         if (!Array.isArray(records)) {
@@ -142,12 +165,13 @@ export class CorveeProcessor extends EventEmitter {
             self = this;
 
         /**
-         * @param {import('packages/harvester/index.js').RecordType[]} records
-         * @param {import('../../filters/index.js').FilterType} filter
+         * @param {import('corvee-harvester').RecordType[]} records
+         * @param {import('corvee-processor').FilterType} filter
          */
         function doFilter(records, filter) {
+
             /**
-             * @type {import("packages/harvester/index.js").RecordType[]}
+             * @type {import('corvee-harvester').RecordType[]}
              */
             const result = [];
 
@@ -163,7 +187,7 @@ export class CorveeProcessor extends EventEmitter {
                         filteredRecords.add(record.id);
                         record._filtered = true;
 
-                        if (isPlainObject(testResult)) {
+                        if (isObject(testResult)) {
                             record = testResult;
                         } else {
                             let report, index;
@@ -213,6 +237,9 @@ export class CorveeProcessor extends EventEmitter {
             return result;
         }
 
+        /**
+         * @param {import('corvee-harvester').RecordType[]} records
+         */
         function doFilterLevels(records) {
 
             const errorLevels = Object
@@ -227,7 +254,7 @@ export class CorveeProcessor extends EventEmitter {
                 // Filtering reports by level
 
                 const highestLevel = Math.max(...record.reports.filter(report => errorLevels.includes(report.level)).map(report => LEVELS[report.level.toUpperCase()]))
-                //console.log(record)
+
                 record.reports = record.reports.filter(report => LEVELS[report.level.toUpperCase()] === highestLevel);
 
                 return record;
@@ -235,6 +262,9 @@ export class CorveeProcessor extends EventEmitter {
             })
         }
 
+        /**
+         * @param {import('corvee-harvester').RecordType[]} records
+         */
         function doFilterPriorities(records) {
 
             const errorLevels = Object
@@ -244,6 +274,9 @@ export class CorveeProcessor extends EventEmitter {
 
             return records.map(record => {
 
+                /**
+                 * @type {import('corvee-harvester').Report[]}
+                 */
                 let reports = [];
 
                 // Filtering reports priorities by level
@@ -263,21 +296,25 @@ export class CorveeProcessor extends EventEmitter {
 
                         const filteredReportsForThisLevel = reportsByLevel.filter(report => self.filterPriorities.get(report.code) >= maxPriority);
 
-                        // console.log(`maxPriority: ${maxPriority}`);
-                        // console.log(filteredReportsForThisLevel)
                         reports = reports.concat(filteredReportsForThisLevel);
                     }
                 })
 
                 record.reports = reports;
-                // console.log(reports);
-                // process.exit();
+
                 return record;
 
             })
         }
 
+        /**
+         * @param {import('corvee-harvester').RecordType[]} records
+         */
         function doAddMessages(records) {
+
+            /**
+             * @type {import("corvee-harvester").RecordType[]}
+             */
             const result = [];
 
             records.forEach((record) => {
@@ -335,6 +372,9 @@ export class CorveeProcessor extends EventEmitter {
 
         this.records = doAddMessages(this.records);
 
+        /**
+         * @type { Partial<import('corvee-processor').FilterType>[] }
+         */
         const perFilter = this.filters.map(({
             code,
             matches,

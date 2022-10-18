@@ -19,14 +19,10 @@ import urlIgnoreThese from './url-ignore-these.js'
 import urlShorten from './url-shorten.js'
 
 /**
- * @typedef {'info' | 'warning' | 'error'} FilterLevelType
- */
-
-/**
  * @typedef {object} FilterType
  * @property {string} code
- * @property {string} description
- * @property {FilterLevelType} [level='error']
+ * @property {string} [description]
+ * @property {import('corvee-processor').FilterLevelType} [level='error']
  * @property {boolean} [exclude=false]
  * @property {number} [priority=0]
  * @property {number} [matches=0]
