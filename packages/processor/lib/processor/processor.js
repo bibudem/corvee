@@ -190,6 +190,7 @@ export class CorveeProcessor extends EventEmitter {
                         if (isObject(testResult)) {
                             record = testResult;
                         } else {
+
                             let report, index;
 
                             if (record.reports.some(report => report.code === filter.code)) {
