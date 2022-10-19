@@ -1,7 +1,13 @@
 import { canonicalizeUrl } from 'corvee-core'
+import { Filter } from "./filter.js"
 
-export const name = 'http-30x-https-upgrade-strict';
+const CODE = 'http-30x-https-upgrade-strict'
 
+const DESCRIPTION = 'Matches when the only difference between the url and the final url is an https scheme upgrade and/or a missing `www.` sub-domain in the final url.'
+
+/**
+ * @type {import('corvee-processor').FilterLevelType}
+ */
 const defaultLevel = 'warning';
 
 const defaultOptions = {
@@ -9,45 +15,37 @@ const defaultOptions = {
     limit: Infinity
 }
 
-export default class Http30xHttpsUpgrade {
+export default class Http30xHttpsUpgradeStrict extends Filter {
 
     /**
-     *Creates an instance of Http30xHttpsUpgrade.
+     *Creates an instance of Http30xHttpsUpgradeStrict.
      * @param {object} options
-     * @param {string} [options.level=warning]
+     * @param {import('corvee-processor').FilterLevelType} [options.level=warning]
      * @param {boolean} [options.exclude=false]
      * @param {boolean} [options.ignoreWww=true] Wether to ignore `www` subdomain or not.
      * @param {number} [options.limit] Limit the number of detections from this filter.
-     * @memberof Http30xHttpsUpgrade
+     * @memberof Http30xHttpsUpgradeStrict
      */
-    constructor({
-        level,
-        exclude = false,
-        ...options
-    } = {}) {
-        this.level = level || defaultLevel;
+    constructor({ level = defaultLevel, exclude = false, ...options } = {}) {
+
+        super(CODE, DESCRIPTION, { level, exclude })
+
         this.options = {
             ...defaultOptions,
             ...options
-        };
-        this.exclude = exclude;
+        }
 
-        // Immutables properties
-        Object.defineProperty(this, 'code', {
-            value: name,
-            enumerable: true
-        })
-        Object.defineProperty(this, 'description', {
-            value: 'Matches when the only difference between the url and the final url is an https scheme upgrade and/or a missing `www.` sub-domain in the final url.',
-            enumerable: true
-        })
-
-        this.test = (report, filter) => {
-            if (!report.finalUrl) {
+        /**
+         * @param {import('corvee-harvester').RecordType} record
+         * @param {import('corvee-processor').FilterType} filter
+         * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
+         */
+        this.test = (record, filter) => {
+            if (!record.finalUrl) {
                 return
             }
 
-            if (report.httpStatusCode >= 400) {
+            if (record.httpStatusCode >= 400) {
                 return
             }
 
@@ -55,8 +53,8 @@ export default class Http30xHttpsUpgrade {
                 return
             }
 
-            const finalUrl = new URL(canonicalizeUrl(report.finalUrl))
-            const url = new URL(canonicalizeUrl(report.url))
+            const finalUrl = new URL(canonicalizeUrl(record.finalUrl))
+            const url = new URL(canonicalizeUrl(record.url))
             const isHttpsUpgrade = finalUrl.protocol === url.protocol.replace(/:$/, 's:')
             const isSameDomain = url.hostname === finalUrl.hostname
             const isSameUrlPath = `${url.pathname}${url.search}` === `${finalUrl.pathname}${finalUrl.search}`
@@ -66,10 +64,10 @@ export default class Http30xHttpsUpgrade {
                 isSameDomain &&
                 isSameUrlPath &&
                 (isHttpsUpgrade || isWwwUpgrade) &&
-                report.redirectChain &&
-                report.redirectChain.length > 0
+                record.redirectChain &&
+                record.redirectChain.length > 0
             ) {
-                return report.finalUrl;
+                return record.finalUrl;
             };
         }
     }

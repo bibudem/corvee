@@ -1,58 +1,53 @@
 import { canonicalizeUrl } from 'corvee-core'
+import { Filter } from './filter.js'
 
-export const name = 'http-30x-https-upgrade-loose';
-
-const defaultLevel = 'error';
+const CODE = 'http-30x-https-upgrade-loose'
+const DESCRIPTION = 'Matches when there is a redirect on a URL on the same domain and an https upgrade scheme. URL paths must differ.'
+/**
+ * @type {import('corvee-processor').FilterLevelType}
+ */
+const defaultLevel = 'error'
+const defaultPriority = 0
 
 const defaultOptions = {
     ignoreWww: true
 }
 
-export default class Http30xHttpsUpgrade {
+export default class Http30xHttpsUpgradeLoose extends Filter {
     /**
-     * Creates an instance of Http30xHttpsUpgrade.
+     * Creates an instance of Http30xHttpsUpgradeLoose.
      * @param {object} options
-     * @param {string} [options.level=warning]
+     * @param {import('corvee-processor').FilterLevelType} [options.level=warning]
      * @param {boolean} [options.exclude=false]
+     * @param {number} [options.priority=1]
      * @param {boolean} [options.ignoreWww=true] Wether to ignore `www` subdomain or not.
      * @param {number} [options.limit] Limit the number of detections from this filter.
-     * @memberof Http30xHttpsUpgrade
+     * @memberof Http30xHttpsUpgradeLoose
      */
-    constructor({
-        level,
-        exclude = false,
-        ...options
-    } = {}) {
-        this.level = level || defaultLevel;
+    constructor({ level = defaultLevel, exclude = false, priority = defaultPriority, ...options } = {}) {
+
+        super(CODE, DESCRIPTION, { level, exclude, priority })
+
         this.options = {
             ...defaultOptions,
             ...options
-        };
-        this.exclude = exclude;
+        }
 
-        // Immutables properties
-        Object.defineProperties(this, {
-            code: {
-                value: name,
-                enumerable: true
-            },
-            description: {
-                value: 'Matches when there is a redirect on a URL on the same domain and an https upgrade scheme. URL paths must differ.',
-                enumerable: true
-            }
-        })
-
-        this.test = (report) => {
-            if (!report.finalUrl) {
+        /**
+         * @param {import('corvee-harvester').RecordType} record
+         * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
+         */
+        this.test = (record) => {
+            if (!record.finalUrl) {
                 return
             }
 
-            if (report.httpStatusCode >= 400) {
+            if (record.httpStatusCode >= 400) {
                 return
             }
 
-            const finalUrl = new URL(canonicalizeUrl(report.finalUrl)),
-                url = new URL(canonicalizeUrl(report.url)),
+            const finalUrl = new URL(canonicalizeUrl(record.finalUrl)),
+                url = new URL(canonicalizeUrl(record.url)),
                 isHttpsUpgrade = finalUrl.protocol === url.protocol.replace(/:$/, 's:'),
                 isSamePathname = finalUrl.pathname === url.pathname,
                 domainRegex = new RegExp(`(^w+(\d+)?\.)?${finalUrl.hostname.replace(/\./ig, '\\.')}$`),
@@ -61,8 +56,8 @@ export default class Http30xHttpsUpgrade {
             return !isSamePathname &&
                 isSameDomain &&
                 isHttpsUpgrade &&
-                report.redirectChain &&
-                report.redirectChain.length > 0;
+                record.redirectChain &&
+                record.redirectChain.length > 0;
         }
     }
 }
