@@ -16,7 +16,7 @@ export const messagesFrCA = {
 
     "http-30x-https-upgrade-strict": {
         pattern: "(.+)",
-        substitution: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
+        substitution: "Redirection vers une nouvelle URL sécurisée de la même page (de <code>http</code> vers <code>https</code>): <code class=\"cvw-url\">$1</code>.  Veuillez vérifier ce lien.",
         msg: "Redirection vers une version sécurisée (<code>https</code>) de la même page."
     },
 
@@ -24,7 +24,7 @@ export const messagesFrCA = {
         msg: "Redirection permanente vers un lien brisé. Vous devez mettre à jour ce lien."
     },
 
-    "http-30x-permanent-redirect-successfull": {
+    "http-30x-permanent-redirect-successful": {
         msg: "Redirection permanente. Vous devez mettre à jour ce lien, sauf s'il s'agit d'un permalien."
     },
 
@@ -33,7 +33,7 @@ export const messagesFrCA = {
     },
 
     "http-307-HSTS-redirect": {
-        msg: "Redirection vers une nouvelle URL sécurisée (de <code>http</code> vers <code>https</code>). Vous devez mettre à jour ce lien."
+        msg: "Redirection vers une nouvelle URL sécurisée de la même page (de <code>http</code> vers <code>https</code>). Vous devez mettre à jour ce lien."
     },
 
     "http-400": {
@@ -103,7 +103,7 @@ export const messagesFrCA = {
     "mail-invalid-syntax": {
         msg: "L'adresse de courriel n'a pas une syntaxe valide.",
         pattern: "Invalid email syntax: (.+)",
-        substitution: "L'adresse de courriel n'a pas une syntaxe valide: $1"
+        substitution: "L'adresse de courriel n'a pas une syntaxe valide: <span class=\"cvw-url\">$1</span>"
     },
 
     "net-certificate": {
@@ -125,7 +125,7 @@ export const messagesFrCA = {
     "url-invalid-url": {
         msg: "L'URL n'a pas une syntaxe valide.",
         pattern: "Invalid URL: (.+)",
-        substitution: "L'URL n'a pas une syntaxe valide: $1"
+        substitution: "L'URL n'a pas une syntaxe valide: <span class=\"cvw-url\">$1</span>"
     },
 
 
