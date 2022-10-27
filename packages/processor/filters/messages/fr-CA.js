@@ -32,6 +32,10 @@ export const messagesFrCA = {
         msg: "Redirections circulaires rencontrées. Vérifiez le lien."
     },
 
+    "http-30x-slash": {
+        msg: "Redirection dont l'url de départ et celle finale diffèrent que par le caractère '/' à la fin."
+    },
+
     "http-307-HSTS-redirect": {
         msg: "Redirection vers une nouvelle URL sécurisée de la même page (de <code>http</code> vers <code>https</code>). Vous devez mettre à jour ce lien."
     },

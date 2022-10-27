@@ -3,7 +3,7 @@ import http30xCircularRedirection from './http-30x-circular-redirection.js'
 import http30xHttpsUpgradeAny from './http-30x-https-upgrade-any.js'
 import Http30xHttpsUpgradeLoose from './http-30x-https-upgrade-loose.js'
 import Http30xHttpsUpgradeStrict from './http-30x-https-upgrade-strict.js'
-import http30xMissingSlash from './http-30x-missing-slash.js'
+import http30xSlash from './http-30x-slash.js'
 import http30xPermanentRedirectFailure from './http-30x-permanent-redirect-failure.js'
 import Http30xPermanentRedirectSuccessful from './http-30x-permanent-redirect-successful.js'
 import http30xRedirectToWelcomePage from './http-30x-redirect-to-welcome-page.js'
@@ -29,7 +29,7 @@ export const filters = {
     http30xHttpsUpgradeAny,
     Http30xHttpsUpgradeLoose,
     Http30xHttpsUpgradeStrict,
-    http30xMissingSlash,
+    http30xSlash,
     http30xPermanentRedirectFailure,
     Http30xPermanentRedirectSuccessful,
     http30xRedirectToWelcomePage,
