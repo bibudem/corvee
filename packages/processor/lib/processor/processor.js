@@ -220,6 +220,8 @@ export class CorveeProcessor extends EventEmitter {
                             if (typeof excluded[record.id] === 'undefined') {
                                 excluded[record.id] = filter.code;
                             }
+
+
                             self.emit('excluded', record, filter)
                             return;
                         }
@@ -291,7 +293,7 @@ export class CorveeProcessor extends EventEmitter {
                         const maxPriority = Math.max(...reportsByLevel.map(report => {
                             const reportCode = report.code;
                             const reportFilterPriority = self.filterPriorities.get(reportCode);
-                            // console.log(`code: ${reportCode}, priority: ${reportFilterPriority}`);
+
                             return reportFilterPriority;
                         }));
 
@@ -349,7 +351,7 @@ export class CorveeProcessor extends EventEmitter {
         const progressBar = new ProgressBar('[:bar] :percent :etas -- current filter: :filter', { total: this.filters.length, width: 60 })
 
         this.filters.forEach(filter => {
-            progressBar.tick({ filter: filter.code })
+            progressBar.tick({ filter: `${filter.code}${filter.description ? ` - ${filter.description}` : ''}` })
             this.records = doFilter(this.records, filter)
         });
 
