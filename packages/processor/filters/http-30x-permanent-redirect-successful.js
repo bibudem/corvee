@@ -18,9 +18,17 @@ const defaultPriority = -1
 
 export default class Http30xPermanentRedirectSuccessful extends Filter {
 
-    constructor({ level = defaultLevel, priority = defaultPriority } = {}) {
+    /**
+     *Creates an instance of Http30xPermanentRedirectSuccessful.
+     * @param {object} options
+     * @param {import('corvee-processor').FilterLevelType} [options.level='info']
+     * @param {boolean} [options.exclude=false]
+     * @param {number} [options.priority=-1]
+     * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
+     */
+    constructor({ level = defaultLevel, exclude, priority = defaultPriority, limit } = {}) {
 
-        super(CODE, DESCRIPTION, { level, priority })
+        super(CODE, DESCRIPTION, { level, exclude, priority, limit })
 
         /**
          * @param {import('corvee-harvester').RecordType} record
@@ -28,6 +36,11 @@ export default class Http30xPermanentRedirectSuccessful extends Filter {
          * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
          */
         this.test = (record, filter) => {
+
+            if (filter.matches >= this.limit) {
+                return
+            }
+
             if (record.redirectChain &&
                 record.redirectChain.length > 0 &&
                 !Number.isNaN(record.httpStatusCode) &&
