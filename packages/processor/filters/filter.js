@@ -1,4 +1,3 @@
-
 /**
  * @typedef {object} FilterType
  * @property {string} code
@@ -7,8 +6,16 @@
  * @property {boolean} [exclude=false]
  * @property {number} [priority=0]
  * @property {number} [matches=0]
+ * @property {number} [limit=Infinity]
  * @property {(report: import('corvee-harvester').Report, filter?: FilterType) => string} test
  */
+
+const defaultOptions = {
+  level: 'error',
+  exclude: false,
+  priority: 0,
+  limit: Infinity
+}
 
 export class Filter {
 
@@ -20,9 +27,10 @@ export class Filter {
    * @param {import('corvee-processor').FilterLevelType} [options.level='error']
    * @param {boolean} [options.exclude=false]
    * @param {number} [options.priority=0]
+   * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
    * @memberof Filter
    */
-  constructor(code, description, { level, exclude, priority } = {}) {
+  constructor(code, description, { level, exclude, priority, limit } = {}) {
 
     if (this.constructor === Filter) {
       throw new Error("This is an abstract class. It can't be instantiated.");
@@ -43,9 +51,10 @@ export class Filter {
       }
     })
 
-    this.level = level || 'error'
-    this.exclude = exclude || false
-    this.priority = priority || 0
+    this.level = level || defaultOptions.level
+    this.exclude = exclude || defaultOptions.exclude
+    this.priority = priority || defaultOptions.priority
+    this.limit = limit || defaultOptions.limit
 
     Object.defineProperty(this, 'matches', {
       enumerable: false,
