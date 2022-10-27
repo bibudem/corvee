@@ -10,9 +10,16 @@ const DESCRIPTION = 'Matches when the only difference between the url and the fi
  */
 const defaultLevel = 'warning';
 
+/**
+ * @typedef {{ [key: string]: any}} DefaultOptions
+ * @private
+ */
+
+/**
+ * @type {DefaultOptions}
+ */
 const defaultOptions = {
-    ignoreWww: true,
-    limit: Infinity
+    ignoreWww: true
 }
 
 export default class Http30xHttpsUpgradeStrict extends Filter {
@@ -20,20 +27,18 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
     /**
      *Creates an instance of Http30xHttpsUpgradeStrict.
      * @param {object} options
-     * @param {import('corvee-processor').FilterLevelType} [options.level=warning]
+     * @param {import('corvee-processor').FilterLevelType} [options.level='warning']
      * @param {boolean} [options.exclude=false]
+     * @param {number} [options.priority=0]
+     * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
      * @param {boolean} [options.ignoreWww=true] Wether to ignore `www` subdomain or not.
-     * @param {number} [options.limit] Limit the number of detections from this filter.
      * @memberof Http30xHttpsUpgradeStrict
      */
-    constructor({ level = defaultLevel, exclude = false, ...options } = {}) {
+    constructor({ level = defaultLevel, exclude, priority, limit, ...options } = {}) {
 
-        super(CODE, DESCRIPTION, { level, exclude })
+        super(CODE, DESCRIPTION, { level, exclude, priority, limit })
 
-        this.options = {
-            ...defaultOptions,
-            ...options
-        }
+        this.ignoreWww = options.ignoreWww || defaultOptions.ignoreWww
 
         /**
          * @param {import('corvee-harvester').RecordType} record
@@ -49,7 +54,7 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
                 return
             }
 
-            if (filter.matches >= this.options.limit) {
+            if (filter.matches >= this.limit) {
                 return
             }
 
@@ -58,7 +63,7 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
             const isHttpsUpgrade = finalUrl.protocol === url.protocol.replace(/:$/, 's:')
             const isSameDomain = url.hostname === finalUrl.hostname
             const isSameUrlPath = `${url.pathname}${url.search}` === `${finalUrl.pathname}${finalUrl.search}`
-            const isWwwUpgrade = this.options.ignoreWww ? new RegExp(`^w+(\d+)?\.${finalUrl.hostname.replace(/\./ig, '\\.')}$`).test(url.hostname) : false
+            const isWwwUpgrade = this.ignoreWww ? new RegExp(`^w+(\d+)?\.${finalUrl.hostname.replace(/\./ig, '\\.')}$`).test(url.hostname) : false
 
             if (
                 isSameDomain &&
