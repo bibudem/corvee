@@ -1,15 +1,43 @@
 import { console, inspect } from 'corvee-core'
 
+/**
+ * @typedef {string | RegExp} StringPattern
+ */
+
+/**
+ * @typedef {string} StringReplacement
+ */
+
+/**
+ * @typedef {object} MessageType
+ * @property {string} msg
+ * @property {StringPattern} [pattern]
+ * @property {StringReplacement} [substitution]
+ */
+
+/**
+ * @typedef {string} MessageCodeType
+ */
+
+/**
+ * @typedef {{ [code: MessageCodeType]: MessageType; }} MessagesDictionnaryType
+ */
+
+/**
+ * @param {MessagesDictionnaryType} messages
+ */
 export function messageFactory(messages) {
 
     Object.keys(messages).forEach(m => {
         if ('pattern' in messages[m] && typeof messages[m].pattern === 'string') {
-            messages[m].pattern = new RegExp(messages[m].pattern,)
+            /**
+             * @type {RegExp}
+             */
+            (messages[m].pattern) = new RegExp(messages[m].pattern,)
         }
     })
 
-    return function message(key, rawMsg) {
-
+    return function message(/** @type {MessageCodeType} */ key, /** @type {string} */ rawMsg) {
         if (typeof messages[key] === 'undefined') {
             return;
         }
@@ -17,11 +45,11 @@ export function messageFactory(messages) {
         const msg = messages[key];
 
         if (msg.pattern && rawMsg) {
-            const reg = msg.pattern.exec(rawMsg);
-            if (reg && reg.length > 1) {
+            const resultArray = /** @type {RegExp} */ (msg.pattern).exec(rawMsg);
+            if (resultArray && resultArray.length > 1) {
                 let message = msg.substitution;
-                for (var i = 1; i < reg.length; i++) {
-                    message = message.replace(`$${i}`, reg[i])
+                for (var i = 1; i < resultArray.length; i++) {
+                    message = message.replace(new RegExp(`\\$${i}`, 'g'), resultArray[i])
                 }
 
                 return message;
