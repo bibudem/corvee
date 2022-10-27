@@ -10,8 +10,12 @@ const DESCRIPTION = 'Matches when the only difference between the url and the fi
  */
 const defaultLevel = 'warning';
 
+const defaultPriority = 0
+
 /**
- * @typedef {{ [key: string]: any}} DefaultOptions
+ * @typedef {object} DefaultOptions
+ * @property {boolean} [ignoreWww=true]
+ * @property {boolean} [ignoreTailingSlash=true]
  * @private
  */
 
@@ -19,7 +23,8 @@ const defaultLevel = 'warning';
  * @type {DefaultOptions}
  */
 const defaultOptions = {
-    ignoreWww: true
+    ignoreWww: true,
+    ignoreTailingSlash: true
 }
 
 export default class Http30xHttpsUpgradeStrict extends Filter {
@@ -32,13 +37,15 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
      * @param {number} [options.priority=0]
      * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
      * @param {boolean} [options.ignoreWww=true] Wether to ignore `www` subdomain or not.
+     * @param {boolean} [options.ignoreTailingSlash=true] Wether to ignore tailing `/` at the end of the url.
      * @memberof Http30xHttpsUpgradeStrict
      */
-    constructor({ level = defaultLevel, exclude, priority, limit, ...options } = {}) {
+    constructor({ level = defaultLevel, exclude, priority = defaultPriority, limit, ...options } = {}) {
 
         super(CODE, DESCRIPTION, { level, exclude, priority, limit })
 
         this.ignoreWww = options.ignoreWww || defaultOptions.ignoreWww
+        this.ignoreTailingSlash = options.ignoreTailingSlash || defaultOptions.ignoreTailingSlash
 
         /**
          * @param {import('corvee-harvester').RecordType} record
@@ -60,9 +67,13 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
 
             const finalUrl = new URL(canonicalizeUrl(record.finalUrl))
             const url = new URL(canonicalizeUrl(record.url))
+
+            const urlPathname = this.ignoreTailingSlash ? url.pathname.replace(/\/$/, '') : url.pathname
+            const finalUrlPathname = this.ignoreTailingSlash ? finalUrl.pathname.replace(/\/$/, '') : finalUrl.pathname
+
             const isHttpsUpgrade = finalUrl.protocol === url.protocol.replace(/:$/, 's:')
             const isSameDomain = url.hostname === finalUrl.hostname
-            const isSameUrlPath = `${url.pathname}${url.search}` === `${finalUrl.pathname}${finalUrl.search}`
+            const isSameUrlPath = `${urlPathname}${url.search}` === `${finalUrlPathname}${finalUrl.search}`
             const isWwwUpgrade = this.ignoreWww ? new RegExp(`^w+(\d+)?\.${finalUrl.hostname.replace(/\./ig, '\\.')}$`).test(url.hostname) : false
 
             if (
