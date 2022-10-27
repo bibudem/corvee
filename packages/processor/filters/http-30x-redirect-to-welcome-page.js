@@ -1,17 +1,19 @@
+import { normalizeUrl } from 'corvee-core'
+
 export default {
     code: 'http-30x-redirect-to-welcome-page',
     description: 'Matches redirects from a domain URL to a welcome page. Ex: http://www.exemple.com -> http://www.exemple.com/welcome.html',
     test: record => {
 
-        if (record.finalUrl && !(typeof record.finalUrl === 'string' && record.finalUrl.length > 0)) {
+        if (record.finalUrl === null) {
             return;
         }
 
         let url, finalUrl
 
         try {
-            url = new URL(record.url);
-            finalUrl = new URL(record.finalUrl);
+            url = new URL(normalizeUrl(record.url));
+            finalUrl = new URL(normalizeUrl(record.finalUrl));
         } catch (e) {
             return false
         }
@@ -20,7 +22,7 @@ export default {
             url.hostname === finalUrl.hostname &&
             url.pathname === '/' &&
             finalUrl.search === '' &&
-            // Looking for paths like '/welcome' or '/fr/'
+            // Looking for paths like '/welcome' or '/fr/' or '/fr/index.php'
             finalUrl.pathname.split('/').filter(step => step).length <= 1 &&
             // ... is a successfull response
             !Number.isNaN(record.httpStatusCode) &&
