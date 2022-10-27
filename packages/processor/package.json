@@ -9,7 +9,8 @@
     },
     "scripts": {
         "test": "jest",
-        "test:bib": "node ./test"
+        "test:bib": "node ./test",
+        "postinstall": "node --no-warnings scripts/check-version.js"
     },
     "author": "",
     "license": "ISC",
@@ -21,6 +22,7 @@
     },
     "devDependencies": {
         "@types/progress": "^2.0.5",
-        "@types/underscore": "^1.11.4"
+        "@types/underscore": "^1.11.4",
+        "semver": "^7.3.8"
     }
 }
