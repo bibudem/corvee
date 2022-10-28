@@ -107,6 +107,7 @@ export class Harvester extends EventEmitter {
          */
         this.config = extend(true, {}, defaultHarvesterOptions, pick(omit(config, ['internLinks', 'proxyUrls']), Object.keys(defaultHarvesterOptions)))
 
+        // Don't merge default configs with user configs
         if (typeof config.internLinks !== 'undefined') {
             this.config.internLinks = config.internLinks
         }
@@ -119,11 +120,11 @@ export class Harvester extends EventEmitter {
 
         this.launchContextOptions.launcher = playwright[this.config.browser]
 
-        // if (!process.env.CRAWLEE_STORAGE_DIR) {
-        process.env.CRAWLEE_STORAGE_DIR = this.config.storageDir
-        // This to prevent a WARN message from crawlee
-        process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir
-        // }
+        if (!process.env.CRAWLEE_STORAGE_DIR) {
+            process.env.CRAWLEE_STORAGE_DIR = this.config.storageDir
+            // This to prevent a WARN message from crawlee
+            process.env.APIFY_LOCAL_STORAGE_DIR = this.config.storageDir
+        }
 
         const crawleeConfig = Configuration.getGlobalConfig()
         crawleeConfig.set('systemInfoIntervalMillis', this.config.notifyDelay)
@@ -523,13 +524,6 @@ export class Harvester extends EventEmitter {
         self.screenshotsStore = await KeyValueStore.open('screenshots');
 
         const requestQueue = await RequestQueue.open('playwright');
-        // const requestQueue = new RequestQueue({
-        //     name: 'playwright',
-        //     id: 'playwright',
-        //     client: new StorageManager()
-        // })
-
-        console.log(requestQueue)
 
         setInterval(async function () {
             /**
@@ -558,8 +552,6 @@ export class Harvester extends EventEmitter {
                 return `Request queue size: ${totalRequestCount} Handled: ${handledRequestCount}`
             })
         }
-
-        const uniqueLinksPerPage = new Map();
 
         /**
          * @param {import("@crawlee/playwright").RequestOptions} requestData
@@ -723,21 +715,6 @@ export class Harvester extends EventEmitter {
                     console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
                     process.exit();
                 }
-
-                //
-                // Don't collect the same link twice per page
-                //
-                const pageUrl = link.userData.parent;
-
-                if (!uniqueLinksPerPage.has(pageUrl)) {
-                    uniqueLinksPerPage.set(pageUrl, new Set())
-                }
-
-                if (uniqueLinksPerPage.get(pageUrl).has(link.url)) {
-                    return;
-                }
-
-                uniqueLinksPerPage.get(pageUrl).add(link.url);
 
                 if (!self.config.schemes.some((/** @type {string} */ scheme) => minimatch(uriObj.scheme, scheme))) {
                     console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${pageUrl} -> ${link.url}` : ''}`)
@@ -1097,11 +1074,6 @@ export class Harvester extends EventEmitter {
                          * @type {object}
                          */
                         self.emit('request', request)
-
-                        // await page._client.send('Network.enable', {
-                        //     maxResourceBufferSize: 1024 * 1204 * 100,
-                        //     maxTotalBufferSize: 1024 * 1204 * 400,
-                        // })
 
                         page.on('error', function onError(error) {
 
