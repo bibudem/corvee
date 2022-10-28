@@ -10,7 +10,7 @@ export default class Notifier {
         logLevel = 'info',
         logger = console,
         delay = 10000
-    }) {
+    } = {}) {
         this.opts = {
             enable,
             autoStart,

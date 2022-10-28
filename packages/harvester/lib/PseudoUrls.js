@@ -37,7 +37,7 @@ export class PseudoUrls {
     }
 
     /**
-     * @param {import('@corvee/core').UrlType} url
+     * @param {import('corvee-core').UrlType} url
      */
     matches(url) {
         return this.purls.length > 0 ? this.purls.some(purl => purl.matches(url)) || url.startsWith('corvee:') || url.startsWith('about:') : true;

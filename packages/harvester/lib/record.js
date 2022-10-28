@@ -32,7 +32,7 @@ import { addTimeoutToPromise } from '@apify/timeout';
  * @property {number} [id]
  * @property {?boolean} isNavigationRequest
  * @property {import('corvee-core').UrlType} parent=corvee:url-list
- * @property {?Array<RedirectChainType>} redirectChain
+ * @property {?RedirectChainType} redirectChain
  * @property {?Array<Report>} reports
  * @property {boolean} [resourceIsEmbeded]
  * @property {?string} resourceType
@@ -87,9 +87,11 @@ export function getFinalStatus(record) {
         { code: 302, text: null },
         { code: 303, text: null }
     ]
-    if ('httpStatusCode' in record) {
+
+    if (record.httpStatusCode !== null) {
         statuses.push({ code: record.httpStatusCode, text: record.httpStatusText })
     }
+
     if (record.redirectChain) {
         statuses.push(...record.redirectChain.map(r => ({ code: r.status, text: r.statusText })))
     }
@@ -117,13 +119,13 @@ export function getFinalStatus(record) {
             return newWinner;
         }
 
-        // Here, we have a status code >= 300
+        // Here, we have a status code >= 300 && <= 399
         // Return the heaviest code from winner vs current
         const candidateStatus = [winner.status.code, newWinner.status.code];
 
         for (const s of sortedHttpStatuses) {
 
-            const foundIdx = candidateStatus.indexOf(s);
+            const foundIdx = candidateStatus.indexOf(s.code);
             if (foundIdx > -1) {
                 return foundIdx === 0 ? winner : newWinner;
             }
@@ -138,6 +140,16 @@ export function getFinalStatus(record) {
     }).status
 }
 
+/**
+ *
+ *
+ * @param {object} options
+ * @param {RecordType} options.record
+ * @param {number|null} options.httpStatusCode
+ * @param {Object.<string, any>} options.headers
+ * 
+ * @returns {import('corvee-core').UrlType|null} finalUrl
+ */
 function getFinalUrl({
     record,
     httpStatusCode,
@@ -146,32 +158,68 @@ function getFinalUrl({
     let finalUrl = null;
     const redirectChain = record.redirectChain;
 
+    /**
+     * @param {RedirectChainType} redirectChain
+     */
+    function getLastContiguousPermanentRedirect(redirectChain) {
+
+        const firstPermanentRedirectIdx = redirectChain.findIndex(redirect => [301, 308].includes(redirect.status))
+
+        if (firstPermanentRedirectIdx === -1) {
+            // No permanent redirect in the redirect chain
+            // All temporary redirects
+            // so return the very last redirect
+            return redirectChain[redirectChain.length - 1]
+        }
+
+        // Try to get the last contiguous permanent redirect from the chain
+
+        const strippedRedirectChain = redirectChain.slice(firstPermanentRedirectIdx)
+
+        const firstTemporaryRedirectIdx = strippedRedirectChain.findIndex(redirect => [302, 303, 307].includes(redirect.status))
+
+        if (firstTemporaryRedirectIdx > 0) {
+            return strippedRedirectChain[firstTemporaryRedirectIdx - 1]
+        }
+
+        // All permanent redirects
+        return strippedRedirectChain[strippedRedirectChain.length - 1]
+    }
+
     if (httpStatusCode === null) {
         return finalUrl
     }
 
-    if (httpStatusCode >= 200 && httpStatusCode <= 299) {
+    if (httpStatusCode >= 200 && httpStatusCode < 300) {
         finalUrl = record.url;
     }
 
     // Edge case where a response with a redirect status code doesn't have a location header field
-    if ([300].includes(httpStatusCode)) {
+    if (httpStatusCode === 300) {
         if ('location' in headers) {
             finalUrl = headers.location;
         }
     }
 
-    if (redirectChain) {
-        // Edge case where there is no location header with a redirect status,
-        // else, get the last redirection url
-        if ([301, 302, 303, 307, 308].includes(httpStatusCode)) {
-            finalUrl = redirectChain[redirectChain.length - 1].url;
-        }
+    if (redirectChain && redirectChain.length > 0) {
 
-        if ((httpStatusCode >= 200 && httpStatusCode <= 299) || httpStatusCode >= 400) {
-            // Pick the last redirect
+        const lastContiguousPermanentRedirect = getLastContiguousPermanentRedirect(redirectChain)
+
+        if (lastContiguousPermanentRedirect) {
+            finalUrl = lastContiguousPermanentRedirect.url
+        } else {
             finalUrl = redirectChain[redirectChain.length - 1].url;
         }
+        // // Edge case where there is no location header with a redirect status,
+        // // else, get the last redirection url
+        // if ([301, 302, 303, 307, 308].includes(httpStatusCode)) {
+        //     finalUrl = redirectChain[redirectChain.length - 1].url;
+        // }
+
+        // if ((httpStatusCode >= 200 && httpStatusCode <= 299) || httpStatusCode >= 400) {
+        //     // Pick the last redirect
+        //     finalUrl = redirectChain[redirectChain.length - 1].url;
+        // }
     }
 
     return finalUrl;
@@ -255,15 +303,13 @@ export async function handleResponse(request, response = null, meta = {}) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
-
-        const finalUrl = getFinalUrl({
+        record.finalUrl = getFinalUrl({
             record,
             httpStatusCode: response.status(),
             headers: response.headers(),
         });
 
-        record.finalUrl = finalUrl;
+        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         // record.timing_ = response.request().timing()
         // record.sizes_ = await response.request().sizes()
@@ -315,15 +361,13 @@ export async function handleResponse(request, response = null, meta = {}) {
         record.httpStatusCode = code
         record.httpStatusText = text
 
-        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
-
-        const finalUrl = getFinalUrl({
+        record.finalUrl = getFinalUrl({
             record,
             httpStatusCode: response.status(),
             headers: response.headers(),
         });
 
-        record.finalUrl = finalUrl;
+        record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         // record.timing_ = response.request().timing()
         // record.sizes_ = await response.request().sizes()
