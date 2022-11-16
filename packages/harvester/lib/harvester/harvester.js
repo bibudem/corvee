@@ -274,7 +274,7 @@ export class Harvester extends EventEmitter {
     }
 
     /**
-     * @param {() => Array<{ url: string; text: string | null; urlData: string | null; isNavigationRequest: boolean; }>} fn
+     * @param {() => Array<{ url: import('corvee-core').UrlType; text: string | null; urlData: string | null; isNavigationRequest: boolean; }>} fn
      */
     setLinkParser(fn) {
         this.linkParser = fn;
@@ -303,7 +303,7 @@ export class Harvester extends EventEmitter {
 
     /**
      * 
-     * @param {string} url 
+     * @param {import('corvee-core').UrlType} url 
      * @returns {boolean}
      */
     shouldNotFollowUrl(url) {
@@ -315,7 +315,7 @@ export class Harvester extends EventEmitter {
     }
 
     /**
-     * @param {string} url
+     * @param {import('corvee-core').UrlType} url
      * @returns {boolean}
      */
     shouldIgnoreUrl(url) {
@@ -349,7 +349,7 @@ export class Harvester extends EventEmitter {
     }
 
     /**
-     * @param {string} url
+     * @param {import('corvee-core').UrlType} url
      * @returns {boolean}
      */
     isExternLink(url) {
@@ -366,6 +366,14 @@ export class Harvester extends EventEmitter {
         }
 
         return isExtern;
+    }
+
+    /**
+     * @param {import('corvee-core').UrlType} url
+     * @returns {boolean}
+     */
+    isInternLink(url) {
+        return !this.isExternLink(url)
     }
 
     isMaxRequestExceeded() {
@@ -693,13 +701,27 @@ export class Harvester extends EventEmitter {
 
                 const link = data.constructor.name === 'Link' ? data : new Link(data, self.normalizeUrl)
 
+                assert.string(link.url)
+                assert.object(link.userData)
+
+                /**
+                 * Emits add-link
+                 * @event Harvester#add-link
+                 * @type {Link}
+                 */
+                self.emit('add-link', link);
+
                 /**
                  * @type {URI.URIComponents}
                  */
                 let uriObj;
 
-                assert.string(link.url)
-                assert.object(link.userData)
+                try {
+                    uriObj = URI.parse(link.url);
+                } catch (error) {
+                    console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
+                    process.exit();
+                }
 
                 if (link.userData.parent) {
                     try {
@@ -709,53 +731,39 @@ export class Harvester extends EventEmitter {
                     }
                 }
 
-                try {
-                    uriObj = URI.parse(link.url);
-                } catch (error) {
-                    console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
-                    process.exit();
-                }
-
                 if (!self.config.schemes.some((/** @type {string} */ scheme) => minimatch(uriObj.scheme, scheme))) {
-                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${pageUrl} -> ${link.url}` : ''}`)
+                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${link.userData.parent} -> ${link.url}` : ''}`)
 
                     return;
                 }
+
+                // Don't process links in current page if it's url satisfies one of the options.noFollow[] rules
+                const noFollowUrl = self.shouldNotFollowUrl(link.userData.parent)
+                if (noFollowUrl) {
+                    console.debug(`Rejecting link ${link.url} in ${link.userData.parent} since a noFollow rule was detected: ${noFollowUrl}`)
+                    return;
+                }
+
+                // Stop processing if filtering settings meet
+                const ignoreRule = self.shouldIgnoreUrl(link.url)
+                if (ignoreRule) {
+                    console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${link.userData.parent} -> ${link.url}`);
+                    return;
+                }
+
+                // This should not occur
+                if (self.isExternLink(link.userData.parent)) {
+                    console.todo(`Intercepted an URL hosted on an external page that was submitted to fetch queue: ${link.userData.parent} -> ${link.url}.`)
+                    return;
+                }
+
+                self.session.counts.activeRequests++
 
                 const trials = link.userData.trials || 1;
 
                 const requestData = extend(true, {}, link, {
                     retryCount: trials
                 })
-
-                // Don't process links in current page if it's url satisfies one of the options.noFollow[] rules
-                const noFollowUrl = self.shouldNotFollowUrl(requestData.userData.parent)
-                if (noFollowUrl) {
-                    console.debug(`Rejecting link ${requestData.url} in ${requestData.userData.parent} since a noFollow rule was detected: ${noFollowUrl}`)
-                    return;
-                }
-
-                // Stop processing if filtering settings meet
-                const ignoreRule = self.shouldIgnoreUrl(requestData.url)
-                if (ignoreRule) {
-                    console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${requestData.userData.parent} -> ${requestData.url}`);
-                    return;
-                }
-
-                // This should not occur
-                if (self.isExternLink(requestData.userData.parent)) {
-                    console.todo(`Intercepted an URL hosted on an external page that was submitted to fetch queue: ${requestData.userData.parent} -> ${requestData.url}.`)
-                    return;
-                }
-
-                self.session.counts.activeRequests++
-
-                /**
-                 * Emits add-link
-                 * @event Harvester#add-link
-                 * @type {Link}
-                 */
-                self.emit('add-link', link);
 
                 if (uriObj.scheme === 'http' || uriObj.scheme === 'https') {
 
@@ -1518,7 +1526,7 @@ export class Harvester extends EventEmitter {
                         self.plugins.onNavigationResponse.forEach(async plugin => {
                             try {
                                 console.verbose(`Processing plugin ${plugin.name}`)
-                                await plugin.fn.call(self, request, pwResponse, page)
+                                await plugin.fn.call(self, page, request, pwResponse)
                             } catch (error) {
                                 console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
                             }
