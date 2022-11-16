@@ -1,4 +1,4 @@
-import EventEmitter from 'node:events'
+import { AsyncEventEmitter } from '@vladfrangu/async_event_emitter'
 import process from 'node:process'
 import { readFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -65,10 +65,10 @@ process.on('uncaughtException', function onUnhandledRejection(error, origin) {
 
 /**
  * Creates a new Harvester
- * @extends EventEmitter
+ * @extends AsyncEventEmitter
  * @class
  */
-export class Harvester extends EventEmitter {
+export class Harvester extends AsyncEventEmitter {
 
     /**
      * 
@@ -288,13 +288,13 @@ export class Harvester extends EventEmitter {
             plugins = [plugins];
         }
 
-        plugins.forEach(p => {
+        plugins.forEach(plugin => {
             ['onNavigationResponse'].forEach(type => {
-                if (type in p) {
-                    console.log(`Adding plugin ${p.name} to ${type}`)
+                if (type in plugin) {
+                    console.log(`Adding plugin ${plugin.name} to ${type}`)
                     this.plugins[type].push({
-                        name: p.name,
-                        fn: p[type]
+                        name: plugin.name,
+                        fn: plugin[type]
                     })
                 }
             })
@@ -1523,14 +1523,17 @@ export class Harvester extends EventEmitter {
                     }
 
                     if (self.plugins.onNavigationResponse.length && pwResponse) {
-                        self.plugins.onNavigationResponse.forEach(async plugin => {
+                        for (const plugin of self.plugins.onNavigationResponse) {
                             try {
                                 console.verbose(`Processing plugin ${plugin.name}`)
-                                await plugin.fn.call(self, page, request, pwResponse)
+                                const data = await plugin.fn.call(self, { page, request, response: pwResponse })
+                                if (plugin.emits && data) {
+                                    self.emit(plugin.name, data)
+                                }
                             } catch (error) {
-                                console.error(`[onNavigationResponse] plugin ${plugin.name}, failed. Error: ${inspect(error)}`)
+                                console.error(`[onNavigationResponse] plugin ${plugin.name}, failed at url: ${page.url()}. Error: ${inspect(error)}`)
                             }
-                        })
+                        }
                     }
 
                     const record = await handleResponse(request, pwResponse, meta)
