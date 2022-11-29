@@ -15,7 +15,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "eventemitter3": "^4.0.0",
+        "eventemitter3": "^5.0.0",
         "io-validate": "^2.1.13",
         "progress": "^2.0.3",
         "underscore": "^1.9.1"
