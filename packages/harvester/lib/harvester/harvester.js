@@ -209,7 +209,7 @@ export class Harvester extends AsyncEventEmitter {
         this.session = {}; // will be initialized in the run() method
 
         if ('plugins' in this.config) {
-            this.setPlugins(this.config.plugins)
+            this.addPlugins(this.config.plugins)
         }
 
         ['schemes', 'noFollow', 'ignore'].forEach(key => {
@@ -281,21 +281,34 @@ export class Harvester extends AsyncEventEmitter {
     }
 
     /**
-     * @param {any[]} plugins
+     * @typedef {( { emits: [boolean], fn: function } | function )} PluginHandlerType
      */
-    setPlugins(plugins) {
+
+    /**
+     * @typedef {object} PluginType
+     * @property {string} name
+     * @property {boolean} [emits=false]
+     * @property {PluginHandlerType} [onNavigationResponse]
+     */
+
+    /**
+     * @param {PluginType[]} plugins
+     */
+    addPlugins(plugins) {
         if (!Array.isArray(plugins)) {
             plugins = [plugins];
         }
 
         plugins.forEach(plugin => {
-            ['onNavigationResponse'].forEach(type => {
-                if (type in plugin) {
-                    console.log(`Adding plugin ${plugin.name} to ${type}`)
-                    this.plugins[type].push({
-                        name: plugin.name,
-                        fn: plugin[type]
-                    })
+            const name = plugin.name;
+            const defaultEmits = Reflect.has(plugin, 'emits') ? plugin.emits : false;
+
+            ['onNavigationResponse'].forEach((/** @type {string} */ type) => {
+                if (Reflect.has(plugin, type)) {
+                    console.log(`Adding plugin \`${plugin.name}\` to \`${type}\< `)
+                    const emits = Reflect.has(plugin[type], 'emits') ? plugin[type] : defaultEmits
+                    const fn = isFunction(plugin[type]) ? plugin[type] : plugin[type].fn
+                    this.plugins[type].push({ name, emits, fn })
                 }
             })
         })
@@ -1525,7 +1538,7 @@ export class Harvester extends AsyncEventEmitter {
                     if (self.plugins.onNavigationResponse.length && pwResponse) {
                         for (const plugin of self.plugins.onNavigationResponse) {
                             try {
-                                console.verbose(`Processing plugin ${plugin.name}`)
+                                console.debug(`Processing plugin ${plugin.name}`)
                                 const data = await plugin.fn.call(self, { page, request, response: pwResponse })
                                 if (plugin.emits && data) {
                                     self.emit(plugin.name, data)
