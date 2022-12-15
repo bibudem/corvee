@@ -22,26 +22,27 @@ import { addTimeoutToPromise } from '@apify/timeout';
  * @property {boolean} [_filtered]
  * @property {string} [_from]
  * @property {?Array<Array<string>>} browsingContextStack
- * @property {?number} contentLength
- * @property {?string} contentType
- * @property {?string} created
- * @property {boolean} extern=true
- * @property {?import('corvee-core').UrlType} finalUrl
- * @property {?number} httpStatusCode
- * @property {?string} [httpStatusText]
- * @property {number} [id]
- * @property {?boolean} isNavigationRequest
- * @property {import('corvee-core').UrlType} parent=corvee:url-list
- * @property {?RedirectChainType} redirectChain
- * @property {?Array<Report>} reports
- * @property {boolean} [resourceIsEmbeded]
- * @property {?string} resourceType
- * @property {number} [size]
- * @property {string} [text]
+ * @property {?number} contentLength The Content-Length response header
+ * @property {?string} contentType The Content-Type response header
+ * @property {?string} created The record creation date
+ * @property {boolean} extern=true Wether the link points to an external resource or not
+ * @property {?import('corvee-core').UrlType} finalUrl The final URL of the resource, is the resource exists
+ * @property {?number} httpStatusCode The final http status code computed from the response and the redirection chain if it exists
+ * @property {?string} [httpStatusText] The http response reason phrase, if present, of the final http status code
+ * @property {number} [id] A job scoped generated id of the record
+ * @property {?boolean} isNavigationRequest Whether this is a navigation or an asset request
+ * @property {?string} [job] The job id
+ * @property {import('corvee-core').UrlType} parent=corvee:url-list The parent (context) url holding the link
+ * @property {?RedirectChainType} redirectChain An array of redirections, if it exists
+ * @property {?Array<Report>} reports An array of reports
+ * @property {boolean} [resourceIsEmbeded] Whether the resource is embeded (an iframe) or not
+ * @property {?string} resourceType ontains the request's resource type as it was perceived by the rendering engine. ResourceType will be one of the following: document, stylesheet, image, media, font, script, texttrack, xhr, fetch, eventsource, websocket, manifest, other.
+ * @property {number} [size] 
+ * @property {string} [text] The text link, if available
  * @property {number} [timing]
- * @property {?number} trials
- * @property {import('corvee-core').UrlType} url
- * @property {string} [urlData]
+ * @property {?number} trials The request trial number at which it succeeded
+ * @property {import('corvee-core').UrlType} url The resource's url
+ * @property {string} [urlData] The url data string taken from the href attribute
  */
 
 /**
