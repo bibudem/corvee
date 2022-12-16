@@ -51,13 +51,13 @@ export class Filter {
       }
     })
 
-    this.level = level || defaultOptions.level
-    this.exclude = exclude || defaultOptions.exclude
-    this.priority = priority || defaultOptions.priority
-    this.limit = limit || defaultOptions.limit
+    this.level = level ?? defaultOptions.level
+    this.exclude = exclude ?? defaultOptions.exclude
+    this.priority = priority ?? defaultOptions.priority
+    this.limit = limit ?? defaultOptions.limit
 
     Object.defineProperty(this, 'matches', {
-      enumerable: false,
+      enumerable: true,
       writable: true,
       value: 0
     })
