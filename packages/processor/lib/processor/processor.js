@@ -178,54 +178,61 @@ export class CorveeProcessor extends EventEmitter {
             records.forEach((record, i) => {
 
                 try {
-                    self.emit('beforeProcess', record, filter)
 
-                    const testResult = filter.test(record, filter);
+                    const limit = Reflect.has(filter, 'limit') ? filter.limit : Infinity
 
-                    if (testResult) {
-                        filter.matches++;
-                        filteredRecords.add(record.id);
-                        record._filtered = true;
+                    if (filter.matches < limit) {
 
-                        if (isObject(testResult)) {
-                            record = testResult;
-                        } else {
+                        self.emit('beforeprocess', record, filter)
 
-                            let report, index;
+                        const testResult = filter.test(record, filter);
 
-                            if (record.reports.some(report => report.code === filter.code)) {
-                                report = record.reports.find(report => report.code === filter.code)
-                                index = record.reports.findIndex(report => report.code === filter.code)
-                                record.reports.splice(index, 1)
+                        if (testResult) {
+                            filter.matches++;
+                            filteredRecords.add(record.id);
+                            record._filtered = true;
+
+                            if (isObject(testResult)) {
+                                record = testResult;
                             } else {
-                                report = {
-                                    code: filter.code,
-                                    level: 'level' in filter ? filter.level : 'error'
+
+                                let report, index;
+
+                                if (record.reports.some(report => report.code === filter.code)) {
+                                    report = record.reports.find(report => report.code === filter.code)
+                                    index = record.reports.findIndex(report => report.code === filter.code)
+                                    record.reports.splice(index, 1)
+                                } else {
+                                    report = {
+                                        code: filter.code,
+                                        level: 'level' in filter ? filter.level : 'error'
+                                    }
+                                    index = record.reports.length
                                 }
-                                index = record.reports.length
+
+                                if (typeof testResult === 'string') {
+                                    report._message = testResult
+                                }
+
+                                record.reports.splice(index, 0, report)
                             }
 
-                            if (typeof testResult === 'string') {
-                                report._message = testResult
+                            self.emit('filtered', record, filter)
+                            self.emit(filter.code, record, filter);
+
+                            if (filter.exclude) {
+                                excludedCount++;
+                                if (typeof excluded[record.id] === 'undefined') {
+                                    excluded[record.id] = filter.code;
+                                }
+
+
+                                self.emit('excluded', record, filter)
+                                return;
                             }
 
-                            record.reports.splice(index, 0, report)
+
                         }
-
-                        self.emit('filtered', record, filter)
-                        self.emit(filter.code, record, filter);
-
-                        if (filter.exclude) {
-                            excludedCount++;
-                            if (typeof excluded[record.id] === 'undefined') {
-                                excluded[record.id] = filter.code;
-                            }
-
-
-                            self.emit('excluded', record, filter)
-                            return;
-                        }
-
 
                     }
                 } catch (e) {
@@ -348,7 +355,12 @@ export class CorveeProcessor extends EventEmitter {
         console.debug(`Processing ${this.filters.length} filters...`);
 
 
-        const progressBar = new ProgressBar('[:bar] :percent :etas -- current filter: :filter', { total: this.filters.length, width: 60 })
+        const progressBar = new ProgressBar(':bar :percent :etas [:filter]', {
+            total: this.filters.length,
+            width: 60,
+            incomplete: '░',
+            complete: '█'
+        })
 
         this.filters.forEach(filter => {
             progressBar.tick({ filter: `${filter.code}` })
@@ -382,12 +394,14 @@ export class CorveeProcessor extends EventEmitter {
             code,
             matches,
             level = 'error',
+            limit = Infinity,
             priority = 0,
             exclude = false,
         }) => ({
             code,
             matches,
             level,
+            limit,
             priority,
             excluded: exclude
         }))
