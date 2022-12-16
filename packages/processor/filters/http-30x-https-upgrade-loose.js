@@ -24,9 +24,9 @@ export default class Http30xHttpsUpgradeLoose extends Filter {
      * @param {number} [options.limit] Limit the number of detections from this filter.
      * @memberof Http30xHttpsUpgradeLoose
      */
-    constructor({ level = defaultLevel, exclude = false, priority = defaultPriority, ...options } = {}) {
+    constructor({ level = defaultLevel, exclude = false, priority = defaultPriority, limit, ...options } = {}) {
 
-        super(CODE, DESCRIPTION, { level, exclude, priority })
+        super(CODE, DESCRIPTION, { level, exclude, priority, limit })
 
         this.options = {
             ...defaultOptions,
