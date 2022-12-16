@@ -381,13 +381,15 @@ export class CorveeProcessor extends EventEmitter {
         const perFilter = this.filters.map(({
             code,
             matches,
+            level = 'error',
+            priority = 0,
             exclude = false,
-            level = 'error'
         }) => ({
             code,
             matches,
-            excluded: exclude,
-            level
+            level,
+            priority,
+            excluded: exclude
         }))
 
         return {
