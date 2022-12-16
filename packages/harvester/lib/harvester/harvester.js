@@ -334,6 +334,9 @@ export class Harvester extends AsyncEventEmitter {
     shouldIgnoreUrl(url) {
         const self = this;
 
+        /**
+         * @param {import('corvee-core').UrlType} url
+         */
         function doCheck(url) {
             if (self.config.ignore.length === 0) {
                 return false;
@@ -745,7 +748,7 @@ export class Harvester extends AsyncEventEmitter {
                 }
 
                 if (!self.config.schemes.some((/** @type {string} */ scheme) => minimatch(uriObj.scheme, scheme))) {
-                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${link.userData.parent} -> ${link.url}` : ''}`)
+                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${link.userData.parent} -> ${link.url.substring(0, 100)}` : ''}`)
 
                     return;
                 }
@@ -1483,14 +1486,17 @@ export class Harvester extends AsyncEventEmitter {
                 }
 
                 /**
+                 * @typedef { object } CrawlingContextType
+                 * @property { import("playwright-core").Request } request
+                 * @property { import("playwright-core").Response } response
+                 * @property { import("playwright-core").Page } page
+                 * @property { Harvester } harvester
+                 */
+
+                /**
                  * Emits response
                  * @event Harvester#response
-                 * @type {{
-                 *  request: import("playwright-core").Request,
-                 *  response: import("playwright-core").Response,
-                 *  page: import("playwright-core").Page,
-                 *  harvester: Harvester
-                 * }} responseData
+                 * @type { CrawlingContextType } responseData
                  */
                 self.emit('response', {
                     request: pwResponse.request(),

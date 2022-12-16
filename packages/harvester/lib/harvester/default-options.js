@@ -155,7 +155,7 @@ export const defaultHarvesterOptions = {
  */
 export const defaultAutoscaledPoolOptions = {
     minConcurrency: 1,
-    maxConcurrency: 5,
+    maxConcurrency: 10,
     scaleUpStepRatio: .05,
     scaleDownStepRatio: .05,
     maybeRunIntervalSecs: .5,
