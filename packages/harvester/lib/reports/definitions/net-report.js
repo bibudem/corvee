@@ -1,5 +1,5 @@
 import * as chromiumNetErrors from 'chromium-net-errors'
-import paramCase from 'param-case'
+import { paramCase } from 'param-case'
 import esMain from 'es-main'
 
 import { Report } from './report.js'

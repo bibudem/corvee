@@ -1,4 +1,4 @@
-import paramCase from 'param-case'
+import { paramCase } from 'param-case'
 
 import { Report } from './report.js'
 import mozillaErrorList from './mozilla-error-list.js'
