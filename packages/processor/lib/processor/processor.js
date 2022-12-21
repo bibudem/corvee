@@ -355,7 +355,7 @@ export class CorveeProcessor extends EventEmitter {
         console.debug(`Processing ${this.filters.length} filters...`);
 
 
-        const progressBar = new ProgressBar(':bar :percent :etas [:filter]', {
+        const progressBar = new ProgressBar('[:bar] :percent :etas :filter', {
             total: this.filters.length,
             width: 60,
             incomplete: '░',
