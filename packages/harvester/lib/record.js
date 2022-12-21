@@ -69,7 +69,7 @@ export const defaultRecordOptions = {
 
 /**
  * @param {RecordType} record
- * @return { { code: number, text: string } } status
+ * @return { { code: (number|null), text: (string|undefined) } } status
  */
 export function getFinalStatus(record) {
 
@@ -95,6 +95,13 @@ export function getFinalStatus(record) {
 
     if (record.redirectChain) {
         statuses.push(...record.redirectChain.map(r => ({ code: r.status, text: r.statusText })))
+    }
+
+    if (statuses.length === 0) {
+        return {
+            code: null,
+            text: undefined
+        }
     }
 
     return statuses.reduce((winner, current) => {
