@@ -30,7 +30,7 @@
     "@types/rimraf": "^4.0.5",
     "@types/yargs": "^17.0.13",
     "lerna": "^6.0.1",
-    "rimraf": "^4.4.1",
+    "rimraf": "^5.0.1",
     "typescript": "^5.0.2"
   },
   "dependencies": {
