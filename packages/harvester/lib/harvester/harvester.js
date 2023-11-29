@@ -43,12 +43,12 @@ process.on('unhandledRejection', function onUnhandledRejection(reason, promise) 
         return
     }
 
-    console.todo(`Unhandled Rejection. Reason: ${inspect(reason)}\nPromise: ${inspect(promise)}`);
-});
+    console.todo(`Unhandled Rejection. Reason: ${inspect(reason)}\nPromise: ${inspect(promise)}`)
+})
 
 process.on('uncaughtException', function onUnhandledRejection(error, origin) {
-    console.todo(`Uncaught Exception. Error: ${inspect(error)}\nOrigin: ${inspect(origin)}`);
-});
+    console.todo(`Uncaught Exception. Error: ${inspect(error)}\nOrigin: ${inspect(origin)}`)
+})
 
 /**
  * @typedef {defaultHarvesterOptions} userConfigType
@@ -76,17 +76,17 @@ export class Harvester extends AsyncEventEmitter {
      */
     constructor(config) {
 
-        super();
+        super()
 
         /**
          * @type {string}
          */
-        this.version = pkg.version;
-        this.isPaused = false;
+        this.version = pkg.version
+        this.isPaused = false
         this._isRunning = false
-        this._pausedAt = 0;
+        this._pausedAt = 0
 
-        let startUrl;
+        let startUrl
 
         if (typeof config === 'string') {
             startUrl = config
@@ -164,7 +164,7 @@ export class Harvester extends AsyncEventEmitter {
         }
 
         if (typeof config.proxyUrls !== 'undefined') {
-            const proxyUrls = typeof config.proxyUrls === 'string' ? [config.proxyUrls] : config.proxyUrls;
+            const proxyUrls = typeof config.proxyUrls === 'string' ? [config.proxyUrls] : config.proxyUrls
             const proxyConfiguration = new ProxyConfiguration({ proxyUrls })
             this.playwrightCrawlerOptions.proxyConfiguration = proxyConfiguration
         }
@@ -174,11 +174,11 @@ export class Harvester extends AsyncEventEmitter {
         console.setLevel(this.config.logLevel)
         console.verbose('### THIS IS VERBOSE ###')
 
-        this.linkParser = defaultLinkParser;
+        this.linkParser = defaultLinkParser
 
         this.normalizeUrl = this.config.normalizeUrlFunction ? this.config.normalizeUrlFunction : normalizeUrl
 
-        this.browsingContextStore = new BrowsingContextStore(this.normalizeUrl);
+        this.browsingContextStore = new BrowsingContextStore(this.normalizeUrl)
 
         this.notify = new Notifier([], {
             enable: this.config.notify,
@@ -188,7 +188,7 @@ export class Harvester extends AsyncEventEmitter {
             autoStart: true
         })
 
-        this.crawler = null;
+        this.crawler = null
 
         this.plugins = {
             onNavigationResponse: []
@@ -206,18 +206,18 @@ export class Harvester extends AsyncEventEmitter {
          *  }
          * }} sessionType
          */
-        this.session = {}; // will be initialized in the run() method
+        this.session = {} // will be initialized in the run() method
 
         if ('plugins' in this.config) {
             this.addPlugins(this.config.plugins)
         }
 
         ['schemes', 'noFollow', 'ignore'].forEach(key => {
-            const arrayProp = config[key];
-            const keepDefaultsProp = `use${key.charAt(0).toUpperCase()}${key.substring(1)}Defaults`;
-            const defaultProp = `${key}Defaults`;
+            const arrayProp = config[key]
+            const keepDefaultsProp = `use${key.charAt(0).toUpperCase()}${key.substring(1)}Defaults`
+            const defaultProp = `${key}Defaults`
             if (keepDefaultsProp in this.config && this.config[keepDefaultsProp]) {
-                let prop = defaultHarvesterOptions[defaultProp];
+                let prop = defaultHarvesterOptions[defaultProp]
                 if (arrayProp) {
                     prop = prop.concat(arrayProp)
                 }
@@ -225,14 +225,14 @@ export class Harvester extends AsyncEventEmitter {
                 delete this.config[defaultProp]
             }
 
-        });
+        })
 
         this.homeBasePUrl = new PseudoUrls(this.config.internLinks)
 
         /**
          * @type {Array<string | Link>}
          */
-        this.urlList = [];
+        this.urlList = []
 
         /**
          * @type {LinkStore}
@@ -277,7 +277,7 @@ export class Harvester extends AsyncEventEmitter {
      * @param {() => Array<{ url: import('corvee-core').UrlType; text: string | null; urlData: string | null; isNavigationRequest: boolean; }>} fn
      */
     setLinkParser(fn) {
-        this.linkParser = fn;
+        this.linkParser = fn
     }
 
     /**
@@ -296,11 +296,11 @@ export class Harvester extends AsyncEventEmitter {
      */
     addPlugins(plugins) {
         if (!Array.isArray(plugins)) {
-            plugins = [plugins];
+            plugins = [plugins]
         }
 
         plugins.forEach(plugin => {
-            const name = plugin.name;
+            const name = plugin.name
             const defaultEmits = Reflect.has(plugin, 'emits') ? plugin.emits : false;
 
             ['onNavigationResponse'].forEach((/** @type {string} */ type) => {
@@ -321,7 +321,7 @@ export class Harvester extends AsyncEventEmitter {
      */
     shouldNotFollowUrl(url) {
         if (this.config.noFollow.length === 0) {
-            return false;
+            return false
         }
 
         return this.config.noFollow.find(testUrl => typeof testUrl === 'string' ? url.includes(testUrl) : testUrl.test(url))
@@ -332,19 +332,19 @@ export class Harvester extends AsyncEventEmitter {
      * @returns {boolean}
      */
     shouldIgnoreUrl(url) {
-        const self = this;
+        const self = this
 
         /**
          * @param {import('corvee-core').UrlType} url
          */
         function doCheck(url) {
             if (self.config.ignore.length === 0) {
-                return false;
+                return false
             }
 
             return self.config.ignore.find(testUrl => {
                 if (typeof testUrl === 'string') {
-                    return url.includes(testUrl);
+                    return url.includes(testUrl)
                 }
                 if (isRegExp(testUrl)) {
                     return testUrl.test(url)
@@ -355,13 +355,13 @@ export class Harvester extends AsyncEventEmitter {
             })
         }
 
-        const shouldIgnore = doCheck(url);
+        const shouldIgnore = doCheck(url)
 
         if (shouldIgnore) {
             console.verbose(`Ignoring url <${url}> based on rule ${shouldIgnore}`)
         }
 
-        return shouldIgnore;
+        return shouldIgnore
     }
 
     /**
@@ -371,17 +371,17 @@ export class Harvester extends AsyncEventEmitter {
     isExternLink(url) {
         const isExtern = (() => {
             if (url) {
-                return !this.homeBasePUrl.matches(url);
+                return !this.homeBasePUrl.matches(url)
             }
 
-            return true;
-        })();
+            return true
+        })()
 
         if (isExtern) {
             console.verbose(`This link is extern: ${url}`)
         }
 
-        return isExtern;
+        return isExtern
     }
 
     /**
@@ -393,7 +393,7 @@ export class Harvester extends AsyncEventEmitter {
     }
 
     isMaxRequestExceeded() {
-        return this.playwrightCrawlerOptions.maxRequestsPerCrawl !== -1 && this.session.counts.activeRequests > this.playwrightCrawlerOptions.maxRequestsPerCrawl && this.session.counts.finishedRequests >= this.playwrightCrawlerOptions.maxRequestsPerCrawl;
+        return this.playwrightCrawlerOptions.maxRequestsPerCrawl !== -1 && this.session.counts.activeRequests > this.playwrightCrawlerOptions.maxRequestsPerCrawl && this.session.counts.finishedRequests >= this.playwrightCrawlerOptions.maxRequestsPerCrawl
     }
 
     /**
@@ -402,18 +402,18 @@ export class Harvester extends AsyncEventEmitter {
     async pause(timeout) {
         if (this.isPaused) {
             console.info('Harvester is already paused.')
-            return;
+            return
         }
 
-        this._pausedAt = Date.now();
+        this._pausedAt = Date.now()
 
         console.info('Pausing harvester...')
 
         await this.crawler.autoscaledPool.pause(timeout)
 
-        this.notify.pause();
+        this.notify.pause()
 
-        this.isPaused = true;
+        this.isPaused = true
 
         setTimeout(() => {
             console.info(`Harvester is paused.`)
@@ -423,22 +423,22 @@ export class Harvester extends AsyncEventEmitter {
     resume() {
         if (this.isPaused) {
             console.info('Harvester is already running.')
-            return;
+            return
         }
         this.crawler.autoscaledPool.resume()
-        const pauseTime = Date.now() - this._pausedAt;
-        this.session.startTime = this.session.startTime + pauseTime;
-        this._pausedAt = 0;
-        this.isPaused = false;
+        const pauseTime = Date.now() - this._pausedAt
+        this.session.startTime = this.session.startTime + pauseTime
+        this._pausedAt = 0
+        this.isPaused = false
 
-        this.notify.resume();
+        this.notify.resume()
 
         console.info(`Harvester resumed crawling.`)
     }
 
     async stop() {
         await this.crawler.autoscaledPool.abort()
-        process.exit();
+        process.exit()
     }
 
     /**
@@ -447,48 +447,48 @@ export class Harvester extends AsyncEventEmitter {
      */
     async run(runOptions) {
 
-        const self = this;
+        const self = this
         const defaultRunOptions = {
             resume: false
         }
 
-        runOptions = Object.assign({}, defaultRunOptions, runOptions);
+        runOptions = Object.assign({}, defaultRunOptions, runOptions)
 
-        this.runOptions = runOptions;
+        this.runOptions = runOptions
 
-        this._isRunning = true;
-        this.isPaused = false;
+        this._isRunning = true
+        this.isPaused = false
 
         if (this.config.notify) {
             this.notify.addMessage(() => {
-                const end = Date.now();
+                const end = Date.now()
                 const duration = humanDuration(end - this.session.startTime)
-                return `[Execution time] ${duration}`;
+                return `[Execution time] ${duration}`
             })
         }
 
-        const cleanupFolderPromises = [];
+        const cleanupFolderPromises = []
 
         if (!runOptions.resume) {
 
             console.info(`Removing ${this.config.storageDir} and ${this.launchContextOptions.userDataDir} folders...`)
 
-            cleanupFolderPromises.push(cleanupFolderPromise(this.config.storageDir));
-            cleanupFolderPromises.push(cleanupFolderPromise(this.launchContextOptions.userDataDir));
+            cleanupFolderPromises.push(cleanupFolderPromise(this.config.storageDir))
+            cleanupFolderPromises.push(cleanupFolderPromise(this.launchContextOptions.userDataDir))
 
         }
 
         self.session = await sessionStore({
             resume: runOptions.resume
-        });
+        })
 
-        self.session.startTime = Date.now();
+        self.session.startTime = Date.now()
 
         if (!runOptions.resume) {
 
             await Promise.all(cleanupFolderPromises)
                 .then(() => {
-                    console.info(`Done removing ${self.config.storageDir} and ${self.launchContextOptions.userDataDir} folders.`);
+                    console.info(`Done removing ${self.config.storageDir} and ${self.launchContextOptions.userDataDir} folders.`)
                 })
                 .catch(error => {
                     console.error(inspect(error))
@@ -497,13 +497,13 @@ export class Harvester extends AsyncEventEmitter {
         }
 
         if (self.config.fetchLinksOnce) {
-            self.linkStore = new LinkStore();
-            await self.linkStore.init();
+            self.linkStore = new LinkStore()
+            await self.linkStore.init()
         }
 
-        self.recordStore = await Dataset.open('records');
+        self.recordStore = await Dataset.open('records')
 
-        self.session.recordCount = 0;
+        self.session.recordCount = 0
         self.session.counts = {
             success: 0,
             fail: 0,
@@ -513,8 +513,8 @@ export class Harvester extends AsyncEventEmitter {
 
         if (runOptions.resume) {
             // set the right record count
-            self.session.recordCount = (await self.recordStore.getInfo()).itemCount;
-            self._handledRequests = new Set();
+            self.session.recordCount = (await self.recordStore.getInfo()).itemCount
+            self._handledRequests = new Set()
 
             await self.recordStore.forEach(async (item) => {
                 self.session.counts.finishedRequests++
@@ -523,9 +523,9 @@ export class Harvester extends AsyncEventEmitter {
         }
 
         process.on('exit', function onExit() {
-            self.notify.stop();
-            const end = Date.now();
-            const duration = humanDuration(end - self.session.startTime);
+            self.notify.stop()
+            const end = Date.now()
+            const duration = humanDuration(end - self.session.startTime)
 
             /**
              * Emits browsing-contexts
@@ -543,17 +543,17 @@ export class Harvester extends AsyncEventEmitter {
 
             console.info(`Total execution time: ${duration}`)
 
-        });
+        })
 
-        self.screenshotsStore = await KeyValueStore.open('screenshots');
+        self.screenshotsStore = await KeyValueStore.open('screenshots')
 
-        const requestQueue = await RequestQueue.open('playwright');
+        const requestQueue = await RequestQueue.open('playwright')
 
         setInterval(async function () {
             /**
              * @type {import('@crawlee/types').RequestQueueInfo}
              */
-            const info = await requestQueue.getInfo();
+            const info = await requestQueue.getInfo()
 
             /**
              * Emits progress
@@ -572,7 +572,7 @@ export class Harvester extends AsyncEventEmitter {
 
         if (self.config.notify) {
             self.notify?.addMessage(async () => {
-                const { totalRequestCount, handledRequestCount } = await requestQueue.getInfo();
+                const { totalRequestCount, handledRequestCount } = await requestQueue.getInfo()
                 return `Request queue size: ${totalRequestCount} Handled: ${handledRequestCount}`
             })
         }
@@ -589,13 +589,13 @@ export class Harvester extends AsyncEventEmitter {
             function tryAgain(fn, interval) {
                 return new Promise(async (resolve) => {
                     const handle = setInterval(async () => {
-                        var done = await fn();
+                        var done = await fn()
                         if (done) {
-                            clearInterval(handle);
-                            resolve();
+                            clearInterval(handle)
+                            resolve()
                         }
                     }, interval)
-                });
+                })
             }
 
             return /** @type {Promise<void>} */(new Promise(async resolve => {
@@ -603,11 +603,11 @@ export class Harvester extends AsyncEventEmitter {
                     if (runOptions.resume) {
                         // resuming previously fetched links
                         if (self._handledRequests.has(`${requestData.url}#${requestData.userData.parent}`)) {
-                            return resolve();
+                            return resolve()
                         }
                     }
 
-                    const reqInfo = await requestQueue.addRequest(requestData);
+                    const reqInfo = await requestQueue.addRequest(requestData)
 
                     if (self.config.fetchLinksOnce) {
 
@@ -618,15 +618,15 @@ export class Harvester extends AsyncEventEmitter {
                             console.verbose(`This link has already been fetched. Will skip fetching. Record: ${inspect(record)}`)
 
                             try {
-                                await addRecord(record);
+                                await addRecord(record)
 
                                 self.session.counts.success++
 
                             } catch (error) {
-                                console.error(inspect(error));
+                                console.error(inspect(error))
                             }
 
-                            return resolve();
+                            return resolve()
 
                         }
 
@@ -657,28 +657,28 @@ export class Harvester extends AsyncEventEmitter {
                         if (reqInfo.wasAlreadyPresent) {
 
                             // The URL is in the request queue, but it has not yet been processed
-                            let i = 0;
+                            let i = 0
                             tryAgain(async () => {
-                                i++;
+                                i++
                                 if (self.linkStore.has(requestData.url)) {
                                     try {
-                                        const record = await self.linkStore.recordFromData(requestData.userData);
+                                        const record = await self.linkStore.recordFromData(requestData.userData)
                                         record._from = `linkStore#trial-${i}`
 
-                                        await addRecord(record);
+                                        await addRecord(record)
 
                                         self.session.counts.success++
 
                                     } catch (error) {
 
-                                        console.error(inspect(error));
+                                        console.error(inspect(error))
 
                                         return true
                                     }
 
-                                    return true;
+                                    return true
                                 }
-                                return false;
+                                return false
                             }, 1000)
 
                         }
@@ -688,7 +688,7 @@ export class Harvester extends AsyncEventEmitter {
                     console.error(`Request data: ${inspect(requestData)}, error: ${inspect(error)}`)
                 }
 
-                resolve();
+                resolve()
 
             }))
         }
@@ -709,7 +709,7 @@ export class Harvester extends AsyncEventEmitter {
             /**
              * @type {Array<Link>}
              */
-            const addRequestPromises = [];
+            const addRequestPromises = []
 
             linkDataset.forEach(async data => {
 
@@ -725,18 +725,18 @@ export class Harvester extends AsyncEventEmitter {
                  * @event Harvester#add-link
                  * @type {Link}
                  */
-                self.emit('add-link', link);
+                self.emit('add-link', link)
 
                 /**
                  * @type {URI.URIComponents}
                  */
-                let uriObj;
+                let uriObj
 
                 try {
-                    uriObj = URI.parse(link.url);
+                    uriObj = URI.parse(link.url)
                 } catch (error) {
                     console.error(`Missing url property: ${inspect(data)}. Error: ${inspect(error)}`)
-                    process.exit();
+                    process.exit()
                 }
 
                 if (link.userData.parent) {
@@ -750,32 +750,32 @@ export class Harvester extends AsyncEventEmitter {
                 if (!self.config.schemes.some((/** @type {string} */ scheme) => minimatch(uriObj.scheme, scheme))) {
                     console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${link.userData.parent} -> ${link.url.substring(0, 100)}` : ''}`)
 
-                    return;
+                    return
                 }
 
                 // Don't process links in current page if it's url satisfies one of the options.noFollow[] rules
                 const noFollowUrl = self.shouldNotFollowUrl(link.userData.parent)
                 if (noFollowUrl) {
                     console.debug(`Rejecting link ${link.url} in ${link.userData.parent} since a noFollow rule was detected: ${noFollowUrl}`)
-                    return;
+                    return
                 }
 
                 // Stop processing if filtering settings meet
                 const ignoreRule = self.shouldIgnoreUrl(link.url)
                 if (ignoreRule) {
-                    console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${link.userData.parent} -> ${link.url}`);
-                    return;
+                    console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${link.userData.parent} -> ${link.url}`)
+                    return
                 }
 
                 // This should not occur
                 if (self.isExternLink(link.userData.parent)) {
                     console.todo(`Intercepted an URL hosted on an external page that was submitted to fetch queue: ${link.userData.parent} -> ${link.url}.`)
-                    return;
+                    return
                 }
 
                 self.session.counts.activeRequests++
 
-                const trials = link.userData.trials || 1;
+                const trials = link.userData.trials || 1
 
                 const requestData = extend(true, {}, link, {
                     retryCount: trials
@@ -790,13 +790,13 @@ export class Harvester extends AsyncEventEmitter {
 
                         const urlReport = new UrlInvalidUrlReport(link.userData.urlData)
 
-                        link.userData.reports = [urlReport];
+                        link.userData.reports = [urlReport]
 
                         const record = await handleFailedRequest(link, null, {
                             _from: 'addToRequestQueue'
                         })
 
-                        await addRecord(record);
+                        await addRecord(record)
 
                         self.session.counts.fail++
 
@@ -816,9 +816,9 @@ export class Harvester extends AsyncEventEmitter {
 
                     const record = await handleResponse(link)
 
-                    await addRecord(record);
+                    await addRecord(record)
 
-                    return;
+                    return
                 }
 
                 if (!self.config.fetchLinksOnce) {
@@ -828,7 +828,7 @@ export class Harvester extends AsyncEventEmitter {
                         payload: `${Date.now()}:${Math.floor(Math.random() * 1E6)}`,
                         keepUrlFragment: false,
                         useExtendedUniqueKey: true
-                    });
+                    })
                 }
 
                 addRequestPromises.push(tryAddToRequestQueue(requestData))
@@ -837,7 +837,7 @@ export class Harvester extends AsyncEventEmitter {
             return Promise.all(addRequestPromises)
                 .catch(error => {
                     console.error(inspect(error))
-                });
+                })
         }
 
         self.addToRequestQueue = addToRequestQueue
@@ -872,22 +872,22 @@ export class Harvester extends AsyncEventEmitter {
 
                 if (self.isMaxRequestExceeded()) {
                     console.info('Maximum requests reached.')
-                    return reject('Maximum requests reached.');
+                    return reject('Maximum requests reached.')
                 }
 
-                record.id = self.session.recordCount;
-                record.extern = self.isExternLink(record.url); // ??? parfois la propriété est absente
+                record.id = self.session.recordCount
+                record.extern = self.isExternLink(record.url) // ??? parfois la propriété est absente
                 record.browsingContextStack = self.browsingContextStore.getContext(record.parent)
 
                 // @ts-ignore
                 delete record._ignore
 
-                self.session.recordCount++;
+                self.session.recordCount++
                 self.session.counts.activeRequests--
                 self.session.counts.finishedRequests++
 
                 try {
-                    await self.recordStore.pushData(record);
+                    await self.recordStore.pushData(record)
                 } catch (error) {
                     console.error(error)
                 }
@@ -896,11 +896,11 @@ export class Harvester extends AsyncEventEmitter {
 
                     try {
                         if (!self.linkStore.has(record.url)) {
-                            console.verbose(`Adding link to link store: ${record.url}`);
-                            await self.linkStore.set(record);
+                            console.verbose(`Adding link to link store: ${record.url}`)
+                            await self.linkStore.set(record)
                         }
                     } catch (error) {
-                        console.error(inspect(error));
+                        console.error(inspect(error))
                     }
                 }
 
@@ -915,7 +915,7 @@ export class Harvester extends AsyncEventEmitter {
                     console.todo(`Parent is external. This should not happen. Record: ${inspect(record)}`)
                 }
 
-                resolve();
+                resolve()
             }).catch(error => {
                 console.error(`Error at addRecord. Error: ${inspect(error)}`)
             })
@@ -943,18 +943,18 @@ export class Harvester extends AsyncEventEmitter {
                 return ret
             }
 
-            const nextLevel = currentLevel + 1;
+            const nextLevel = currentLevel + 1
 
             if (nextLevel > self.config.maxDepth) {
                 return ret
             }
 
-            const parent = self.normalizeUrl(page.url());
+            const parent = self.normalizeUrl(page.url())
 
             const noFollowUrl = self.shouldNotFollowUrl(parent)
             if (noFollowUrl) {
                 console.verbose(`Stop parsing links in ${parent} since a noFollow rule was detected: ${noFollowUrl}`)
-                return ret;
+                return ret
             }
 
 
@@ -979,14 +979,14 @@ export class Harvester extends AsyncEventEmitter {
             assert.ok(isObject(links) || Array.isArray(links), 'The return value from the parser function must be an object or an array.')
 
             if (!Array.isArray(links)) {
-                links = [links];
+                links = [links]
             }
 
             return links
                 .map(link => {
                     // type validation
                     v(link).has('url').isString().not.isEmpty()
-                    return link;
+                    return link
                 })
                 .map(({ url, ...urlData }) => {
                     return new Link(url, {
@@ -1001,16 +1001,16 @@ export class Harvester extends AsyncEventEmitter {
                 .filter(link => {
 
                     if (self.shouldIgnoreUrl(link.url)) {
-                        return false;
+                        return false
                     }
 
                     if (self.config.checkExtern) {
-                        return true;
+                        return true
                     }
 
                     // else, return only internal links
 
-                    return !link.extern;
+                    return !link.extern
                 })
                 // exclude internal links (href="#some-anchor")
                 .filter(link => {
@@ -1063,7 +1063,7 @@ export class Harvester extends AsyncEventEmitter {
 
                 try {
 
-                    let record;
+                    let record
 
                     if (pwResponse) {
                         record = await handleResponse(request, pwResponse, meta)
@@ -1071,7 +1071,7 @@ export class Harvester extends AsyncEventEmitter {
                         record = await handleFailedNavigationRequest(request, error, meta)
                     }
 
-                    await addRecord(record);
+                    await addRecord(record)
 
                     self.session.counts.fail++
                 } catch (error) {
@@ -1090,7 +1090,7 @@ export class Harvester extends AsyncEventEmitter {
 
                     if (typeof request.userData._ignore === 'undefined') {
 
-                        request.userData.trials = request.retryCount;
+                        request.userData.trials = request.retryCount
 
                         /**
                          * Emits request
@@ -1108,15 +1108,15 @@ export class Harvester extends AsyncEventEmitter {
                                 if (!request.userData.reports) {
                                     request.userData.reports = []
                                 }
-                                request.userData.reports.push(error);
+                                request.userData.reports.push(error)
                             }
 
                             return reject(error)
                         })
 
                         page.on('dialog', async function onDialog(dialog) {
-                            await dialog.dismiss();
-                        });
+                            await dialog.dismiss()
+                        })
 
                         page.on('request', async function onRequest(pwRequest) {
 
@@ -1127,7 +1127,7 @@ export class Harvester extends AsyncEventEmitter {
                             // TODO: remove this test when it is stated that it will never be true
                             if ('userData' in pwRequest) {
                                 console.error('pwRequest already have a .userData property. Check why.')
-                                process.exit(1);
+                                process.exit(1)
                             }
 
                             if (!pwRequest.isNavigationRequest() && self.config.navigationOnly) {
@@ -1142,8 +1142,8 @@ export class Harvester extends AsyncEventEmitter {
 
                             request.userData.isNavigationRequest = pwRequest.isNavigationRequest()
 
-                            const url = pwRequest.url();
-                            const parent = page.url();
+                            const url = pwRequest.url()
+                            const parent = page.url()
 
                             // @ts-ignore
                             pwRequest.userData = Object.assign({ trials: 1 }, request.userData,
@@ -1158,12 +1158,16 @@ export class Harvester extends AsyncEventEmitter {
                         page.on('request', async function onDocumentRequest(pwRequest) {
                             if (pwRequest.isNavigationRequest()) {
 
+                                const url = pwRequest.url()
+                                const parentUrl = page.url()
+
                                 // Don't request if extern setting meets
-                                if (!self.config.checkExtern && self.isExternLink(URL)) {
+                                if (!self.config.checkExtern && self.isExternLink(url)) {
 
-                                    console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(URL)} from settings.`);
+                                    console.verbose(`Skipping external request ${displayUrl(parentUrl)} -> ${displayUrl(url)} from settings.`)
 
-                                    return pwRequest.abort('blockedbyclient')
+                                    // return pwRequest.abort('blockedbyclient')
+                                    return
                                 }
                             }
                         })
@@ -1199,11 +1203,11 @@ export class Harvester extends AsyncEventEmitter {
                             if (pwRequest.isNavigationRequest()) {
 
                                 if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
-                                    return;
+                                    return
                                 }
 
                                 if (request.retryCount < self.config.maxRequestRetries) {
-                                    return;
+                                    return
                                 }
 
                                 if (pwRequest.failure() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
@@ -1213,7 +1217,7 @@ export class Harvester extends AsyncEventEmitter {
                                     // Has been handled at 'onDocumentDownload'
                                     //
 
-                                    return;
+                                    return
                                 }
 
                                 // Retry count maxed out.
@@ -1232,10 +1236,10 @@ export class Harvester extends AsyncEventEmitter {
                             if (pwRequest.isNavigationRequest() && pwRequest.failure().errorText === 'net::ERR_ABORTED') {
 
                                 if (request.retryCount === 1) {
-                                    const pwResponse = await pwRequest.response();
+                                    const pwResponse = await pwRequest.response()
                                     if (pwResponse) {
 
-                                        let record;
+                                        let record
                                         const meta = {
                                             _from: 'onDocumentDownload',
                                             trials: request.retryCount,
@@ -1244,7 +1248,7 @@ export class Harvester extends AsyncEventEmitter {
 
                                         try {
                                             record = await handleResponse(pwRequest, pwResponse, meta)
-                                            await addRecord(record);
+                                            await addRecord(record)
                                         } catch (error) {
                                             console.error(inspect(error))
                                         }
@@ -1270,25 +1274,25 @@ export class Harvester extends AsyncEventEmitter {
                             //
 
                             if (pwRequest.isNavigationRequest()) {
-                                return;
+                                return
                             }
 
                             if (pwRequest.failure() && pwRequest.failure().errorText.indexOf('net::ERR_BLOCKED_BY_CLIENT') > -1) {
-                                return;
+                                return
                             }
 
                             //
                             // Request failed start
                             //
 
-                            const url = pwRequest.url();
+                            const url = pwRequest.url()
 
                             console.verbose(`${pwRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pwRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pwRequest.failure() ? `${pwRequest.failure().errorText} ` : ` `}at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
 
                             if (!self.homeBasePUrl.matches(page.url())) {
-                                console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`);
+                                console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`)
 
-                                return Promise.resolve();
+                                return Promise.resolve()
                             } else {
                                 if (['document', 'other'].includes(pwRequest.resourceType())) {
                                     console.warn(`This should be a page asset of the crawled website: ${displayUrl(pwRequest.url())}, resource type: ${pwRequest.resourceType()}`)
@@ -1307,9 +1311,9 @@ export class Harvester extends AsyncEventEmitter {
 
                                 const record = await handleFailedRequest(request, pwRequest, {
                                     _from: 'onAssetRequestFailed'
-                                });
+                                })
 
-                                await addRecord(record);
+                                await addRecord(record)
 
                                 self.session.counts.fail++
                             }
@@ -1404,7 +1408,7 @@ export class Harvester extends AsyncEventEmitter {
                                         }
                                     )(pwResponse.request())
 
-                                    meta.timing = await getTimingFor(firstResponseUrl, page);
+                                    meta.timing = await getTimingFor(firstResponseUrl, page)
 
                                     if (self.config.getPerfData) {
                                         meta.perfData = await getPerformanceData(firstResponseUrl, page)
@@ -1413,7 +1417,7 @@ export class Harvester extends AsyncEventEmitter {
                                     try {
 
                                         const record = await handleResponse(pwResponse.request(), pwResponse, meta)
-                                        await addRecord(record);
+                                        await addRecord(record)
 
                                         self.session.counts.success++
 
@@ -1525,7 +1529,7 @@ export class Harvester extends AsyncEventEmitter {
                 // }
 
                 try {
-                    self.normalizeUrl(request.url, true);
+                    self.normalizeUrl(request.url, true)
 
                     try {
                         request.userData.timing = await getTimingFor(pwResponse.url(), page)
@@ -1557,7 +1561,7 @@ export class Harvester extends AsyncEventEmitter {
 
                     const record = await handleResponse(request, pwResponse, meta)
 
-                    await addRecord(record);
+                    await addRecord(record)
 
                     self.session.counts.success++
 
@@ -1567,13 +1571,13 @@ export class Harvester extends AsyncEventEmitter {
 
                     const pageFinalUrl = self.normalizeUrl(record.finalUrl ? record.finalUrl : record.url, true)
 
-                    const finalNavUrl = self.normalizeUrl(page.url(), true);
+                    const finalNavUrl = self.normalizeUrl(page.url(), true)
 
                     if (!self.isExternLink(finalNavUrl) && pwResponse && pwResponse.ok()) {
 
                         const links = await parseLinksInPage(page, {
                             currentLevel: request.userData.level,
-                        });
+                        })
 
                         await addToRequestQueue(links)
 
@@ -1582,7 +1586,7 @@ export class Harvester extends AsyncEventEmitter {
                                 // TODO: find a better test to detect cross origin frames then !== ''
                                 // Some frames' url could be chrome-error://chromewebdata/
 
-                                const frameUrl = frame.url();
+                                const frameUrl = frame.url()
 
                                 if (frameUrl && !frameUrl.startsWith('chrome')) {
 
@@ -1611,7 +1615,7 @@ Error: ${inspect(error)}`)
                 }
             },
             requestQueue: requestQueue,
-        });
+        })
 
         crawler.requestHandlerTimeoutMillis = self.playwrightCrawlerOptions.requestHandlerTimeoutSecs * 1000
 
@@ -1631,4 +1635,4 @@ Error: ${inspect(error)}`)
 
         await self.stop()
     }
-};
+}
