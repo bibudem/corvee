@@ -27,11 +27,11 @@
   },
   "homepage": "https://github.com/bibudem/corvee#readme",
   "devDependencies": {
-    "@types/rimraf": "^3.0.2",
+    "@types/rimraf": "^4.0.5",
     "@types/yargs": "^17.0.13",
     "lerna": "^6.0.1",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.8.4"
+    "rimraf": "^4.4.1",
+    "typescript": "^5.0.2"
   },
   "dependencies": {
     "@apify/log": "^2.2.1"
