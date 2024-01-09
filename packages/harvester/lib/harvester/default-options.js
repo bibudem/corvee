@@ -1,9 +1,9 @@
 import { tmpdir } from 'node:os'
-import { readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf-8'))
-const tmpDir = join(process.env.TEMP || tmpdir(), 'corvee');
+const tmpDir = join(process.env.TEMP || tmpdir(), 'corvee')
 
 /**
  * Corvée options
@@ -154,13 +154,14 @@ export const defaultHarvesterOptions = {
  * @see {@link https://crawlee.dev/api/core/interface/AutoscaledPoolOptions}
  */
 export const defaultAutoscaledPoolOptions = {
-    minConcurrency: 1,
-    maxConcurrency: 10,
-    scaleUpStepRatio: .05,
-    scaleDownStepRatio: .05,
-    maybeRunIntervalSecs: .5,
-    loggingIntervalSecs: 10,
     autoscaleIntervalSecs: 10,
+    loggingIntervalSecs: 10,
+    maxConcurrency: 10,
+    maybeRunIntervalSecs: .5,
+    minConcurrency: 1,
+    scaleDownStepRatio: .05,
+    scaleUpStepRatio: .05,
+
     /**
      * SystemStatus Options
      * @see {@link https://crawlee.dev/api/core/interface/SystemStatusOptions}

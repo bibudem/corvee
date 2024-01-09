@@ -12,12 +12,12 @@ import { hookStdout } from './hook-stdout.js'
 
 const PROJECT_ROOT = process.cwd()
 
-const today = new Date();
-const year = today.getFullYear();
-const month = `${today.getMonth() + 1}`.padStart(2, '0');
-const day = `${today.getDate()}`.padStart(2, '0');
+const today = new Date()
+const year = today.getFullYear()
+const month = `${today.getMonth() + 1}`.padStart(2, '0')
+const day = `${today.getDate()}`.padStart(2, '0')
 
-const defaultTodayDashedPrefix = `${year}-${month}-${day}`;
+const defaultTodayDashedPrefix = `${year}-${month}-${day}`
 
 const argv = yargs(hideBin(process.argv))
     .options({
@@ -36,12 +36,12 @@ const argv = yargs(hideBin(process.argv))
         }
     })
     .help()
-    .argv;
+    .argv
 
 // @ts-ignore
-const job = argv.job;
+const job = argv.job
 
-const { combine, timestamp, printf } = format;
+const { combine, timestamp, printf } = format
 
 const winstonLevels = {
     verbose: 6,
@@ -53,7 +53,7 @@ const winstonLevels = {
     todo: 0
 }
 
-const tracerLevels = ['verbose', 'debug', 'info', 'log', 'warn', 'error', 'todo'];
+const tracerLevels = ['verbose', 'debug', 'info', 'log', 'warn', 'error', 'todo']
 const tracerLevelColors = {
     verbose: colors.gray,
     debug: colors.cyan,
@@ -66,9 +66,9 @@ const tracerLevelColors = {
 
 const DEFAULT_LEVEL = 'debug'
 
-const basePath = process.cwd();
+const basePath = process.cwd()
 // @ts-ignore
-const logFilePath = join(basePath, 'logs', `console-${argv.$0.split('.')[0]}-${job}.log`)
+const logFilePath = join(basePath, 'logs', `${job}-${argv.$0.split('.')[0]}.log`)
 
 Error.stackTraceLimit = 20
 
@@ -83,7 +83,7 @@ const fileLogger = createLogger({
         format: 'HH:mm:ss.SSS'
     }), printf((info) => {
 
-        const stackInfo = getStackInfo(12);
+        const stackInfo = getStackInfo(12)
 
         return `${info.timestamp} <${info.level.toUpperCase()}> ${stackInfo.relativePath}:${stackInfo.line} ${stackInfo.method} ${info.message}`.replace(/\x1B\[\d+m/g, '') // strip colors
     })),
@@ -93,11 +93,11 @@ const fileLogger = createLogger({
             filename: logFilePath,
         })
     ]
-});
+})
 
 fileLogger.setLevel = (level) => {
     Object.keys(transports).forEach(key => {
-        transports[key].level = level;
+        transports[key].level = level
     })
 }
 
@@ -118,7 +118,7 @@ const consoleLogger = tracer.colorConsole({
     dateformat: "HH:MM:ss.l"
 })
 
-consoleLogger.setLevel = tracer.setLevel;
+consoleLogger.setLevel = tracer.setLevel
 
 /**
  * @typedef {Object<string, any>} LoggerType
@@ -145,11 +145,11 @@ const logger = {
 
 tracerLevels.forEach(level => {
     logger[level] = function () {
-        [fileLogger, consoleLogger].forEach(logger => logger[level].apply(logger, arguments));
+        [fileLogger, consoleLogger].forEach(logger => logger[level].apply(logger, arguments))
     }
 })
 
-logger.log = logger.info;
+logger.log = logger.info
 
 /**
  * Parses and returns info about the call stack at the given index.
