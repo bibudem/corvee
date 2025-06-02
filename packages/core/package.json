@@ -23,7 +23,7 @@
         "underscore": "^1.9.1",
         "uri-js": "^4.2.2",
         "winston": "^3.2.1",
-        "yargs": "^17.5.1"
+        "yargs": "^18.0.0"
     },
     "devDependencies": {
         "@types/underscore": "^1.11.4",

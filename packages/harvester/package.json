@@ -52,7 +52,7 @@
         "toidentifier": "^1.0.1",
         "underscore": "^1.13.4",
         "uri-js": "^4.4.1",
-        "yargs": "^17.5.1"
+        "yargs": "^18.0.0"
     },
     "devDependencies": {
         "@types/assert-plus": "^1.0.4",
