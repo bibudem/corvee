@@ -1,6 +1,6 @@
 {
-  "name": "corvee",
-  "version": "2.0.0-beta.7",
+  "name": "@corvee/root",
+  "version": "2.0.0-beta.8",
   "private": true,
   "description": "",
   "engines": {
