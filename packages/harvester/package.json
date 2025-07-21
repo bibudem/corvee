@@ -57,7 +57,7 @@
     "devDependencies": {
         "@types/assert-plus": "^1.0.4",
         "@types/extend": "^3.0.1",
-        "@types/minimatch": "^5.1.2",
+        "@types/minimatch": "^6.0.0",
         "@types/underscore": "^1.11.4",
         "@types/yargs": "^17.0.13",
         "es-main": "^1.2.0"
