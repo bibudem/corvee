@@ -16,7 +16,7 @@
     "dependencies": {
         "colors": "^1.4.0",
         "es-main": "^1.2.0",
-        "filenamify-url": "^3.0.0",
+        "filenamify-url": "^4.0.0",
         "io-validate": "^2.1.13",
         "is-relative-url": "^4.0.0",
         "tracer": "^1.0.1",
