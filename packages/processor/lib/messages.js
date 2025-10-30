@@ -1,4 +1,4 @@
-import { console, inspect } from 'corvee-core'
+import { console, inspect } from '@corvee/core'
 
 /**
  * @typedef {string | RegExp} StringPattern
@@ -39,27 +39,27 @@ export function messageFactory(messages) {
 
     return function message(/** @type {MessageCodeType} */ key, /** @type {string} */ rawMsg) {
         if (typeof messages[key] === 'undefined') {
-            return;
+            return
         }
 
-        const msg = messages[key];
+        const msg = messages[key]
 
         if (msg.pattern && rawMsg) {
-            const resultArray = /** @type {RegExp} */ (msg.pattern).exec(rawMsg);
+            const resultArray = /** @type {RegExp} */ (msg.pattern).exec(rawMsg)
             if (resultArray && resultArray.length > 1) {
-                let message = msg.substitution;
+                let message = msg.substitution
                 for (var i = 1; i < resultArray.length; i++) {
                     message = message.replace(new RegExp(`\\$${i}`, 'g'), resultArray[i])
                 }
 
-                return message;
+                return message
 
             } else if (msg.msg) {
                 // Use default message if it exists
-                return msg.msg;
+                return msg.msg
             }
         }
 
-        return msg.msg;
+        return msg.msg
     }
 }

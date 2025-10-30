@@ -1,8 +1,8 @@
-import { console as logger, inspect } from 'corvee-core'
+import { console as logger, inspect } from '@corvee/core'
 
 export async function getPerformanceData(resourceName, page) {
   if (typeof page === 'undefined') {
-    return null;
+    return null
   }
 
   async function logConsole(msg) {
@@ -10,7 +10,7 @@ export async function getPerformanceData(resourceName, page) {
     if (msg.type() === 'error' && msg.text().startsWith('[CORVEE]')) {
       const { url, lineNumber, columnNumber } = msg.location()
       const msg = msg.text().substring(9)
-      logger[msg.type()](`[${url}] ${lineNumber}:${columnNumber} ${msg}`);
+      logger[msg.type()](`[${url}] ${lineNumber}:${columnNumber} ${msg}`)
     }
   }
 
@@ -18,9 +18,9 @@ export async function getPerformanceData(resourceName, page) {
 
   const perf = await page.evaluate(
     (resourceName) => {
-      var data;
+      var data
       try {
-        data = resourceName ? window.performance.getEntriesByName(resourceName) : window.performance.getEntries();
+        data = resourceName ? window.performance.getEntriesByName(resourceName) : window.performance.getEntries()
         data = JSON.stringify(data)
       } catch (error) {
         console.error(`[CORVEE] Failed to get ${resourceName ? `window.performance.getEntriesByName(${resourceName})` : 'window.performance.getEntries()'} from ${location.href}. Error: ${error}, ${error.stack}`)
@@ -32,5 +32,5 @@ export async function getPerformanceData(resourceName, page) {
 
   page.removeListener('console', logConsole)
 
-  return perf ? JSON.parse(perf) : perf;
+  return perf ? JSON.parse(perf) : perf
 }

@@ -14,7 +14,10 @@
     "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": false,
@@ -23,9 +26,15 @@
     // next to the .js files
     "outDir": "types",
     "paths": {
-      "corvee-core":["packages/core"],
-      "corvee-harvester": ["packages/harvester/"],
-      "corvee-processor":["packages/processor/"],
+      "@corvee/core": [
+        "packages/core"
+      ],
+      "corvee-harvester": [
+        "packages/harvester/"
+      ],
+      "corvee-processor": [
+        "packages/processor/"
+      ],
     },
     "resolveJsonModule": false,
     "skipLibCheck": true,

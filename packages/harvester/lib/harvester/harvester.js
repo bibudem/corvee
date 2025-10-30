@@ -11,7 +11,7 @@ import playwright from 'playwright'
 import v from 'io-validate'
 import assert from 'assert-plus'
 import extend from 'extend'
-import { console, inspect, normalizeUrl, isValidUrl } from 'corvee-core'
+import { console, inspect, normalizeUrl, isValidUrl } from '@corvee/core'
 
 import { computeUniqueKey } from '../index.js'
 import { cleanupFolderPromise } from './cleanup-folder-promise.js'
@@ -274,7 +274,7 @@ export class Harvester extends AsyncEventEmitter {
     }
 
     /**
-     * @param {() => Array<{ url: import('corvee-core').UrlType; text: string | null; urlData: string | null; isNavigationRequest: boolean; }>} fn
+     * @param {() => Array<{ url: import('@corvee/core').UrlType; text: string | null; urlData: string | null; isNavigationRequest: boolean; }>} fn
      */
     setLinkParser(fn) {
         this.linkParser = fn
@@ -316,7 +316,7 @@ export class Harvester extends AsyncEventEmitter {
 
     /**
      * 
-     * @param {import('corvee-core').UrlType} url 
+     * @param {import('@corvee/core').UrlType} url 
      * @returns {boolean}
      */
     shouldNotFollowUrl(url) {
@@ -328,14 +328,14 @@ export class Harvester extends AsyncEventEmitter {
     }
 
     /**
-     * @param {import('corvee-core').UrlType} url
+     * @param {import('@corvee/core').UrlType} url
      * @returns {boolean}
      */
     shouldIgnoreUrl(url) {
         const self = this
 
         /**
-         * @param {import('corvee-core').UrlType} url
+         * @param {import('@corvee/core').UrlType} url
          */
         function doCheck(url) {
             if (self.config.ignore.length === 0) {
@@ -365,7 +365,7 @@ export class Harvester extends AsyncEventEmitter {
     }
 
     /**
-     * @param {import('corvee-core').UrlType} url
+     * @param {import('@corvee/core').UrlType} url
      * @returns {boolean}
      */
     isExternLink(url) {
@@ -385,7 +385,7 @@ export class Harvester extends AsyncEventEmitter {
     }
 
     /**
-     * @param {import('corvee-core').UrlType} url
+     * @param {import('@corvee/core').UrlType} url
      * @returns {boolean}
      */
     isInternLink(url) {

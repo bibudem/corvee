@@ -1,5 +1,5 @@
 import { FailedToLaunchReport, HttpReport, BrowserHasDisconnectedReport, MailReport, MozillaReport, MOZILLA_ERROR_REGEX, NetReport, CorveeReport, PageCrashedReport, TimeoutReport, TargetClosedReport, UrlReport, Report } from './definitions/index.js'
-import { console, inspect } from 'corvee-core'
+import { console, inspect } from '@corvee/core'
 
 /**
  * @param {object[] | Error} data
@@ -10,10 +10,10 @@ export function captureReports(data) {
     }
 
     if (!Array.isArray(data)) {
-        data = [data];
+        data = [data]
     }
 
-    return data.map(captureReport).filter(err => err !== null);
+    return data.map(captureReport).filter(err => err !== null)
 }
 
 /**
@@ -26,7 +26,7 @@ export function captureReport(error) {
     //
     if ('message' in error && /net::ERR_([^ ]+)/i.test(error.message)) {
 
-        const netReport = new NetReport(error.message);
+        const netReport = new NetReport(error.message)
         netReport._from = "/net::ERR_([^ ]+)/i.test(error) (OBJECT)"
 
         return netReport
@@ -36,7 +36,7 @@ export function captureReport(error) {
     // CorveeReport class
     //
     if (error instanceof CorveeReport) {
-        return error;
+        return error
     }
 
     // HttpReport class
@@ -62,7 +62,7 @@ export function captureReport(error) {
     //
     if ('message' in error && MOZILLA_ERROR_REGEX.test(error.message)) {
 
-        const mozillaReport = new MozillaReport(error.message);
+        const mozillaReport = new MozillaReport(error.message)
         mozillaReport._from = "'message' in error && MOZILLA_ERROR_REGEX.test(error.message) (OBJECT)"
 
         return mozillaReport

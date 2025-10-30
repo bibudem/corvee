@@ -1,6 +1,6 @@
 {
-    "name": "corvee-processor",
-    "version": "2.0.0-beta.7",
+    "name": "@corvee/processor",
+    "version": "2.0.0-beta.8",
     "description": "",
     "type": "module",
     "exports": "./index.js",

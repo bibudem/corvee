@@ -1,4 +1,4 @@
-import { canonicalizeUrl } from 'corvee-core'
+import { canonicalizeUrl } from '@corvee/core'
 import { Filter } from "./filter.js"
 
 const CODE = 'http-30x-https-upgrade-strict'
@@ -8,7 +8,7 @@ const DESCRIPTION = 'Matches when the only difference between the url and the fi
 /**
  * @type {import('corvee-processor').FilterLevelType}
  */
-const defaultLevel = 'warning';
+const defaultLevel = 'warning'
 
 const defaultPriority = 0
 
@@ -83,7 +83,7 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
                 record.redirectChain &&
                 record.redirectChain.length > 0
             ) {
-                return record.finalUrl;
+                return record.finalUrl
             };
         }
     }

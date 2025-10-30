@@ -4,19 +4,19 @@ import ProgressBar from 'progress'
 import { LEVELS } from './levels.js'
 
 import { messageFactory } from '../messages.js'
-import { console, inspect } from 'corvee-core'
+import { console, inspect } from '@corvee/core'
 
 class FilterPriorities extends Map {
 
     constructor() {
-        super();
+        super()
     }
 
     /**
      * @param {any} key
      */
     get(key) {
-        return super.has(key) ? super.get(key) : -Infinity;
+        return super.has(key) ? super.get(key) : -Infinity
     }
 }
 
@@ -97,12 +97,12 @@ export class CorveeProcessor extends EventEmitter {
     addErrors(errors) {
 
         this._errors = this._errors.concat(...errors.flat(Infinity).map(error => {
-            error.matches = 0;
-            error.test = error.test.bind(this);
-            return error;
-        }));
+            error.matches = 0
+            error.test = error.test.bind(this)
+            return error
+        }))
 
-        return this;
+        return this
     }
 
     /**
@@ -114,20 +114,20 @@ export class CorveeProcessor extends EventEmitter {
 
             console.verbose(`Adding filter ${filter.code}`)
 
-            filter.matches = 0;
-            filter.test = filter.test.bind(this);
-            filter.priority = filter.priority || 0;
+            filter.matches = 0
+            filter.test = filter.test.bind(this)
+            filter.priority = filter.priority || 0
 
-            this.filterPriorities.set(filter.code, filter.priority);
+            this.filterPriorities.set(filter.code, filter.priority)
 
             if (typeof this.messages[filter.code] === 'undefined') {
                 this.filtersWithoutMessages.add(filter.code)
             }
 
-            return filter;
-        }));
+            return filter
+        }))
 
-        return this;
+        return this
     }
 
     /**
@@ -135,34 +135,34 @@ export class CorveeProcessor extends EventEmitter {
      */
     async process(records) {
         if (!Array.isArray(records)) {
-            records = [records];
+            records = [records]
         }
 
         const reportType = {
             level: 'error'
         }
 
-        const filteredRecords = new Set();
+        const filteredRecords = new Set()
 
         // Normalizing records structure
         records = records.map(record => {
-            record._filtered = false;
+            record._filtered = false
             record.reports = (record.reports || []).map(report => {
 
                 return {
                     ...reportType,
                     ...report
                 }
-            });
-            return record;
-        });
+            })
+            return record
+        })
 
         this.records = [...this.records, ...records]
 
         var nbIn = this.records.length,
             excluded = {},
             excludedCount = 0,
-            self = this;
+            self = this
 
         /**
          * @param {import('corvee-harvester').RecordType[]} records
@@ -173,7 +173,7 @@ export class CorveeProcessor extends EventEmitter {
             /**
              * @type {import('corvee-harvester').RecordType[]}
              */
-            const result = [];
+            const result = []
 
             records.forEach((record, i) => {
 
@@ -185,18 +185,18 @@ export class CorveeProcessor extends EventEmitter {
 
                         self.emit('beforeprocess', record, filter)
 
-                        const testResult = filter.test(record, filter);
+                        const testResult = filter.test(record, filter)
 
                         if (testResult) {
-                            filter.matches++;
-                            filteredRecords.add(record.id);
-                            record._filtered = true;
+                            filter.matches++
+                            filteredRecords.add(record.id)
+                            record._filtered = true
 
                             if (isObject(testResult)) {
-                                record = testResult;
+                                record = testResult
                             } else {
 
-                                let report, index;
+                                let report, index
 
                                 if (record.reports.some(report => report.code === filter.code)) {
                                     report = record.reports.find(report => report.code === filter.code)
@@ -218,17 +218,17 @@ export class CorveeProcessor extends EventEmitter {
                             }
 
                             self.emit('filtered', record, filter)
-                            self.emit(filter.code, record, filter);
+                            self.emit(filter.code, record, filter)
 
                             if (filter.exclude) {
-                                excludedCount++;
+                                excludedCount++
                                 if (typeof excluded[record.id] === 'undefined') {
-                                    excluded[record.id] = filter.code;
+                                    excluded[record.id] = filter.code
                                 }
 
 
                                 self.emit('excluded', record, filter)
-                                return;
+                                return
                             }
 
 
@@ -244,7 +244,7 @@ export class CorveeProcessor extends EventEmitter {
                 result.push(record)
 
             })
-            return result;
+            return result
         }
 
         /**
@@ -255,7 +255,7 @@ export class CorveeProcessor extends EventEmitter {
             const errorLevels = Object
                 .keys(LEVELS)
                 .filter(level => LEVELS[level] >= self.config.errorLevel)
-                .map(level => level.toLowerCase());
+                .map(level => level.toLowerCase())
 
             console.log(`effective levels: ${JSON.stringify(errorLevels)}`)
 
@@ -265,9 +265,9 @@ export class CorveeProcessor extends EventEmitter {
 
                 const highestLevel = Math.max(...record.reports.filter(report => errorLevels.includes(report.level)).map(report => LEVELS[report.level.toUpperCase()]))
 
-                record.reports = record.reports.filter(report => LEVELS[report.level.toUpperCase()] === highestLevel);
+                record.reports = record.reports.filter(report => LEVELS[report.level.toUpperCase()] === highestLevel)
 
-                return record;
+                return record
 
             })
         }
@@ -280,39 +280,39 @@ export class CorveeProcessor extends EventEmitter {
             const errorLevels = Object
                 .keys(LEVELS)
                 .filter(level => LEVELS[level] >= self.config.errorLevel)
-                .map(level => level.toLowerCase());
+                .map(level => level.toLowerCase())
 
             return records.map(record => {
 
                 /**
                  * @type {import('corvee-harvester').Report[]}
                  */
-                let reports = [];
+                let reports = []
 
                 // Filtering reports priorities by level
 
                 errorLevels.forEach(errorLevel => {
 
-                    const reportsByLevel = record.reports.filter(report => report.level === errorLevel);
+                    const reportsByLevel = record.reports.filter(report => report.level === errorLevel)
 
                     if (reportsByLevel.length > 0) {
 
                         const maxPriority = Math.max(...reportsByLevel.map(report => {
-                            const reportCode = report.code;
-                            const reportFilterPriority = self.filterPriorities.get(reportCode);
+                            const reportCode = report.code
+                            const reportFilterPriority = self.filterPriorities.get(reportCode)
 
-                            return reportFilterPriority;
-                        }));
+                            return reportFilterPriority
+                        }))
 
-                        const filteredReportsForThisLevel = reportsByLevel.filter(report => self.filterPriorities.get(report.code) >= maxPriority);
+                        const filteredReportsForThisLevel = reportsByLevel.filter(report => self.filterPriorities.get(report.code) >= maxPriority)
 
-                        reports = reports.concat(filteredReportsForThisLevel);
+                        reports = reports.concat(filteredReportsForThisLevel)
                     }
                 })
 
-                record.reports = reports;
+                record.reports = reports
 
-                return record;
+                return record
 
             })
         }
@@ -325,17 +325,17 @@ export class CorveeProcessor extends EventEmitter {
             /**
              * @type {import("corvee-harvester").RecordType[]}
              */
-            const result = [];
+            const result = []
 
             records.forEach((record) => {
 
                 // Adding messages
 
                 record.reports.forEach(report => {
-                    var message = self.getMessage(report.code, report._message);
+                    var message = self.getMessage(report.code, report._message)
                     delete report._message
                     if (message) {
-                        report.message = message;
+                        report.message = message
                     }
                 })
 
@@ -343,16 +343,16 @@ export class CorveeProcessor extends EventEmitter {
 
             })
 
-            return result;
+            return result
         }
 
-        console.debug(`Processing ${this._errors.length} custom errors...`);
+        console.debug(`Processing ${this._errors.length} custom errors...`)
 
         this._errors.forEach(error => {
             this.records = doErrors(this.records, error)
-        });
+        })
 
-        console.debug(`Processing ${this.filters.length} filters...`);
+        console.debug(`Processing ${this.filters.length} filters...`)
 
 
         const progressBar = new ProgressBar('[:bar] :percent :etas :filter', {
@@ -365,7 +365,7 @@ export class CorveeProcessor extends EventEmitter {
         this.filters.forEach(filter => {
             progressBar.tick({ filter: `${filter.code}` })
             this.records = doFilter(this.records, filter)
-        });
+        })
 
         this.unfilteredRecords = this.records
             .filter(record => !record._filtered)
@@ -377,15 +377,15 @@ export class CorveeProcessor extends EventEmitter {
 
         console.log('Filtering report by level...')
 
-        this.records = doFilterLevels(this.records);
+        this.records = doFilterLevels(this.records)
 
-        console.log('Filtering reports by priority...');
+        console.log('Filtering reports by priority...')
 
-        this.records = doFilterPriorities(this.records);
+        this.records = doFilterPriorities(this.records)
 
         console.log('Adding messages...')
 
-        this.records = doAddMessages(this.records);
+        this.records = doAddMessages(this.records)
 
         /**
          * @type { Partial<import('corvee-processor').FilterType>[] }
@@ -416,6 +416,6 @@ export class CorveeProcessor extends EventEmitter {
             records: this.records,
             unfilteredRecords: this.unfilteredRecords,
             perFilter
-        };
+        }
     }
 }

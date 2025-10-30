@@ -2,11 +2,11 @@
 
 Function = Function //;node --module "$0" "$@";exit
 
-'use strict';
+'use strict'
 
 import yargs from 'yargs'
 import { Corvee as Harvester } from '../lib/index.js'
-import { console, inspect } from 'corvee-core';
+import { console, inspect } from '@corvee/core'
 
 const argv = yargs
     .usage(`Usage:
@@ -40,10 +40,10 @@ const argv = yargs
     .showHelpOnFail(true)
     .help()
     .demandCommand()
-    .argv;
+    .argv
 
 const urls = argv._
-const records = [];
+const records = []
 
 if (urls && urls.length) {
 
@@ -88,22 +88,22 @@ if (urls && urls.length) {
     }
 
     if (argv.depth) {
-        opts.maxDepth = argv.depth;
+        opts.maxDepth = argv.depth
     } else if (argv.requests) {
-        opts.maxDepth = Infinity;
+        opts.maxDepth = Infinity
     }
 
     if (argv.requests) {
-        opts.maxRequestsPerCrawl = argv.requests;
+        opts.maxRequestsPerCrawl = argv.requests
     } else if (argv.depth) {
-        opts.maxRequestsPerCrawl = Infinity;
+        opts.maxRequestsPerCrawl = Infinity
     }
 
     if (argv.links) {
         opts.internLinks = urls
     }
 
-    const harvester = new Harvester(opts);
+    const harvester = new Harvester(opts)
 
     harvester.setPlugins([webScrapingPlugin()])
 
@@ -120,7 +120,7 @@ if (urls && urls.length) {
             if (records.length === 1) {
                 console.log(inspect(records[0], {
                     depth: 3
-                }));
+                }))
             } else {
                 console.log(inspect(records, {
                     depth: 4
@@ -141,7 +141,7 @@ if (urls && urls.length) {
     harvester.addUrl(urls)
 
     // Apify.main(harvester.run())
-    harvester.run();
+    harvester.run()
 } else {
     // argv.help();
 }

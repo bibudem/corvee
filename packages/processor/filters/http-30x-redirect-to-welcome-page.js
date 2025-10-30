@@ -1,4 +1,4 @@
-import { normalizeUrl } from 'corvee-core'
+import { normalizeUrl } from '@corvee/core'
 
 export default {
     code: 'http-30x-redirect-to-welcome-page',
@@ -6,14 +6,14 @@ export default {
     test: record => {
 
         if (record.finalUrl === null) {
-            return;
+            return
         }
 
         let url, finalUrl
 
         try {
-            url = new URL(normalizeUrl(record.url));
-            finalUrl = new URL(normalizeUrl(record.finalUrl));
+            url = new URL(normalizeUrl(record.url))
+            finalUrl = new URL(normalizeUrl(record.finalUrl))
         } catch (e) {
             return false
         }
@@ -27,7 +27,7 @@ export default {
             // ... is a successfull response
             !Number.isNaN(record.httpStatusCode) &&
             record.httpStatusCode >= 300 &&
-            record.httpStatusCode < 400;
+            record.httpStatusCode < 400
     },
     exclude: true
 }
