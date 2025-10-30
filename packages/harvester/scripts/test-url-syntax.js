@@ -22,25 +22,25 @@ function testLibrary({
         url,
         valid
     }) => {
-        let result = null;
+        let result = null
         try {
-            result = fn(url);
+            result = fn(url)
         } catch (e) { }
 
-        let lbl = false;
+        let lbl = false
         if (result === valid) {
-            results.passed++;
-            lbl = true;
+            results.passed++
+            lbl = true
         } else if (result === null) {
-            results.crached++;
+            results.crached++
         } else {
-            results.failed++;
+            results.failed++
         }
         console.log(`${labels[lbl]} ${result ? '[true]   ' : result === false ? '[false]  ' : '[crashed]'} ${url}`)
     })
 
     console.log(`\nPassed: ${results.passed}\nFailed: ${results.failed}\nCrashed: ${results.crashed}`)
-    console.groupEnd();
+    console.groupEnd()
     console.log('\n')
 }
 
@@ -48,7 +48,7 @@ testLibrary({
     name: 'ParsedUrl',
     fn: (url) => {
         try {
-            return (new ParsedURL(url)).isValid;
+            return (new ParsedURL(url)).isValid
         } catch (e) {
             return null
         }
@@ -97,7 +97,7 @@ testLibrary({
 //   "$", "i"
 // );
 
-import { isValidUrl } from 'corvee-core'
+import { isValidUrl } from '@corvee/core'
 
 testLibrary({
     name: 'https://gist.github.com/dperini/729294',

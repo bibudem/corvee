@@ -1,4 +1,4 @@
-import { console } from 'corvee-core'
+import { console } from '@corvee/core'
 
 export default class Notifier {
     /**
@@ -16,13 +16,13 @@ export default class Notifier {
             autoStart,
             logLevel,
             delay
-        };
-        this.messages = messages;
-        this._notifyHandle = null;
-        this.logger = logger;
+        }
+        this.messages = messages
+        this._notifyHandle = null
+        this.logger = logger
 
         if (this.opts.autoStart) {
-            this.start();
+            this.start()
         }
     }
 
@@ -38,17 +38,17 @@ export default class Notifier {
 
     stop() {
         if (this._notifyHandle) {
-            clearInterval(this._notifyHandle);
-            this._notifyHandle = null;
+            clearInterval(this._notifyHandle)
+            this._notifyHandle = null
         }
     }
 
     pause() {
-        this.stop();
+        this.stop()
     }
 
     resume() {
-        this.start();
+        this.start()
     }
 
     enable() {

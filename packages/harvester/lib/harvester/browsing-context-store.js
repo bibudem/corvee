@@ -1,11 +1,11 @@
-import { isFunction } from 'underscore';
-import { normalizeUrl as defaultNormalizeUrlFunction, console } from 'corvee-core'
+import { isFunction } from 'underscore'
+import { normalizeUrl as defaultNormalizeUrlFunction, console } from '@corvee/core'
 
 export class BrowsingContextStore {
 
     constructor(data, normalizeUrl = defaultNormalizeUrlFunction) {
 
-        this._cache = new Map();
+        this._cache = new Map()
         this.normalizeUrl = normalizeUrl
 
         if (arguments.length === 1) {
@@ -27,7 +27,7 @@ export class BrowsingContextStore {
     }
 
     get size() {
-        return this._cache.size;
+        return this._cache.size
     }
 
     getContext(url) {
@@ -36,7 +36,7 @@ export class BrowsingContextStore {
             return null
         }
 
-        const self = this;
+        const self = this
 
         /*
 
@@ -62,41 +62,41 @@ export class BrowsingContextStore {
         }
 
         function doFind(url) {
-            const parents = findParentsFor(url);
+            const parents = findParentsFor(url)
             if (parents.length > 0) {
                 return parents.map(url => {
                     const ret = [url],
-                        parents = doFind(url);
+                        parents = doFind(url)
                     if (parents && parents.length > 0) {
                         ret.push(parents)
                     }
-                    return ret;
+                    return ret
                 })
             }
             return []
         }
 
         url = this.normalizeUrl(url)
-        const result = doFind(url);
+        const result = doFind(url)
 
-        return result.length > 0 ? result : null;
+        return result.length > 0 ? result : null
     }
 
     addContext(url, contextUrl) {
-        url = this.normalizeUrl(url);
-        contextUrl = this.normalizeUrl(contextUrl);
+        url = this.normalizeUrl(url)
+        contextUrl = this.normalizeUrl(contextUrl)
 
-        const context = this._cache.get(contextUrl) || new Set();
+        const context = this._cache.get(contextUrl) || new Set()
 
-        context.add(url);
+        context.add(url)
 
         this._cache.set(contextUrl, context)
     }
 
     entries() {
         return Array.from(this._cache.entries()).reduce((obj, entry) => {
-            obj[entry[0]] = [...entry[1].values()];
-            return obj;
+            obj[entry[0]] = [...entry[1].values()]
+            return obj
         }, {})
     }
 }

@@ -1,34 +1,34 @@
-import { KeyValueStore } from '@crawlee/playwright';
-import { console } from 'corvee-core'
+import { KeyValueStore } from '@crawlee/playwright'
+import { console } from '@corvee/core'
 
 export async function sessionStore({
     interval = 5000,
     resume = false
 } = {}) {
 
-    const store = await KeyValueStore.open('session');
+    const store = await KeyValueStore.open('session')
 
-    let storedData = {};
+    let storedData = {}
 
     if (!resume) {
-        await store.setValue('data', {});
+        await store.setValue('data', {})
     } else {
-        storedData = await store.getValue('data');
+        storedData = await store.getValue('data')
     }
 
     const data = {
         ...storedData
-    };
-
-    const proxyData = new Proxy(data, {});
-
-    const save = async () => {
-        await store.setValue('data', data);
     }
 
-    await save();
+    const proxyData = new Proxy(data, {})
 
-    setInterval(save, interval);
+    const save = async () => {
+        await store.setValue('data', data)
+    }
 
-    return proxyData;
+    await save()
+
+    setInterval(save, interval)
+
+    return proxyData
 }

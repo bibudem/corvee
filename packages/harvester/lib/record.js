@@ -1,13 +1,13 @@
 import { omit, isNull, isNumber } from 'underscore'
 import extend from 'extend'
 
-import { console, inspect } from 'corvee-core'
+import { console, inspect } from '@corvee/core'
 import { captureReports, HttpReport, Report } from './reports/index.js'
-import { addTimeoutToPromise } from '@apify/timeout';
+import { addTimeoutToPromise } from '@apify/timeout'
 
 /**
  * @typedef {object} RedirectType
- * @property {import('corvee-core').UrlType} url
+ * @property {import('@corvee/core').UrlType} url
  * @property {number} status
  * @property {string} statusText
  */
@@ -26,13 +26,13 @@ import { addTimeoutToPromise } from '@apify/timeout';
  * @property {?string} contentType The Content-Type response header
  * @property {?string} created The record creation date
  * @property {boolean} extern=true Wether the link points to an external resource or not
- * @property {?import('corvee-core').UrlType} finalUrl The final URL of the resource, is the resource exists
+ * @property {?import('@corvee/core').UrlType} finalUrl The final URL of the resource, is the resource exists
  * @property {?number} httpStatusCode The final http status code computed from the response and the redirection chain if it exists
  * @property {?string} [httpStatusText] The http response reason phrase, if present, of the final http status code
  * @property {number} [id] A job scoped generated id of the record
  * @property {?boolean} isNavigationRequest Whether this is a navigation or an asset request
  * @property {?string} [job] The job id
- * @property {import('corvee-core').UrlType} parent=corvee:url-list The parent (context) url holding the link
+ * @property {import('@corvee/core').UrlType} parent=corvee:url-list The parent (context) url holding the link
  * @property {?RedirectChainType} redirectChain An array of redirections, if it exists
  * @property {?Array<Report>} reports An array of reports
  * @property {boolean} [resourceIsEmbeded] Whether the resource is embeded (an iframe) or not
@@ -41,7 +41,7 @@ import { addTimeoutToPromise } from '@apify/timeout';
  * @property {string} [text] The text link, if available
  * @property {number} [timing]
  * @property {?number} trials The request trial number at which it succeeded
- * @property {import('corvee-core').UrlType} url The resource's url
+ * @property {import('@corvee/core').UrlType} url The resource's url
  * @property {string} [urlData] The url data string taken from the href attribute
  */
 
@@ -65,7 +65,7 @@ export const defaultRecordOptions = {
     size: null,
     trials: null,
     url: null,
-};
+}
 
 /**
  * @param {RecordType} record
@@ -76,7 +76,7 @@ export function getFinalStatus(record) {
     /**
      * @type {Array<{code: number, text: ?string}>}
      */
-    const statuses = [];
+    const statuses = []
 
     /**
      * @type {Array<{code: number, text: ?string}>}
@@ -110,32 +110,32 @@ export function getFinalStatus(record) {
         const newWinner = {
             status: current,
             lvl: currentLvl
-        };
+        }
 
 
         if (currentLvl < winner.lvl) {
-            return winner;
+            return winner
         }
 
         // New winner!
         if (currentLvl > winner.lvl) {
-            return newWinner;
+            return newWinner
         }
 
         if (currentLvl < 3 || currentLvl > 3) {
             // return the most recent status code in the redirectChain
-            return newWinner;
+            return newWinner
         }
 
         // Here, we have a status code >= 300 && <= 399
         // Return the heaviest code from winner vs current
-        const candidateStatus = [winner.status.code, newWinner.status.code];
+        const candidateStatus = [winner.status.code, newWinner.status.code]
 
         for (const s of sortedHttpStatuses) {
 
-            const foundIdx = candidateStatus.indexOf(s.code);
+            const foundIdx = candidateStatus.indexOf(s.code)
             if (foundIdx > -1) {
-                return foundIdx === 0 ? winner : newWinner;
+                return foundIdx === 0 ? winner : newWinner
             }
         }
 
@@ -156,15 +156,15 @@ export function getFinalStatus(record) {
  * @param {number|null} options.httpStatusCode
  * @param {Object.<string, any>} options.headers
  * 
- * @returns {import('corvee-core').UrlType|null} finalUrl
+ * @returns {import('@corvee/core').UrlType|null} finalUrl
  */
 function getFinalUrl({
     record,
     httpStatusCode,
     headers
 }) {
-    let finalUrl = null;
-    const redirectChain = record.redirectChain;
+    let finalUrl = null
+    const redirectChain = record.redirectChain
 
     /**
      * @param {RedirectChainType} redirectChain
@@ -199,13 +199,13 @@ function getFinalUrl({
     }
 
     if (httpStatusCode >= 200 && httpStatusCode < 300) {
-        finalUrl = record.url;
+        finalUrl = record.url
     }
 
     // Edge case where a response with a redirect status code doesn't have a location header field
     if (httpStatusCode === 300) {
         if ('location' in headers) {
-            finalUrl = headers.location;
+            finalUrl = headers.location
         }
     }
 
@@ -216,7 +216,7 @@ function getFinalUrl({
         if (lastContiguousPermanentRedirect) {
             finalUrl = lastContiguousPermanentRedirect.url
         } else {
-            finalUrl = redirectChain[redirectChain.length - 1].url;
+            finalUrl = redirectChain[redirectChain.length - 1].url
         }
         // // Edge case where there is no location header with a redirect status,
         // // else, get the last redirection url
@@ -230,7 +230,7 @@ function getFinalUrl({
         // }
     }
 
-    return finalUrl;
+    return finalUrl
 }
 
 /**
@@ -247,7 +247,7 @@ function getHttpReport(httpStatusCode, httpStatusText, reports) {
             reports = []
         }
 
-        reports.push(httpError);
+        reports.push(httpError)
     }
 
     return reports
@@ -260,13 +260,13 @@ function getHttpReport(httpStatusCode, httpStatusText, reports) {
  */
 export async function handleResponse(request, response = null, meta = {}) {
 
-    const reports = captureReports(request.userData.reports);
-    const userData = omit(request.userData, 'reports');
+    const reports = captureReports(request.userData.reports)
+    const userData = omit(request.userData, 'reports')
 
     const baseReport = extend(true, {}, defaultRecordOptions, {
         reports,
         created: new Date().toISOString()
-    });
+    })
 
     if (Reflect.has(request, 'id')) {
 
@@ -289,7 +289,7 @@ export async function handleResponse(request, response = null, meta = {}) {
                 trials: request.retryCount
             },
             meta
-        );
+        )
 
         try {
             const responseBody = await addTimeoutToPromise(response.body, 1000, '')
@@ -300,7 +300,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         } catch (error) { }
 
         if ('content-type' in response.headers()) {
-            record.contentType = response.headers()['content-type'].split(';')[0].trim();
+            record.contentType = response.headers()['content-type'].split(';')[0].trim()
         }
 
         if ('content-length' in response.headers()) {
@@ -315,16 +315,16 @@ export async function handleResponse(request, response = null, meta = {}) {
             record,
             httpStatusCode: response.status(),
             headers: response.headers(),
-        });
+        })
 
         record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         // record.timing_ = response.request().timing()
         // record.sizes_ = await response.request().sizes()
 
-        delete record.uniqueKey;
+        delete record.uniqueKey
 
-        return record;
+        return record
     }
 
     if (Reflect.has(request, '_events')) {
@@ -347,7 +347,7 @@ export async function handleResponse(request, response = null, meta = {}) {
                 resourceType: request.resourceType()
             },
             meta
-        );
+        )
 
         try {
             const responseBody = await addTimeoutToPromise(response.body, 1000, '')
@@ -358,7 +358,7 @@ export async function handleResponse(request, response = null, meta = {}) {
         } catch (error) { }
 
         if ('content-type' in response.headers()) {
-            record.contentType = response.headers()['content-type'].split(';')[0].trim();
+            record.contentType = response.headers()['content-type'].split(';')[0].trim()
         }
 
         if ('content-length' in response.headers()) {
@@ -373,16 +373,16 @@ export async function handleResponse(request, response = null, meta = {}) {
             record,
             httpStatusCode: response.status(),
             headers: response.headers(),
-        });
+        })
 
         record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
         // record.timing_ = response.request().timing()
         // record.sizes_ = await response.request().sizes()
 
-        delete record.uniqueKey;
+        delete record.uniqueKey
 
-        return record;
+        return record
     }
 
     if (request.url.startsWith('mailto:')) {
@@ -399,9 +399,9 @@ export async function handleResponse(request, response = null, meta = {}) {
             baseReport,
             userData,
             meta
-        );
+        )
 
-        return record;
+        return record
     }
 
     /*
@@ -423,9 +423,9 @@ export async function handleResponse(request, response = null, meta = {}) {
         },
         userData,
         meta
-    );
+    )
 
-    return record;
+    return record
 }
 
 /**
@@ -435,7 +435,7 @@ export async function handleResponse(request, response = null, meta = {}) {
  */
 export async function handleFailedNavigationRequest(request, error, meta) {
 
-    const reports = captureReports(error);
+    const reports = captureReports(error)
     const userData = omit(request.userData, 'reports')
 
     const baseReport = extend(
@@ -446,7 +446,7 @@ export async function handleFailedNavigationRequest(request, error, meta) {
             reports,
             trials: request.retryCount,
             created: new Date().toISOString()
-        });
+        })
 
     const record = extend(
         true,
@@ -454,7 +454,7 @@ export async function handleFailedNavigationRequest(request, error, meta) {
         baseReport,
         userData,
         meta
-    );
+    )
 
     const { code, text } = getFinalStatus(record)
     record.httpStatusCode = code
@@ -462,7 +462,7 @@ export async function handleFailedNavigationRequest(request, error, meta) {
 
     record.reports = getHttpReport(record.httpStatusCode, record.httpStatusText, record.reports)
 
-    return record;
+    return record
 }
 
 /**
@@ -476,7 +476,7 @@ export async function handleFailedRequest(request, pwRequest, meta) {
     // crawlee Request class
     //
 
-    const reports = captureReports(request.userData.reports);
+    const reports = captureReports(request.userData.reports)
     const userData = omit(request.userData, 'reports')
 
     const baseReport = extend(
@@ -487,7 +487,7 @@ export async function handleFailedRequest(request, pwRequest, meta) {
             reports,
             trials: request.retryCount,
             created: new Date().toISOString()
-        });
+        })
 
     if (meta._from === 'addToRequestQueue' || meta._from === 'page.goto().catch()') {
 
@@ -500,9 +500,9 @@ export async function handleFailedRequest(request, pwRequest, meta) {
             },
             userData,
             meta
-        );
+        )
 
-        return record;
+        return record
     }
 
     if (meta._from === 'onAssetRequestFailed') {
@@ -519,9 +519,9 @@ export async function handleFailedRequest(request, pwRequest, meta) {
             },
             userData,
             meta
-        );
+        )
 
-        return record;
+        return record
     }
 }
 
@@ -563,7 +563,7 @@ export async function getRedirectChain(request) {
             return redirectChain
         }
 
-        let redirectedUrl;
+        let redirectedUrl
 
         const locationHeader = await response.headerValue('location')
 

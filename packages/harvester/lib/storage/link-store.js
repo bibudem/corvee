@@ -1,9 +1,9 @@
-import { KeyValueStore } from '@crawlee/playwright';
+import { KeyValueStore } from '@crawlee/playwright'
 import LRU from 'lru'
 import v from 'io-validate'
-import extend from 'extend';
+import extend from 'extend'
 import { omit, pick } from 'underscore'
-import { idFromUrl, normalizeUrl, console, inspect } from 'corvee-core'
+import { idFromUrl, normalizeUrl, console, inspect } from '@corvee/core'
 
 /*
 Link props:
@@ -29,7 +29,7 @@ Link props:
    extern
 */
 
-const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType contentLength extern size redirectChain reports'.split(' ');
+const linkIntrinsicProps = 'url finalUrl httpStatusCode contentType resourceType contentLength extern size redirectChain reports'.split(' ')
 
 const linkTemplate = {
     finalUrl: null,
@@ -44,7 +44,7 @@ const linkTemplate = {
 export class LinkStore {
 
     constructor() {
-        this._linkIdx = new Set();
+        this._linkIdx = new Set()
         this._cache = new LRU(10000)
         this._store = null
     }
@@ -58,13 +58,13 @@ export class LinkStore {
     }
 
     has(url) {
-        v(url, 'url').isString();
+        v(url, 'url').isString()
 
         url = normalizeUrl(url)
 
-        const key = idFromUrl(url);
+        const key = idFromUrl(url)
 
-        return this._linkIdx.has(key);
+        return this._linkIdx.has(key)
     }
 
     async set(
@@ -72,31 +72,31 @@ export class LinkStore {
         options = {}) {
 
         v(linkData).isObject()
-        v(linkData.url, 'url').isString();
+        v(linkData.url, 'url').isString()
 
-        const linkId = idFromUrl(normalizeUrl(linkData.url));
+        const linkId = idFromUrl(normalizeUrl(linkData.url))
 
         if (this._linkIdx.has(linkId)) {
-            return Promise.resolve();
+            return Promise.resolve()
         }
 
-        linkData = pick(linkData, linkIntrinsicProps);
+        linkData = pick(linkData, linkIntrinsicProps)
 
-        await this._store.setValue(linkId, linkData, options);
-        this._linkIdx.add(linkId);
+        await this._store.setValue(linkId, linkData, options)
+        this._linkIdx.add(linkId)
     }
 
     async get(url) {
         try {
-            v(url, 'url').isString();
+            v(url, 'url').isString()
         } catch (e) {
-            console.error(inspect(e));
-            process.exit();
+            console.error(inspect(e))
+            process.exit()
         }
 
-        const linkId = idFromUrl(normalizeUrl(url));
+        const linkId = idFromUrl(normalizeUrl(url))
 
-        return this._store.getValue(linkId);
+        return this._store.getValue(linkId)
     }
 
     async recordFromData(data) {
@@ -104,22 +104,22 @@ export class LinkStore {
         let {
             url,
             ...linkData
-        } = data;
+        } = data
 
-        v(url, 'url').isString();
+        v(url, 'url').isString()
 
         url = normalizeUrl(url)
 
-        const linkId = idFromUrl(url);
+        const linkId = idFromUrl(url)
 
         if (!this._linkIdx.has(linkId)) {
             console.error(`This link is not in the link-store: ${inspect(data)}`)
             throw new Error(data)
         }
 
-        const fromCache = this._cache.get(linkId);
+        const fromCache = this._cache.get(linkId)
 
-        const storedLink = fromCache || (await this._store.getValue(linkId));
+        const storedLink = fromCache || (await this._store.getValue(linkId))
 
         if (typeof fromCache === 'undefined') {
             this._cache.set(linkId, storedLink)
@@ -130,13 +130,13 @@ export class LinkStore {
                 ...linkData,
                 ...linkData.userData
             }
-            delete linkData.userData;
+            delete linkData.userData
         }
 
-        delete linkData.uniqueKey;
+        delete linkData.uniqueKey
 
         if (!storedLink) {
-            return storedLink;
+            return storedLink
         }
 
         const newRecord = extend(true, {}, linkTemplate, storedLink, omit(linkData, linkIntrinsicProps), {
@@ -144,6 +144,6 @@ export class LinkStore {
             created: new Date().toISOString()
         })
 
-        return newRecord;
+        return newRecord
     }
 }

@@ -1,16 +1,16 @@
 import fs from 'node:fs'
 import { join } from 'node:path'
 
-import { console, inspect } from 'corvee-core'
+import { console, inspect } from '@corvee/core'
 
 export function saveReportCodes(harvester, jobId) {
 
-    const dir = join(import.meta.url, '..', 'data');
-    const fileName = join(dir, `${jobId}_report-codes.json`);
+    const dir = join(import.meta.url, '..', 'data')
+    const fileName = join(dir, `${jobId}_report-codes.json`)
 
-    const reportCodes = new Map();
+    const reportCodes = new Map()
 
-    let i = 0;
+    let i = 0
 
     const reportCodesStream = fs.createWriteStream(fileName, {
         autoClose: false
@@ -19,8 +19,8 @@ export function saveReportCodes(harvester, jobId) {
     harvester.on('record', function onRecord(record) {
         if (record.reports) {
             record.reports.forEach(report => {
-                let reportCode = null;
-                let reportType;
+                let reportCode = null
+                let reportType
 
                 i++
 
@@ -50,17 +50,17 @@ export function saveReportCodes(harvester, jobId) {
 
     harvester.on('end', () => {
         reportCodesStream.write(JSON.stringify([...reportCodes.values()].sort((a, b) => {
-            const nameA = a.reportCode.toUpperCase(); // ignore upper and lowercase
-            const nameB = b.reportCode.toUpperCase(); // ignore upper and lowercase
+            const nameA = a.reportCode.toUpperCase() // ignore upper and lowercase
+            const nameB = b.reportCode.toUpperCase() // ignore upper and lowercase
             if (nameA < nameB) {
-                return -1;
+                return -1
             }
             if (nameA > nameB) {
-                return 1;
+                return 1
             }
 
             // names must be equal
-            return 0;
+            return 0
         }), null, 2))
 
         console.info(`${reportCodes.size} report codes types saved to ${fileName}`)

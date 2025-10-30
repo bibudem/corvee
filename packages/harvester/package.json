@@ -1,6 +1,6 @@
 {
-    "name": "corvee-harvester",
-    "version": "2.0.0-beta.7",
+    "name": "@corvee/harvester",
+    "version": "2.0.0-beta.8",
     "description": "",
     "type": "module",
     "exports": "./index.js",
@@ -40,7 +40,7 @@
         "@vladfrangu/async_event_emitter": "^2.1.2",
         "assert-plus": "^1.0.0",
         "chromium-net-errors": "^13.0.0",
-        "corvee-core": "*",
+        "@corvee/core": "*",
         "extend": "^3.0.2",
         "filenamify-url": "^3.0.0",
         "io-validate": "^2.1.13",

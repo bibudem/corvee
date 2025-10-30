@@ -1,4 +1,4 @@
-import { canonicalizeUrl } from 'corvee-core'
+import { canonicalizeUrl } from '@corvee/core'
 import { Filter } from './filter.js'
 
 const CODE = 'http-30x-https-upgrade-loose'
@@ -51,13 +51,13 @@ export default class Http30xHttpsUpgradeLoose extends Filter {
                 isHttpsUpgrade = finalUrl.protocol === url.protocol.replace(/:$/, 's:'),
                 isSamePathname = finalUrl.pathname === url.pathname,
                 domainRegex = new RegExp(`(^w+(\d+)?\.)?${finalUrl.hostname.replace(/\./ig, '\\.')}$`),
-                isSameDomain = this.options.ignoreWww ? domainRegex.test(url.hostname) : url.hostname === finalUrl.hostname;
+                isSameDomain = this.options.ignoreWww ? domainRegex.test(url.hostname) : url.hostname === finalUrl.hostname
 
             return !isSamePathname &&
                 isSameDomain &&
                 isHttpsUpgrade &&
                 record.redirectChain &&
-                record.redirectChain.length > 0;
+                record.redirectChain.length > 0
         }
     }
 }
