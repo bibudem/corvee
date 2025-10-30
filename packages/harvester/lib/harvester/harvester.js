@@ -748,7 +748,7 @@ export class Harvester extends AsyncEventEmitter {
                 }
 
                 if (!self.config.schemes.some((/** @type {string} */ scheme) => minimatch(uriObj.scheme, scheme))) {
-                    console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${link.userData.parent} -> ${link.url.substring(0, 100)}` : ''}`)
+                    // console.warn(`Unsupported scheme: '${uriObj.scheme}' ${link.url ? `at uri ${link.userData.parent} -> ${link.url.substring(0, 100)}` : ''}`)
 
                     return
                 }
@@ -756,20 +756,20 @@ export class Harvester extends AsyncEventEmitter {
                 // Don't process links in current page if it's url satisfies one of the options.noFollow[] rules
                 const noFollowUrl = self.shouldNotFollowUrl(link.userData.parent)
                 if (noFollowUrl) {
-                    console.debug(`Rejecting link ${link.url} in ${link.userData.parent} since a noFollow rule was detected: ${noFollowUrl}`)
+                    // console.debug(`Rejecting link ${link.url} in ${link.userData.parent} since a noFollow rule was detected: ${noFollowUrl}`)
                     return
                 }
 
                 // Stop processing if filtering settings meet
                 const ignoreRule = self.shouldIgnoreUrl(link.url)
                 if (ignoreRule) {
-                    console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${link.userData.parent} -> ${link.url}`)
+                    // console.debug(`Ignoring this url based on config.ignore rule ${ignoreRule}: ${link.userData.parent} -> ${link.url}`)
                     return
                 }
 
                 // This should not occur
                 if (self.isExternLink(link.userData.parent)) {
-                    console.todo(`Intercepted an URL hosted on an external page that was submitted to fetch queue: ${link.userData.parent} -> ${link.url}.`)
+                    console.warn(`[TODO] Intercepted an URL hosted on an external page that was submitted to fetch queue: ${link.userData.parent} -> ${link.url}.`)
                     return
                 }
 
