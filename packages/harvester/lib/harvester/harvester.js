@@ -227,7 +227,7 @@ export class Harvester extends AsyncEventEmitter {
 
         })
 
-        this.homeBasePUrl = new PseudoUrls(this.config.internLinks)
+        this.homeBasePURL = new PseudoUrls(this.config.internLinks)
 
         /**
          * @type {Array<string | Link>}
@@ -371,7 +371,7 @@ export class Harvester extends AsyncEventEmitter {
     isExternLink(url) {
         const isExtern = (() => {
             if (url) {
-                return !this.homeBasePUrl.matches(url)
+                return !this.homeBasePURL.matches(url)
             }
 
             return true
@@ -1289,7 +1289,7 @@ export class Harvester extends AsyncEventEmitter {
 
                             console.verbose(`${pwRequest.isNavigationRequest() ? `[${request.retryCount}]` : ''} ${pwRequest.isNavigationRequest() ? 'IS' : 'IS NOT'} NAV, ${pwRequest.failure() ? `${pwRequest.failure().errorText} ` : ` `}at ${displayUrl(request.userData.parent)} -> ${displayUrl(url)}`)
 
-                            if (!self.homeBasePUrl.matches(page.url())) {
+                            if (!self.homeBasePURL.matches(page.url())) {
                                 console.verbose(`Ignoring request error on external page asset. ${displayUrl(page.url())} -> ${displayUrl(url)}`)
 
                                 return Promise.resolve()
