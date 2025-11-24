@@ -42,7 +42,7 @@
         "chromium-net-errors": "^13.0.0",
         "@corvee/core": "*",
         "extend": "^3.0.2",
-        "filenamify-url": "^3.0.0",
+        "filenamify-url": "^4.0.0",
         "io-validate": "^2.1.13",
         "lru": "^3.1.0",
         "minimatch": "^10.1.1",
