@@ -2,12 +2,12 @@
  * @typedef {object} FilterType
  * @property {string} code
  * @property {string} [description]
- * @property {import('corvee-processor').FilterLevelType} [level='error']
+ * @property {import('@corvee/processor').FilterLevelType} [level='error']
  * @property {boolean} [exclude=false]
  * @property {number} [priority=0]
  * @property {number} [matches=0]
  * @property {number} [limit=Infinity]
- * @property {(report: import('corvee-harvester').Report, filter?: FilterType) => string} test
+ * @property {(report: import('@corvee/harvester').Report, filter?: FilterType) => string} test
  */
 
 const defaultOptions = {
@@ -24,7 +24,7 @@ export class Filter {
    * @param {string} code
    * @param {string} description
    * @param {object} options
-   * @param {import('corvee-processor').FilterLevelType} [options.level='error']
+   * @param {import('@corvee/processor').FilterLevelType} [options.level='error']
    * @param {boolean} [options.exclude=false]
    * @param {number} [options.priority=0]
    * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
@@ -33,7 +33,7 @@ export class Filter {
   constructor(code, description, { level, exclude, priority, limit } = {}) {
 
     if (this.constructor === Filter) {
-      throw new Error("This is an abstract class. It can't be instantiated.");
+      throw new Error("This is an abstract class. It can't be instantiated.")
     }
 
     Object.defineProperties(this, {
@@ -64,11 +64,11 @@ export class Filter {
   }
 
   /**
-   * @param {import('corvee-harvester').RecordType} record
-   * @param {import('corvee-processor').FilterType} [filter]
-   * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
+   * @param {import('@corvee/harvester').RecordType} record
+   * @param {import('@corvee/processor').FilterType} [filter]
+   * @returns {import('@corvee/harvester').RecordType | string | boolean | undefined}
    */
   test(record, filter) {
-    throw new Error("Method 'test()' must be implemented.");
+    throw new Error("Method 'test()' must be implemented.")
   }
 }

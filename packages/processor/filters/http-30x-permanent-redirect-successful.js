@@ -21,19 +21,19 @@ export default class Http30xPermanentRedirectSuccessful extends Filter {
     /**
      *Creates an instance of Http30xPermanentRedirectSuccessful.
      * @param {object} options
-     * @param {import('corvee-processor').FilterLevelType} [options.level='info']
+     * @param {import('@corvee/processor').FilterLevelType} [options.level='info']
      * @param {boolean} [options.exclude=false]
      * @param {number} [options.priority=-1]
      * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
      */
-    constructor({ level = defaultLevel, exclude, priority = defaultPriority, limit } = {}) {
+    constructor({ level = defaultLevel, exclude, priority = defaultPriority, limit = Infinity } = {}) {
 
         super(CODE, DESCRIPTION, { level, exclude, priority, limit })
 
         /**
-         * @param {import('corvee-harvester').RecordType} record
-         * @param {import('corvee-processor').FilterType} filter
-         * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
+         * @param {import('@corvee/harvester').RecordType} record
+         * @param {import('@corvee/processor').FilterType} filter
+         * @returns {import('@corvee/harvester').RecordType | string | boolean | undefined}
          */
         this.test = (record, filter) => {
 
@@ -48,19 +48,19 @@ export default class Http30xPermanentRedirectSuccessful extends Filter {
             ) {
                 const permanentRedirects = record.redirectChain.filter(r => {
                     // @ts-ignore
-                    return [301, 308].includes(r.status) || (r.status === 307 && r.statusText === 'Internal Redirect');
-                });
+                    return [301, 308].includes(r.status) || (r.status === 307 && r.statusText === 'Internal Redirect')
+                })
 
                 if (permanentRedirects.length > 0) {
 
                     // @ts-ignore
-                    record.finalUrl = permanentRedirects[permanentRedirects.length - 1].url;
+                    record.finalUrl = permanentRedirects[permanentRedirects.length - 1].url
                     record.reports.push({
                         code: this.code,
                         level: this.level,
                         priority: this.priority
                     })
-                    return record;
+                    return record
                 }
             }
         }
