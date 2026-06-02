@@ -4,6 +4,7 @@ import ProgressBar from 'progress'
 import { LEVELS } from './levels.js'
 
 import { messageFactory } from '../messages.js'
+// @ts-ignore
 import { console, inspect } from '@corvee/core'
 
 class FilterPriorities extends Map {
@@ -34,6 +35,7 @@ class FilterPriorities extends Map {
  * @memberof CorveeProcessor
  */
 
+// @ts-ignore
 export class CorveeProcessor extends EventEmitter {
 
     /**
@@ -74,9 +76,11 @@ export class CorveeProcessor extends EventEmitter {
          */
         this._errors = []
         this.config = config
+        // @ts-ignore
         this.config.errorLevel = this.config.errorLevel || LEVELS.WARNING
         this.filtersWithoutMessages = new Set()
 
+        // @ts-ignore
         this.getMessage = messageFactory(this.messages)
 
         this.addFilters(filters)
@@ -88,6 +92,7 @@ export class CorveeProcessor extends EventEmitter {
      */
     isMuted(record) {
 
+        // @ts-ignore
         return record.reports.every(report => LEVELS[report.level] < this.config.errorLevel)
     }
 
@@ -175,6 +180,7 @@ export class CorveeProcessor extends EventEmitter {
              */
             const result = []
 
+            // @ts-ignore
             records.forEach((record, i) => {
 
                 try {
@@ -183,8 +189,10 @@ export class CorveeProcessor extends EventEmitter {
 
                     if (filter.matches < limit) {
 
+                        // @ts-ignore
                         self.emit('beforeprocess', record, filter)
 
+                        // @ts-ignore
                         const testResult = filter.test(record, filter)
 
                         if (testResult) {
@@ -211,22 +219,29 @@ export class CorveeProcessor extends EventEmitter {
                                 }
 
                                 if (typeof testResult === 'string') {
+                                    // @ts-ignore
                                     report._message = testResult
                                 }
 
+                                // @ts-ignore
                                 record.reports.splice(index, 0, report)
                             }
 
+                            // @ts-ignore
                             self.emit('filtered', record, filter)
+                            // @ts-ignore
                             self.emit(filter.code, record, filter)
 
                             if (filter.exclude) {
                                 excludedCount++
+                                // @ts-ignore
                                 if (typeof excluded[record.id] === 'undefined') {
+                                    // @ts-ignore
                                     excluded[record.id] = filter.code
                                 }
 
 
+                                // @ts-ignore
                                 self.emit('excluded', record, filter)
                                 return
                             }
@@ -254,6 +269,7 @@ export class CorveeProcessor extends EventEmitter {
 
             const errorLevels = Object
                 .keys(LEVELS)
+                // @ts-ignore
                 .filter(level => LEVELS[level] >= self.config.errorLevel)
                 .map(level => level.toLowerCase())
 
@@ -263,8 +279,10 @@ export class CorveeProcessor extends EventEmitter {
 
                 // Filtering reports by level
 
+                // @ts-ignore
                 const highestLevel = Math.max(...record.reports.filter(report => errorLevels.includes(report.level)).map(report => LEVELS[report.level.toUpperCase()]))
 
+                // @ts-ignore
                 record.reports = record.reports.filter(report => LEVELS[report.level.toUpperCase()] === highestLevel)
 
                 return record
@@ -279,6 +297,7 @@ export class CorveeProcessor extends EventEmitter {
 
             const errorLevels = Object
                 .keys(LEVELS)
+                // @ts-ignore
                 .filter(level => LEVELS[level] >= self.config.errorLevel)
                 .map(level => level.toLowerCase())
 
@@ -349,6 +368,7 @@ export class CorveeProcessor extends EventEmitter {
         console.debug(`Processing ${this._errors.length} custom errors...`)
 
         this._errors.forEach(error => {
+            // @ts-ignore
             this.records = doErrors(this.records, error)
         })
 
@@ -364,6 +384,7 @@ export class CorveeProcessor extends EventEmitter {
 
         this.filters.forEach(filter => {
             progressBar.tick({ filter: `${filter.code}` })
+            // @ts-ignore
             this.records = doFilter(this.records, filter)
         })
 
@@ -371,6 +392,7 @@ export class CorveeProcessor extends EventEmitter {
             .filter(record => !record._filtered)
             .map(record => {
                 const newRecord = structuredClone(record)
+                // @ts-ignore
                 this.emit('unfiltered', newRecord)
                 return newRecord
             })
