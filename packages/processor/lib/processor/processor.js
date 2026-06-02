@@ -187,68 +187,68 @@ export class CorveeProcessor extends EventEmitter {
 
                     const limit = Reflect.has(filter, 'limit') ? filter.limit : Infinity
 
-                    if (filter.matches < limit) {
-
+                    if (filter.matches >= limit) {
                         // @ts-ignore
-                        self.emit('beforeprocess', record, filter)
+                        self.emit('limit-reached', record, filter)
+                        return
+                    }
 
-                        // @ts-ignore
-                        const testResult = filter.test(record, filter)
+                    // @ts-ignore
+                    self.emit('beforeprocess', record, filter)
 
-                        if (testResult) {
-                            filter.matches++
-                            filteredRecords.add(record.id)
-                            record._filtered = true
+                    // @ts-ignore
+                    const testResult = filter.test(record, filter)
 
-                            if (isObject(testResult)) {
-                                record = testResult
+                    if (testResult) {
+                        filter.matches++
+                        filteredRecords.add(record.id)
+                        record._filtered = true
+
+                        if (isObject(testResult)) {
+                            record = testResult
+                        } else {
+
+                            let report, index
+
+                            if (record.reports.some(report => report.code === filter.code)) {
+                                report = record.reports.find(report => report.code === filter.code)
+                                index = record.reports.findIndex(report => report.code === filter.code)
+                                record.reports.splice(index, 1)
                             } else {
-
-                                let report, index
-
-                                if (record.reports.some(report => report.code === filter.code)) {
-                                    report = record.reports.find(report => report.code === filter.code)
-                                    index = record.reports.findIndex(report => report.code === filter.code)
-                                    record.reports.splice(index, 1)
-                                } else {
-                                    report = {
-                                        code: filter.code,
-                                        level: 'level' in filter ? filter.level : 'error'
-                                    }
-                                    index = record.reports.length
+                                report = {
+                                    code: filter.code,
+                                    level: 'level' in filter ? filter.level : 'error'
                                 }
+                                index = record.reports.length
+                            }
 
-                                if (typeof testResult === 'string') {
-                                    // @ts-ignore
-                                    report._message = testResult
-                                }
-
+                            if (typeof testResult === 'string') {
                                 // @ts-ignore
-                                record.reports.splice(index, 0, report)
+                                report._message = testResult
                             }
 
                             // @ts-ignore
-                            self.emit('filtered', record, filter)
-                            // @ts-ignore
-                            self.emit(filter.code, record, filter)
-
-                            if (filter.exclude) {
-                                excludedCount++
-                                // @ts-ignore
-                                if (typeof excluded[record.id] === 'undefined') {
-                                    // @ts-ignore
-                                    excluded[record.id] = filter.code
-                                }
-
-
-                                // @ts-ignore
-                                self.emit('excluded', record, filter)
-                                return
-                            }
-
-
+                            record.reports.splice(index, 0, report)
                         }
 
+                        // @ts-ignore
+                        self.emit('filtered', record, filter)
+                        // @ts-ignore
+                        self.emit(filter.code, record, filter)
+
+                        if (filter.exclude) {
+                            excludedCount++
+                            // @ts-ignore
+                            if (typeof excluded[record.id] === 'undefined') {
+                                // @ts-ignore
+                                excluded[record.id] = filter.code
+                            }
+
+
+                            // @ts-ignore
+                            self.emit('excluded', record, filter)
+                            return
+                        }
                     }
                 } catch (e) {
                     console.error(e)
