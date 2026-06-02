@@ -22,12 +22,12 @@ class FilterPriorities extends Map {
 
 /**
  * @typedef {object} CorveeProcessorConfigType
- * @property {import('corvee-processor').FilterLevelType} errorLevel
+ * @property {import('@corvee/processor').FilterLevelType} errorLevel
  */
 
 /**
  * @typedef {object} CorveeProcessorOptionsType
- * @property {import('corvee-processor').FilterType[]} [filters]
+ * @property {import('@corvee/processor').FilterType[]} [filters]
  * @property {object[]} [errors]
  * @property {Object<string, object>} [messages]
  * @property {CorveeProcessorConfigType} [config]
@@ -54,17 +54,17 @@ export class CorveeProcessor extends EventEmitter {
         }
 
         /**
-         * @type {import('corvee-harvester').RecordType[]}
+         * @type {import('@corvee/harvester').RecordType[]}
          */
         this.records = []
 
         /**
-         * @type {import('corvee-harvester').RecordType[]}
+         * @type {import('@corvee/harvester').RecordType[]}
          */
         this.unfilteredRecords = []
 
         /**
-         * @type { Partial<import('corvee-processor').FilterType>[] }
+         * @type { Partial<import('@corvee/processor').FilterType>[] }
          */
         this.filters = []
         this.messages = messages
@@ -84,7 +84,7 @@ export class CorveeProcessor extends EventEmitter {
     }
 
     /**
-     * @param {import('corvee-harvester').RecordType} record
+     * @param {import('@corvee/harvester').RecordType} record
      */
     isMuted(record) {
 
@@ -106,7 +106,7 @@ export class CorveeProcessor extends EventEmitter {
     }
 
     /**
-     * @param {import('corvee-processor').FilterType[]} filters
+     * @param {import('@corvee/processor').FilterType[]} filters
      */
     addFilters(filters) {
 
@@ -131,7 +131,7 @@ export class CorveeProcessor extends EventEmitter {
     }
 
     /**
-     * @param {import('corvee-harvester').RecordType[]} records
+     * @param {import('@corvee/harvester').RecordType[]} records
      */
     async process(records) {
         if (!Array.isArray(records)) {
@@ -165,13 +165,13 @@ export class CorveeProcessor extends EventEmitter {
             self = this
 
         /**
-         * @param {import('corvee-harvester').RecordType[]} records
-         * @param {import('corvee-processor').FilterType} filter
+         * @param {import('@corvee/harvester').RecordType[]} records
+         * @param {import('@corvee/processor').FilterType} filter
          */
         function doFilter(records, filter) {
 
             /**
-             * @type {import('corvee-harvester').RecordType[]}
+             * @type {import('@corvee/harvester').RecordType[]}
              */
             const result = []
 
@@ -248,7 +248,7 @@ export class CorveeProcessor extends EventEmitter {
         }
 
         /**
-         * @param {import('corvee-harvester').RecordType[]} records
+         * @param {import('@corvee/harvester').RecordType[]} records
          */
         function doFilterLevels(records) {
 
@@ -273,7 +273,7 @@ export class CorveeProcessor extends EventEmitter {
         }
 
         /**
-         * @param {import('corvee-harvester').RecordType[]} records
+         * @param {import('@corvee/harvester').RecordType[]} records
          */
         function doFilterPriorities(records) {
 
@@ -285,7 +285,7 @@ export class CorveeProcessor extends EventEmitter {
             return records.map(record => {
 
                 /**
-                 * @type {import('corvee-harvester').Report[]}
+                 * @type {import('@corvee/harvester').Report[]}
                  */
                 let reports = []
 
@@ -318,12 +318,12 @@ export class CorveeProcessor extends EventEmitter {
         }
 
         /**
-         * @param {import('corvee-harvester').RecordType[]} records
+         * @param {import('@corvee/harvester').RecordType[]} records
          */
         function doAddMessages(records) {
 
             /**
-             * @type {import("corvee-harvester").RecordType[]}
+             * @type {import("@corvee/harvester").RecordType[]}
              */
             const result = []
 
@@ -388,7 +388,7 @@ export class CorveeProcessor extends EventEmitter {
         this.records = doAddMessages(this.records)
 
         /**
-         * @type { Partial<import('corvee-processor').FilterType>[] }
+         * @type { Partial<import('@corvee/processor').FilterType>[] }
          */
         const perFilter = this.filters.map(({
             code,

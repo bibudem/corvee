@@ -29,10 +29,10 @@
       "@corvee/core": [
         "packages/core"
       ],
-      "corvee-harvester": [
+      "@corvee/harvester": [
         "packages/harvester/"
       ],
-      "corvee-processor": [
+      "@corvee/processor": [
         "packages/processor/"
       ],
     },

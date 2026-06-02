@@ -18,7 +18,7 @@ export default class Http30xRootToPathPermanentRedirect extends Filter {
     /**
      *Creates an instance of Http30xRootToPathPermanentRedirect.
      * @param {object} options
-     * @param {import('corvee-processor').FilterLevelType} [options.level='info']
+     * @param {import('@corvee/processor').FilterLevelType} [options.level='info']
      * @param {boolean} [options.exclude=true]
      * @param {number} [options.priority=0]
      * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
@@ -28,9 +28,9 @@ export default class Http30xRootToPathPermanentRedirect extends Filter {
         super(CODE, DESCRIPTION, { level, exclude, priority, limit })
 
         /**
-         * @param {import('corvee-harvester').RecordType} record
-         * @param {import('corvee-processor').FilterType} filter
-         * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
+         * @param {import('@corvee/harvester').RecordType} record
+         * @param {import('@corvee/processor').FilterType} filter
+         * @returns {import('@corvee/harvester').RecordType | string | boolean | undefined}
          */
         this.test = (record, filter) => {
 

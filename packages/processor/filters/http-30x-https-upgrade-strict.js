@@ -6,7 +6,7 @@ const CODE = 'http-30x-https-upgrade-strict'
 const DESCRIPTION = 'Matches when the only difference between the url and the final url is an https scheme upgrade and/or a missing `www.` sub-domain in the final url.'
 
 /**
- * @type {import('corvee-processor').FilterLevelType}
+ * @type {import('@corvee/processor').FilterLevelType}
  */
 const defaultLevel = 'warning'
 
@@ -32,7 +32,7 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
     /**
      *Creates an instance of Http30xHttpsUpgradeStrict.
      * @param {object} options
-     * @param {import('corvee-processor').FilterLevelType} [options.level='warning']
+     * @param {import('@corvee/processor').FilterLevelType} [options.level='warning']
      * @param {boolean} [options.exclude=false]
      * @param {number} [options.priority=0]
      * @param {number} [options.limit=Infinity] Limit the number of detections from this filter.
@@ -48,9 +48,9 @@ export default class Http30xHttpsUpgradeStrict extends Filter {
         this.ignoreTailingSlash = options.ignoreTailingSlash || defaultOptions.ignoreTailingSlash
 
         /**
-         * @param {import('corvee-harvester').RecordType} record
-         * @param {import('corvee-processor').FilterType} filter
-         * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
+         * @param {import('@corvee/harvester').RecordType} record
+         * @param {import('@corvee/processor').FilterType} filter
+         * @returns {import('@corvee/harvester').RecordType | string | boolean | undefined}
          */
         this.test = (record, filter) => {
             if (!record.finalUrl) {

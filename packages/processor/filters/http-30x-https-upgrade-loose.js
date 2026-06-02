@@ -4,7 +4,7 @@ import { Filter } from './filter.js'
 const CODE = 'http-30x-https-upgrade-loose'
 const DESCRIPTION = 'Matches when there is a redirect on a URL on the same domain and an https upgrade scheme. URL paths must differ.'
 /**
- * @type {import('corvee-processor').FilterLevelType}
+ * @type {import('@corvee/processor').FilterLevelType}
  */
 const defaultLevel = 'error'
 const defaultPriority = 0
@@ -17,7 +17,7 @@ export default class Http30xHttpsUpgradeLoose extends Filter {
     /**
      * Creates an instance of Http30xHttpsUpgradeLoose.
      * @param {object} options
-     * @param {import('corvee-processor').FilterLevelType} [options.level=warning]
+     * @param {import('@corvee/processor').FilterLevelType} [options.level=warning]
      * @param {boolean} [options.exclude=false]
      * @param {number} [options.priority=1]
      * @param {boolean} [options.ignoreWww=true] Wether to ignore `www` subdomain or not.
@@ -34,8 +34,8 @@ export default class Http30xHttpsUpgradeLoose extends Filter {
         }
 
         /**
-         * @param {import('corvee-harvester').RecordType} record
-         * @returns {import('corvee-harvester').RecordType | string | boolean | undefined}
+         * @param {import('@corvee/harvester').RecordType} record
+         * @returns {import('@corvee/harvester').RecordType | string | boolean | undefined}
          */
         this.test = (record) => {
             if (!record.finalUrl) {

@@ -11,7 +11,7 @@ const CODE = 'http-30x-permanent-redirect-successful'
 const DESCRIPTION = 'Matches a successful response after one or more redirections where at least one of that is permanent. Returns the URL of the last permanent redirect.'
 
 /**
- * @type {import('corvee-processor').FilterLevelType}
+ * @type {import('@corvee/processor').FilterLevelType}
  */
 const defaultLevel = 'info'
 const defaultPriority = -1
