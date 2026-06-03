@@ -170,6 +170,7 @@ function getStackInfo(stackIndex) {
     var sp = stackReg.exec(s) || stackReg2.exec(s)
 
     if (sp && sp.length === 5) {
+
         return {
             method: sp[1],
             relativePath: relative(PROJECT_ROOT, fileURLToPath(sp[2])),

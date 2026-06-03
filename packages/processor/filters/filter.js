@@ -7,6 +7,7 @@
  * @property {number} [priority=0]
  * @property {number} [matches=0]
  * @property {number} [limit=Infinity]
+ * @property {boolean} [_filtered=false]
  * @property {(report: import('@corvee/harvester').Report, filter?: FilterType) => string} test
  */
 

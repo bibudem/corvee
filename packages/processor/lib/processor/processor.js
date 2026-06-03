@@ -119,9 +119,12 @@ export class CorveeProcessor extends EventEmitter {
 
             console.verbose(`Adding filter ${filter.code}`)
 
+            // normalizing filter properties
             filter.matches = 0
             filter.test = filter.test.bind(this)
             filter.priority = filter.priority || 0
+            filter.limit = filter.limit || Infinity
+            filter._filtered = false
 
             this.filterPriorities.set(filter.code, filter.priority)
 
@@ -166,8 +169,8 @@ export class CorveeProcessor extends EventEmitter {
 
         var nbIn = this.records.length,
             excluded = {},
-            excludedCount = 0,
-            self = this
+            excludedCount = 0
+        const self = this
 
         /**
          * @param {import('@corvee/harvester').RecordType[]} records
@@ -183,16 +186,16 @@ export class CorveeProcessor extends EventEmitter {
             // @ts-ignore
             records.forEach((record, i) => {
 
+                // console.debug(`Processing record ${i + 1}/${records.length} with filter ${filter.code} (${filter.matches}/${filter.limit} matches so far)`)
+                // if (filter.matches >= filter.limit) {
+                //     // @ts-ignore
+                //     self.emit('limit-reached', record, filter)
+                //     //filter.matches === filter.limit && console.log(`Filter ${filter.code} limit reached (${filter.matches}/${filter.limit} matches). Skipping...`)
+                //     result.push(record)
+                //     return
+                // }
+
                 try {
-
-                    const limit = Reflect.has(filter, 'limit') ? filter.limit : Infinity
-
-                    if (filter.matches >= limit) {
-                        // @ts-ignore
-                        self.emit('limit-reached', record, filter)
-                        return
-                    }
-
                     // @ts-ignore
                     self.emit('beforeprocess', record, filter)
 
@@ -384,6 +387,7 @@ export class CorveeProcessor extends EventEmitter {
 
         this.filters.forEach(filter => {
             progressBar.tick({ filter: `${filter.code}` })
+
             // @ts-ignore
             this.records = doFilter(this.records, filter)
         })
