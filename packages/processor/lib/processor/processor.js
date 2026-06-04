@@ -186,14 +186,7 @@ export class CorveeProcessor extends EventEmitter {
             // @ts-ignore
             records.forEach((record, i) => {
 
-                // console.debug(`Processing record ${i + 1}/${records.length} with filter ${filter.code} (${filter.matches}/${filter.limit} matches so far)`)
-                // if (filter.matches >= filter.limit) {
-                //     // @ts-ignore
-                //     self.emit('limit-reached', record, filter)
-                //     //filter.matches === filter.limit && console.log(`Filter ${filter.code} limit reached (${filter.matches}/${filter.limit} matches). Skipping...`)
-                //     result.push(record)
-                //     return
-                // }
+                // if (filter.matches < filter.limit) {
 
                 try {
                     // @ts-ignore
@@ -259,6 +252,7 @@ export class CorveeProcessor extends EventEmitter {
                     process.exit()
                 }
 
+                // }
                 result.push(record)
 
             })
