@@ -186,11 +186,11 @@ export class CorveeProcessor extends EventEmitter {
             // @ts-ignore
             records.forEach((record, i) => {
 
-                // if (filter.matches < filter.limit) {
-
                 try {
                     // @ts-ignore
                     self.emit('beforeprocess', record, filter)
+
+                    // if (filter.matches < filter.limit) {
 
                     // @ts-ignore
                     const testResult = filter.test(record, filter)
@@ -246,13 +246,13 @@ export class CorveeProcessor extends EventEmitter {
                             return
                         }
                     }
+                    // }
                 } catch (e) {
                     console.error(e)
                     console.info('At record', record)
                     process.exit()
                 }
 
-                // }
                 result.push(record)
 
             })
