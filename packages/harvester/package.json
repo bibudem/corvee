@@ -35,7 +35,7 @@
         "cv": "./bin/cli.js"
     },
     "dependencies": {
-        "@apify/timeout": "^0.4.11",
+        "@apify/timeout": "^0.4.13",
         "@corvee/core": "*",
         "@crawlee/playwright": "^3.18.1",
         "@vladfrangu/async_event_emitter": "^2.1.2",
