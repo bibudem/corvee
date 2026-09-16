@@ -27,7 +27,8 @@
         "test:samples:misc": "node test/samples/misc",
         "test:samples:samples": "node test/samples/samples",
         "test:url": "node test/url",
-        "serve:http-status": "nodemon --watch ./test/htttp-status/server.js --watch ./test/http-status/routes.js --exec node ./scripts/start-server.js"
+        "serve:http-status": "nodemon --watch ./test/htttp-status/server.js --watch ./test/http-status/routes.js --exec node ./scripts/start-server.js",
+        "postinstall": "npx playwright install"
     },
     "author": "",
     "license": "ISC",
